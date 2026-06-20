@@ -1,3 +1,5 @@
+import { getGames } from '../api.js';
+
 export function renderScoreboard() {
   return `
     <div class="page-header">

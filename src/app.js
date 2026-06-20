@@ -3,6 +3,7 @@ import { renderGolfers } from './pages/golfers.js';
 import { renderWorldCup } from './pages/worldcup.js';
 import { renderAddGame } from './pages/addgame.js';
 import { renderAdmin } from './pages/admin.js';
+import { CONFIG } from './config.js';
 
 const content = document.getElementById('app-content');
 const navButtons = document.querySelectorAll('.bottom-nav button');
@@ -46,3 +47,19 @@ if ('serviceWorker' in navigator) {
     .register('./service-worker.js')
     .catch(err => console.error('SW registration failed:', err));
 }
+
+window.testApi = async function () {
+  try {
+    const result = await fetch(
+      `${CONFIG.API_URL}?action=getAvailableGames&sportKey=ALL`
+    );
+
+    const data = await result.json();
+
+    console.log('API SUCCESS:', data);
+    alert(`Loaded ${data.data?.length || 0} games`);
+  } catch (err) {
+    console.error(err);
+    alert(err.message);
+  }
+};
