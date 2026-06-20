@@ -1,4 +1,3 @@
-import { getGames } from '../api.js';
 import { getAvailableGames } from '../api.js';
 
 getAvailableGames('ALL')
