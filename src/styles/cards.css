@@ -34,14 +34,6 @@
   font-size: 20px;
 }
 
-.team-row.winner {
-  color: #facc15;
-}
-
-.team-row strong {
-  font-size: 24px;
-}
-
 .game-channel {
   margin-top: 10px;
   font-size: 13px;
@@ -56,5 +48,19 @@
 }
 
 .team-row strong {
-  font-size: 26px;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.team-row.leading {
+  font-weight: 700;
+}
+
+.team-row.leading {
+  font-weight: 700;
+}
+
+.game-live {
+  color: #22c55e;
+  font-weight: 700;
 }
