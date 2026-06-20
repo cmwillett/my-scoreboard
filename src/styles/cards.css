@@ -53,11 +53,12 @@
 }
 
 .team-row.leading {
+  color: #22c55e;
   font-weight: 700;
 }
 
-.team-row.leading {
-  font-weight: 700;
+.team-row.leading strong {
+  font-size: 24px;
 }
 
 .game-live {
