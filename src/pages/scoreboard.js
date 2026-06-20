@@ -1,4 +1,9 @@
 import { getGames } from '../api.js';
+import { getAvailableGames } from '../api.js';
+
+getAvailableGames('ALL')
+  .then(result => console.log(result))
+  .catch(err => console.error(err));
 
 export function renderScoreboard() {
   return `
