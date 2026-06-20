@@ -49,3 +49,7 @@ navButtons.forEach(btn => {
 });
 
 renderPage('scoreboard');
+
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('./service-worker.js');
+}
