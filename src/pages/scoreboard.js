@@ -5,6 +5,7 @@ export async function renderScoreboard() {
   try {
     const result = await getAvailableGames('ALL');
     const games = result.data || [];
+    console.log('FIRST GAME:', games[0]);
 
     return `
       <div class="page-header">
