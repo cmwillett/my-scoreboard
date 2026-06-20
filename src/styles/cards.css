@@ -41,3 +41,20 @@
 .team-row strong {
   font-size: 24px;
 }
+
+.game-channel {
+  margin-top: 10px;
+  font-size: 13px;
+  color: #94a3b8;
+}
+
+.team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 0;
+}
+
+.team-row strong {
+  font-size: 26px;
+}
