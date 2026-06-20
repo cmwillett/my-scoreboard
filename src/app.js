@@ -4,7 +4,6 @@ import { renderWorldCup } from './pages/worldcup.js';
 import { renderAddGame } from './pages/addgame.js';
 import { renderAdmin } from './pages/admin.js';
 import { CONFIG } from './config.js';
-import { CONFIG } from './config.js';
 import { startAutoRefresh, stopAutoRefresh } from './services/refresh.js';
 
 const content = document.getElementById('app-content');
