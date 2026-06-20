@@ -16,10 +16,17 @@ const pages = {
   admin: renderAdmin
 };
 
-function renderPage(pageKey) {
-  const renderer = pages[pageKey] || renderScoreboard;
+async function renderPage(pageKey) {
+  const renderer =
+    pages[pageKey] || renderScoreboard;
 
-  content.innerHTML = renderer();
+  content.innerHTML = `
+    <div class="card">
+      Loading...
+    </div>
+  `;
+
+  content.innerHTML = await renderer();
 
   navButtons.forEach(btn => {
     btn.classList.toggle(
@@ -32,9 +39,9 @@ function renderPage(pageKey) {
 }
 
 navButtons.forEach(btn => {
-  btn.addEventListener('click', () => {
-    renderPage(btn.dataset.page);
-  });
+    btn.addEventListener('click', async () => {
+    await renderPage(btn.dataset.page);
+    });
 });
 
 const startingPage =
