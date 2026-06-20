@@ -1,5 +1,11 @@
 import { getAvailableGames } from '../api.js';
 
+const games = await getAvailableGames('ALL');
+
+content.innerHTML = games
+  .map(renderGameCard)
+  .join('');
+
 export function renderScoreboard() {
   return `
     <div class="page-header">
