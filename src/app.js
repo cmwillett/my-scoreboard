@@ -4,6 +4,8 @@ import { renderWorldCup } from './pages/worldcup.js';
 import { renderAddGame } from './pages/addgame.js';
 import { renderAdmin } from './pages/admin.js';
 import { CONFIG } from './config.js';
+import { CONFIG } from './config.js';
+import { startAutoRefresh, stopAutoRefresh } from './services/refresh.js';
 
 const content = document.getElementById('app-content');
 const navButtons = document.querySelectorAll('.bottom-nav button');
@@ -17,6 +19,7 @@ const pages = {
 };
 
 async function renderPage(pageKey) {
+  stopAutoRefresh();
   const renderer =
     pages[pageKey] || renderScoreboard;
 
@@ -36,6 +39,11 @@ async function renderPage(pageKey) {
   });
 
   window.location.hash = pageKey;
+  if (pageKey === 'scoreboard') {
+  startAutoRefresh(() => {
+    renderPage('scoreboard');
+  }, CONFIG.REFRESH_INTERVAL);
+}
 }
 
 navButtons.forEach(btn => {
