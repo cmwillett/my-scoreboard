@@ -1,0 +1,58 @@
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #0f172a;
+  color: white;
+}
+
+.app {
+  min-height: 100vh;
+  padding-bottom: 72px;
+}
+
+.top-bar {
+  padding: 16px;
+  background: #111827;
+  border-bottom: 1px solid #334155;
+}
+
+.top-bar h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.content {
+  padding: 16px;
+}
+
+.card {
+  background: #1e293b;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  background: #111827;
+  border-top: 1px solid #334155;
+}
+
+.bottom-nav button {
+  padding: 12px 4px;
+  background: none;
+  border: none;
+  color: #cbd5e1;
+  font-size: 13px;
+}
+
+.bottom-nav button.active {
+  color: white;
+  font-weight: bold;
+}
