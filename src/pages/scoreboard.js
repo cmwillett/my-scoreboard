@@ -4,7 +4,6 @@ import { renderGameCard } from '../components/gameCard.js';
 export async function renderScoreboard() {
   try {
     const result = await getAvailableGames('ALL');
-
     const games = result.data || [];
 
     return `
