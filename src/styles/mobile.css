@@ -1,0 +1,14 @@
+@media (min-width: 800px) {
+  .content {
+    max-width: 900px;
+    margin: 0 auto;
+  }
+
+  .bottom-nav {
+    max-width: 900px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-left: 1px solid #334155;
+    border-right: 1px solid #334155;
+  }
+}
