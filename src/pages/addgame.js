@@ -36,7 +36,8 @@ function renderGolferOptions(golfers) {
 
 function attachAddHandlers() {
   const sportSelect = document.getElementById('sport-select');
-  const itemSelect = document.getElementById('item-select');
+  const itemInput = document.getElementById('item-select');
+  const itemOptions = document.getElementById('item-options');
   const itemLabel = document.getElementById('item-label');
   const spreadWrap = document.getElementById('spread-wrap');
   const saveBtn = document.getElementById('save-followed-item');
@@ -44,11 +45,13 @@ function attachAddHandlers() {
   async function updateItems() {
     const sport = sportSelect.value;
 
-    itemSelect.innerHTML = `<option value="">Loading...</option>`;
+    itemInput.value = '';
+    itemOptions.innerHTML = '';
+    itemInput.placeholder = 'Loading...';
 
     if (!sport) {
       itemLabel.textContent = 'Team/Golfer';
-      itemSelect.innerHTML = `<option value="">Choose sport first...</option>`;
+      itemInput.placeholder = 'Choose sport first...';
       spreadWrap.style.display = 'block';
       return;
     }
@@ -60,10 +63,8 @@ function attachAddHandlers() {
       const result = await getAvailableGolfers();
       const golfers = result.data || [];
 
-      itemSelect.innerHTML = `
-        <option value="">Choose golfer...</option>
-        ${renderGolferOptions(golfers)}
-      `;
+      itemInput.placeholder = 'Search golfer...';
+      itemOptions.innerHTML = renderGolferOptions(golfers);
 
       return;
     }
@@ -74,19 +75,17 @@ function attachAddHandlers() {
     const result = await getTeamsForSport(sport);
     const teams = result.data || [];
 
-    itemSelect.innerHTML = `
-      <option value="">Choose team...</option>
-      ${renderTeamOptions(teams)}
-    `;
+    itemInput.placeholder = 'Search team...';
+    itemOptions.innerHTML = renderTeamOptions(teams);
   }
 
   sportSelect.addEventListener('change', updateItems);
 
   saveBtn.addEventListener('click', async () => {
     const sport = sportSelect.value;
-    const item = itemSelect.value;
-    const spread = document.getElementById('spread-input').value;
-    const note = document.getElementById('note-input').value;
+    const item = itemInput.value.trim();
+    const spread = document.getElementById('spread-input').value.trim();
+    const note = document.getElementById('note-input').value.trim();
     const favorite = document.getElementById('favorite-input').checked;
 
     if (!sport || !item) {
@@ -106,7 +105,7 @@ function attachAddHandlers() {
 
       alert(`${item} added.`);
 
-      itemSelect.value = '';
+      itemInput.value = '';
       document.getElementById('spread-input').value = '';
       document.getElementById('note-input').value = '';
       document.getElementById('favorite-input').checked = false;
@@ -140,9 +139,14 @@ export async function renderAddGame() {
       </select>
 
       <label id="item-label">Team/Golfer</label>
-      <select id="item-select">
-        <option value="">Choose sport first...</option>
-      </select>
+      <input
+        id="item-select"
+        list="item-options"
+        type="text"
+        placeholder="Choose sport first..."
+        autocomplete="off"
+      />
+      <datalist id="item-options"></datalist>
 
       <div id="spread-wrap">
         <label>Spread</label>
