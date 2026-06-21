@@ -69,3 +69,11 @@ export async function removeFollowedGolfer(golfer) {
     golfer
   });
 }
+
+export async function getAvailableSports() {
+  return apiRequest('getAvailableSports');
+}
+
+export async function getTeamsForSport(sport) {
+  return apiRequest('getTeamsForSport', { sport });
+}

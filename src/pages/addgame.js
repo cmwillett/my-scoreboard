@@ -1,67 +1,82 @@
 import {
-  getAvailableGames,
+  getAvailableSports,
+  getTeamsForSport,
   getAvailableGolfers,
   addFollowedTeam,
   addFollowedGolfer
 } from '../api.js';
 
-function getTeamsBySport(games) {
-  const teamsBySport = {};
-
-  games.forEach(game => {
-    const sport = game.sport || game.sportKey;
-    if (!sport) return;
-
-    if (!teamsBySport[sport]) {
-      teamsBySport[sport] = new Set();
-    }
-
-    if (game.awayTeam) teamsBySport[sport].add(game.awayTeam);
-    if (game.homeTeam) teamsBySport[sport].add(game.homeTeam);
-  });
-
-  return Object.fromEntries(
-    Object.entries(teamsBySport).map(([sport, teams]) => [
-      sport,
-      [...teams].sort()
-    ])
-  );
+function renderSportOptions(sports) {
+  return sports
+    .map(sport => `<option value="${sport}">${sport}</option>`)
+    .join('');
 }
 
-function attachAddHandlers(teamsBySport, golfers) {
+function renderTeamOptions(teams) {
+  return teams
+    .map(team => {
+      const value = team.shortName || team.fullName || team;
+      const label = team.fullName
+        ? `${team.shortName} - ${team.fullName}`
+        : value;
+
+      return `<option value="${value}">${label}</option>`;
+    })
+    .join('');
+}
+
+function renderGolferOptions(golfers) {
+  return golfers
+    .map(g => g.golfer)
+    .filter(Boolean)
+    .sort()
+    .map(name => `<option value="${name}">${name}</option>`)
+    .join('');
+}
+
+function attachAddHandlers() {
   const sportSelect = document.getElementById('sport-select');
   const itemSelect = document.getElementById('item-select');
   const itemLabel = document.getElementById('item-label');
   const spreadWrap = document.getElementById('spread-wrap');
   const saveBtn = document.getElementById('save-followed-item');
 
-  function updateItems() {
+  async function updateItems() {
     const sport = sportSelect.value;
+
+    itemSelect.innerHTML = `<option value="">Loading...</option>`;
+
+    if (!sport) {
+      itemLabel.textContent = 'Team/Golfer';
+      itemSelect.innerHTML = `<option value="">Choose sport first...</option>`;
+      spreadWrap.style.display = 'block';
+      return;
+    }
 
     if (sport === 'Golf') {
       itemLabel.textContent = 'Golfer';
       spreadWrap.style.display = 'none';
 
+      const result = await getAvailableGolfers();
+      const golfers = result.data || [];
+
       itemSelect.innerHTML = `
         <option value="">Choose golfer...</option>
-        ${golfers
-          .map(g => g.golfer)
-          .filter(Boolean)
-          .sort()
-          .map(name => `<option value="${name}">${name}</option>`)
-          .join('')}
+        ${renderGolferOptions(golfers)}
       `;
+
       return;
     }
 
     itemLabel.textContent = 'Team';
     spreadWrap.style.display = 'block';
 
-    const teams = teamsBySport[sport] || [];
+    const result = await getTeamsForSport(sport);
+    const teams = result.data || [];
 
     itemSelect.innerHTML = `
       <option value="">Choose team...</option>
-      ${teams.map(team => `<option value="${team}">${team}</option>`).join('')}
+      ${renderTeamOptions(teams)}
     `;
   }
 
@@ -75,7 +90,7 @@ function attachAddHandlers(teamsBySport, golfers) {
     const favorite = document.getElementById('favorite-input').checked;
 
     if (!sport || !item) {
-      alert('Choose a sport and item.');
+      alert('Choose a sport and team/golfer.');
       return;
     }
 
@@ -106,30 +121,22 @@ function attachAddHandlers(teamsBySport, golfers) {
 }
 
 export async function renderAddGame() {
-  const [gamesResult, golfersResult] = await Promise.all([
-    getAvailableGames('ALL'),
-    getAvailableGolfers()
-  ]);
+  const result = await getAvailableSports();
+  const sports = result.data || [];
 
-  const games = gamesResult.data || [];
-  const golfers = golfersResult.data || [];
-
-  const teamsBySport = getTeamsBySport(games);
-  const sports = [...Object.keys(teamsBySport).sort(), 'Golf'];
-
-  setTimeout(() => attachAddHandlers(teamsBySport, golfers), 0);
+  setTimeout(attachAddHandlers, 0);
 
   return `
     <div class="page-header">
       <h2>Add Game/Golfer</h2>
-      <p>Follow a team or golfer and optionally add a note.</p>
+      <p>Follow a team or golfer and optionally add a spread or note.</p>
     </div>
 
     <div class="card form-card">
       <label>Sport</label>
       <select id="sport-select">
         <option value="">Choose sport...</option>
-        ${sports.map(sport => `<option value="${sport}">${sport}</option>`).join('')}
+        ${renderSportOptions(sports)}
       </select>
 
       <label id="item-label">Team/Golfer</label>
