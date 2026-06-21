@@ -2,7 +2,8 @@ import {
   getFollowedGolfers,
   addFollowedGolfer,
   removeFollowedGolfer,
-  updateFollowedGolferOrder
+  updateFollowedGolferOrder,
+  removeAllFollowedGolfers
 } from '../api.js';
 import { formatLastUpdated } from '../utils/date.js';
 
@@ -180,6 +181,24 @@ function getDragAfterElement(container, y) {
 }
 
 function attachGolferHandlers() {
+const removeAllBtn = document.getElementById(
+  'remove-all-golfers-btn'
+);
+
+if (removeAllBtn) {
+  removeAllBtn.addEventListener('click', () => {
+    openConfirmModal({
+      title: 'Remove All Golfers?',
+      message:
+        'This will remove all followed golfers and their notes.',
+      confirmText: 'Remove All',
+      onConfirm: async () => {
+        await removeAllFollowedGolfers();
+        location.reload();
+      }
+    });
+  });
+}
   document.querySelectorAll('.sort-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       setSortMode(btn.dataset.sortMode);
@@ -241,7 +260,21 @@ export async function renderGolfers() {
 
     return `
       <div class="page-header">
-        <h2>Golfers</h2>
+        <div class="page-title-row">
+            <h2>Golfers</h2>
+
+            ${
+                followed.length
+                ? `
+                    <button
+                    id="remove-all-golfers-btn"
+                    class="small-btn danger">
+                    Remove All
+                    </button>
+                `
+                : ''
+            }
+            </div>
         <p>${currentRound} • Cut line: ${cutLine}</p>
         <p class="last-updated">Golf Last Updated: ${lastUpdated}</p>
       </div>
