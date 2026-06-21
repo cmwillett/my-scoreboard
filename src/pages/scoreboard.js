@@ -1,4 +1,4 @@
-import { getAvailableGames } from '../api.js';
+import { getAvailableGames, addFollowedTeam } from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
 import { formatLastUpdated } from '../utils/date.js';
 
@@ -73,6 +73,28 @@ function renderSection(title, games) {
   `;
 }
 
+function attachFollowTeamHandlers() {
+  document.querySelectorAll('.follow-team-btn').forEach(button => {
+    button.addEventListener('click', async () => {
+      const sport = button.dataset.sport;
+      const team = button.dataset.team;
+
+      button.disabled = true;
+      button.textContent = 'Saving...';
+
+      try {
+        await addFollowedTeam(sport, team);
+        button.textContent = 'Followed';
+      } catch (err) {
+        console.error(err);
+        button.disabled = false;
+        button.textContent = `Follow ${team}`;
+        alert('Could not follow team.');
+      }
+    });
+  });
+}
+
 export async function renderScoreboard() {
   try {
     const result = await getAvailableGames('ALL');
@@ -82,6 +104,8 @@ export async function renderScoreboard() {
     const liveGames = games.filter(game => getGameSection(game) === 'live');
     const upcomingGames = games.filter(game => getGameSection(game) === 'upcoming');
     const finalGames = games.filter(game => getGameSection(game) === 'final');
+
+    setTimeout(attachFollowTeamHandlers, 0);
 
     return `
         <div class="page-header">
