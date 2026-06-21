@@ -45,16 +45,24 @@ export function renderGameCard(followedGame) {
           : ''
       }
 
-      ${
-        followedGame.spread || followedGame.notes
-          ? `
-            <div class="game-notes">
-              ${followedGame.spread ? `<div><strong>Spread:</strong> ${followedGame.spread}</div>` : ''}
-              ${followedGame.notes ? `<div><strong>Notes:</strong> ${followedGame.notes}</div>` : ''}
-            </div>
-          `
-          : ''
-      }
+${
+  followedGame.spread || followedGame.notes
+    ? `
+      <div class="game-meta">
+        ${
+          followedGame.spread
+            ? `<span class="game-pill">Spread: ${followedGame.spread}</span>`
+            : ''
+        }
+        ${
+          followedGame.notes
+            ? `<span class="game-note">${followedGame.notes}</span>`
+            : ''
+        }
+      </div>
+    `
+    : ''
+}
 
       <div class="game-card-actions">
         <button

@@ -256,7 +256,11 @@ if (sport !== 'Golf' && !selectedGame) {
         });
       }
 
-      alert(`${item} added.`);
+if (sport === 'Golf') {
+  alert(`${item} added.`);
+} else {
+  alert(`${selectedGame.awayTeam} at ${selectedGame.homeTeam} added.`);
+}
 
       itemInput.value = '';
       document.getElementById('spread-input').value = '';
