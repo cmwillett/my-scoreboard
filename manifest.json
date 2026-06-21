@@ -1,7 +1,10 @@
 {
+  "id": "/my-scoreboard/",
   "name": "My Scoreboard",
   "short_name": "Scoreboard",
+  "description": "A personal scoreboard for followed games, favorite teams, golfers, and World Cup matches.",
   "start_url": "/my-scoreboard/",
+  "scope": "/my-scoreboard/",
   "display": "standalone",
   "background_color": "#0f172a",
   "theme_color": "#111827",
@@ -10,12 +13,14 @@
     {
       "src": "assets/icons/icon-192.png",
       "sizes": "192x192",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     },
     {
       "src": "assets/icons/icon-512.png",
       "sizes": "512x512",
-      "type": "image/png"
+      "type": "image/png",
+      "purpose": "any maskable"
     }
   ]
 }

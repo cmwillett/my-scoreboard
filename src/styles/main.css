@@ -289,3 +289,60 @@ body {
 .admin-checkbox-row input {
   width: auto;
 }
+
+.pwa-install-banner {
+  position: fixed;
+  left: 12px;
+  right: 12px;
+  bottom: 74px;
+  z-index: 900;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px;
+  background: #1e293b;
+  color: white;
+  border: 1px solid #334155;
+  border-radius: 16px;
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.45);
+}
+
+.pwa-install-copy {
+  display: grid;
+  gap: 3px;
+}
+
+.pwa-install-copy strong {
+  font-size: 15px;
+}
+
+.pwa-install-copy span {
+  color: #cbd5e1;
+  font-size: 13px;
+  line-height: 1.35;
+}
+
+.pwa-install-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.pwa-install-actions button {
+  border: 1px solid #334155;
+  border-radius: 12px;
+  padding: 9px 11px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.pwa-install-btn {
+  background: #22c55e;
+  color: #052e16;
+}
+
+.pwa-dismiss-btn {
+  background: #0f172a;
+  color: #cbd5e1;
+}

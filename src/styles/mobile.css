@@ -12,3 +12,13 @@
     border-right: 1px solid #334155;
   }
 }
+@media (max-width: 520px) {
+  .pwa-install-banner {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .pwa-install-actions button {
+    flex: 1;
+  }
+}

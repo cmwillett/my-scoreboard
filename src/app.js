@@ -5,6 +5,7 @@ import { renderAdmin } from './pages/admin.js';
 import { getPageVisibility } from './api.js';
 import { CONFIG } from './config.js';
 import { startAutoRefresh, stopAutoRefresh } from './services/refresh.js';
+import { initPwaInstallPrompt } from './components/pwaInstall.js';
 
 const content = document.getElementById('app-content');
 const navButtons = document.querySelectorAll('.bottom-nav button');
@@ -146,6 +147,7 @@ async function initApp() {
 }
 
 initApp();
+initPwaInstallPrompt();
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker

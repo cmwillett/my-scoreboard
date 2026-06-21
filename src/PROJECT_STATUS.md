@@ -75,8 +75,9 @@
 
 ### Infrastructure
 - PWA shell exists
-- Manifest exists
-- Service worker exists
+- Manifest exists with app icons
+- Service worker caches the app shell and avoids caching Apps Script API responses
+- Install prompt/banner exists
 - GitHub ZIP workflow established
 - Apps Script ZIP workflow established
 - Cleanup branch workflow established
@@ -85,7 +86,7 @@
 1. Build/finish World Cup page in GitHub frontend
 2. Build/finish Admin refresh controls
 3. Continue improving partial-page refresh behavior where needed
-4. PWA install prompt/banner
+4. Offline support polish
 5. Ongoing cleanup/dead-code removal
 
 
@@ -100,3 +101,10 @@
 
 - Add Game/Golfer now lives in Admin. The standalone Add route is deprecated/hidden from nav.
 - Scoreboard and Golfers auto-refresh current content without full browser reloads.
+
+
+## PWA Notes
+- `manifest.json` defines standalone display, app scope, theme colors, and icons.
+- `service-worker.js` caches the frontend app shell only. Apps Script/API responses are intentionally not cached so scores stay fresh.
+- `src/components/pwaInstall.js` owns the install prompt/banner.
+- The install banner respects standalone mode and remembers dismissals per device.
