@@ -33,3 +33,15 @@ export async function getGolfers() {
 export async function getWorldCupGames() {
   return apiRequest('getWorldCupGames');
 }
+
+export async function getFollowedTeams() {
+  return apiRequest('getFollowedTeams');
+}
+
+export async function addFollowedTeam(sport, team) {
+  return apiRequest('addFollowedTeam', { sport, team });
+}
+
+export async function removeFollowedTeam(sport, team) {
+  return apiRequest('removeFollowedTeam', { sport, team });
+}
