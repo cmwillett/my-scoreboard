@@ -1,0 +1,35 @@
+.table-wrap {
+  overflow-x: auto;
+}
+
+.golfers-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.golfers-table th,
+.golfers-table td {
+  padding: 10px 8px;
+  border-bottom: 1px solid #334155;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.golfers-table th {
+  color: #93c5fd;
+  font-weight: 700;
+}
+
+.small-btn {
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: white;
+  border-radius: 8px;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.small-btn.danger {
+  color: #fca5a5;
+}
