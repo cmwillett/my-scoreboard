@@ -41,20 +41,21 @@ export function renderGameCard(followedGame) {
 
       ${
         channel
-          ? `<div class="game-channel">${channel}</div>`
+          ? `<div class="game-subtitle">
+                ${channel}
+                </div>`
           : ''
       }
 
 ${
   followedGame.spread || followedGame.notes
     ? `
-      <div class="game-details">
+      <div class="game-pick-box">
         ${
           followedGame.spread
             ? `
-              <div class="game-detail-row">
-                <span class="game-detail-label">Spread</span>
-                <span class="game-detail-value">${followedGame.spread}</span>
+              <div class="pick-row">
+                💰 ${followedGame.spread}
               </div>
             `
             : ''
@@ -63,9 +64,8 @@ ${
         ${
           followedGame.notes
             ? `
-              <div class="game-detail-row">
-                <span class="game-detail-label">Notes</span>
-                <span class="game-detail-value">${followedGame.notes}</span>
+              <div class="pick-row">
+                📝 ${followedGame.notes}
               </div>
             `
             : ''
@@ -75,7 +75,7 @@ ${
     : ''
 }
 
-      <div class="game-card-actions">
+      <div class="game-card-buttons">
         <button
           class="small-btn edit-followed-game-btn"
           data-id="${followedGame.id}"
