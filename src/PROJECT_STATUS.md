@@ -56,6 +56,7 @@
 - Manual followed game cards support spread/notes, edit modal, remove modal, remove all modal
 - Favorite-team cards show a Favorite Team indicator and do not show edit/remove buttons
 - Games grouped into Live / Upcoming / Final sections by sport
+- Scoreboard auto-refreshes without a full browser reload
 
 ### Golfers
 - Shows followed golfers from `FollowedGolfers`
@@ -64,6 +65,7 @@
 - Manual Sort supports drag/drop ordering saved to `FollowedGolfers.SortOrder`
 - Notes support with modal editing
 - Remove and Remove All use modals
+- Golfers page auto-refreshes without a full browser reload
 
 ### Admin
 - PIN protected using `AppSettings.pin` through `checkAdminPin` API
@@ -82,7 +84,7 @@
 ## Next Features
 1. Build/finish World Cup page in GitHub frontend
 2. Build/finish Admin refresh controls
-3. Improve refresh behavior so frontend re-renders current content without full browser reloads
+3. Continue improving partial-page refresh behavior where needed
 4. PWA install prompt/banner
 5. Ongoing cleanup/dead-code removal
 
@@ -97,3 +99,4 @@
 - Add Game/Golfer moved into Admin. Main nav is Scores | Golfers | World Cup | Admin.
 
 - Add Game/Golfer now lives in Admin. The standalone Add route is deprecated/hidden from nav.
+- Scoreboard and Golfers auto-refresh current content without full browser reloads.

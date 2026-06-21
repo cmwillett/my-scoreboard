@@ -101,10 +101,14 @@ async function renderPage(pageKey, options = {}) {
     window.location.hash = targetPage;
   }
 
-  if (targetPage === 'scoreboard') {
+  if (targetPage === 'scoreboard' || targetPage === 'golfers') {
+    const refreshInterval = targetPage === 'golfers'
+      ? (CONFIG.GOLF_REFRESH_INTERVAL || CONFIG.REFRESH_INTERVAL)
+      : CONFIG.REFRESH_INTERVAL;
+
     startAutoRefresh(() => {
       refreshCurrentPage({ showLoading: false });
-    }, CONFIG.REFRESH_INTERVAL);
+    }, refreshInterval);
   }
 }
 
