@@ -105,3 +105,9 @@ export async function removeFollowedGame(id) {
     id
   });
 }
+
+export async function updateFollowedGolferOrder(golfers) {
+  return apiRequest('updateFollowedGolferOrder', {
+    golfers: JSON.stringify(golfers)
+  });
+}

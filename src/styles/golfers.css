@@ -33,3 +33,44 @@
 .small-btn.danger {
   color: #fca5a5;
 }
+
+.sort-toggle {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.sort-toggle-btn {
+  flex: 1;
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #cbd5e1;
+  border-radius: 12px;
+  padding: 10px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.sort-toggle-btn.active {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: white;
+}
+
+.manual-sort-note {
+  color: #94a3b8;
+  margin-top: -4px;
+  margin-bottom: 12px;
+  font-size: 14px;
+}
+
+.drag-handle {
+  color: #60a5fa;
+  cursor: grab;
+  font-weight: 900;
+  text-align: center;
+}
+
+.golfer-row.dragging {
+  opacity: 0.45;
+}
