@@ -34,13 +34,14 @@ function getGameSection(game) {
   return 'upcoming';
 }
 
-function renderGameChoice(game) {
+function renderGameChoice(game, index) {
   const status = game.status || game.startTime || '';
+
   return `
     <button
       type="button"
       class="game-choice-btn"
-      data-event-id="${game.eventId || game.eventID || game.id}"
+      data-game-index="${index}"
     >
       <strong>${game.awayTeam}</strong> at <strong>${game.homeTeam}</strong>
       <span>${status}</span>
@@ -74,21 +75,23 @@ function renderGameChoices(team) {
   }
 
   gamesWrap.style.display = 'block';
-  gamesList.innerHTML = gamesToShow.map(renderGameChoice).join('');
+  gamesList.innerHTML = gamesToShow
+    .map((game, index) => renderGameChoice(game, index))
+    .join('');
 
   gamesList.querySelectorAll('.game-choice-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      const eventId = btn.dataset.eventId;
+      const index = Number(btn.dataset.gameIndex);
 
-      selectedGame = gamesToShow.find(game =>
-        String(game.eventId || game.eventID || game.id) === String(eventId)
-        );
+      selectedGame = gamesToShow[index];
 
       gamesList.querySelectorAll('.game-choice-btn').forEach(b => {
         b.classList.remove('selected');
       });
 
       btn.classList.add('selected');
+
+      console.log('Selected game:', selectedGame);
     });
   });
 }
