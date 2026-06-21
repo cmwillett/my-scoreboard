@@ -24,11 +24,6 @@ export function renderGameCard(followedGame) {
 
   return `
     <div class="score-card" data-followed-game-id="${followedGame.id}">
-      <div class="score-card-top">
-        <span>${sport}</span>
-        <span class="${isLive ? 'game-live' : ''}">${status}</span>
-      </div>
-
       <div class="team-row ${awayLeading ? 'leading' : ''}">
         <span>${game.awayTeam || '-'}</span>
         <strong>${game.awayScore || '-'}</strong>
@@ -39,13 +34,10 @@ export function renderGameCard(followedGame) {
         <strong>${game.homeScore || '-'}</strong>
       </div>
 
-      ${
-        channel
-          ? `<div class="game-subtitle">
-                ${channel}
-                </div>`
-          : ''
-      }
+<div class="game-meta-line">
+  ${channel ? `<span>${channel}</span>` : ''}
+  ${status ? `<span class="${isLive ? 'game-live' : ''}">${status}</span>` : ''}
+</div>
 
 ${
   followedGame.spread || followedGame.notes

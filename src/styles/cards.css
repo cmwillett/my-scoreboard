@@ -88,12 +88,6 @@
   border-radius: 12px;
 }
 
-.game-subtitle {
-  margin-top: 10px;
-  color: #cbd5e1;
-  font-size: .9rem;
-}
-
 .game-details {
   margin-top: 12px;
   border-top: 1px solid rgba(255,255,255,.08);
@@ -130,4 +124,20 @@
   line-height: 1.5;
   color: #fff;
   word-break: break-word;
+}
+
+.game-meta-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 12px;
+  color: #60a5fa;
+  font-size: .9rem;
+  font-weight: 700;
+}
+
+.game-meta-line span + span::before {
+  content: '•';
+  margin-right: 10px;
+  color: #64748b;
 }
