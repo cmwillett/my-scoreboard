@@ -18,10 +18,12 @@
   margin-bottom: 12px;
 }
 
-.score-card-top {
+.score-card-top .game-live,
+.score-card-top span:last-child {
   display: flex;
   justify-content: space-between;
-  color: #94a3b8;
+  color: #93c5fd;
+  font-weight: 700;
   font-size: 13px;
   margin-bottom: 10px;
 }
@@ -61,11 +63,6 @@
   font-size: 24px;
 }
 
-.game-live {
-  color: #22c55e;
-  font-weight: 700;
-}
-
 .game-pick-box {
   margin-top: 10px;
   background: rgba(0, 0, 0, 0.25);
@@ -93,7 +90,7 @@
 
 .game-subtitle {
   margin-top: 10px;
-  opacity: .75;
+  color: #cbd5e1;
   font-size: .9rem;
 }
 
@@ -101,6 +98,18 @@
   margin-top: 12px;
   border-top: 1px solid rgba(255,255,255,.08);
   padding-top: 12px;
+  position: relative;
+}
+
+.game-details::before {
+  content: '';
+  position: absolute;
+  top: -1px;
+  left: 0;
+  width: 70px;
+  height: 2px;
+  background: #60a5fa;
+  border-radius: 999px;
 }
 
 .game-detail-block + .game-detail-block {
@@ -109,10 +118,10 @@
 
 .game-detail-title {
   font-size: .8rem;
-  font-weight: 700;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: .05em;
-  color: #94a3b8;
+  letter-spacing: .08em;
+  color: #60a5fa;
   margin-bottom: 4px;
 }
 
