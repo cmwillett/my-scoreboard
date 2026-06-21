@@ -5,12 +5,16 @@ import {
   removeAllFollowedGames
 } from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
+import {
+  openConfirmModal,
+  openGameEditModal
+} from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
 
 function getGameSection(followedGame) {
   const game = followedGame.live || followedGame;
   const rawStatus = game.rawStatus || '';
-  const status = (game.status || '').toLowerCase();
+  const status = String(game.status || '').toLowerCase();
 
   if (
     rawStatus === 'STATUS_IN_PROGRESS' ||
@@ -48,125 +52,6 @@ function groupBySport(games) {
   }, {});
 }
 
-function openMessageModal({ title, message }) {
-  const modal = document.createElement('div');
-  modal.className = 'modal-backdrop';
-
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>${title}</h3>
-      <p>${message}</p>
-
-      <div class="modal-actions">
-        <button id="close-message-modal" class="primary-btn">OK</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById('close-message-modal').addEventListener('click', () => {
-    modal.remove();
-  });
-}
-
-function openConfirmModal({ title, message, confirmText, onConfirm }) {
-  const modal = document.createElement('div');
-  modal.className = 'modal-backdrop';
-
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>${title}</h3>
-      <p>${message}</p>
-
-      <div class="modal-actions">
-        <button id="cancel-confirm-modal" class="small-btn">Cancel</button>
-        <button id="confirm-modal-action" class="small-btn danger">
-          ${confirmText}
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById('cancel-confirm-modal').addEventListener('click', () => {
-    modal.remove();
-  });
-
-  document.getElementById('confirm-modal-action').addEventListener('click', async () => {
-    const confirmBtn = document.getElementById('confirm-modal-action');
-
-    confirmBtn.disabled = true;
-    confirmBtn.textContent = 'Working...';
-
-    try {
-      await onConfirm();
-      modal.remove();
-    } catch (err) {
-      console.error(err);
-      modal.remove();
-
-      openMessageModal({
-        title: 'Something went wrong',
-        message: 'The action could not be completed.'
-      });
-    }
-  });
-}
-
-function openGameEditModal(id, currentSpread, currentNotes) {
-  const modal = document.createElement('div');
-
-  modal.className = 'modal-backdrop';
-
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>Edit Game</h3>
-
-      <label>Spread</label>
-      <input id="edit-game-spread" type="text" value="${currentSpread || ''}" />
-
-      <label>Notes</label>
-      <textarea id="edit-game-notes" rows="5">${currentNotes || ''}</textarea>
-
-      <div class="modal-actions">
-        <button id="cancel-game-edit" class="small-btn">Cancel</button>
-        <button id="save-game-edit" class="primary-btn">Save</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById('cancel-game-edit').addEventListener('click', () => {
-    modal.remove();
-  });
-
-  document.getElementById('save-game-edit').addEventListener('click', async () => {
-    const saveBtn = document.getElementById('save-game-edit');
-    const spread = document.getElementById('edit-game-spread').value.trim();
-    const notes = document.getElementById('edit-game-notes').value.trim();
-
-    saveBtn.disabled = true;
-    saveBtn.textContent = 'Saving...';
-
-    try {
-      await updateFollowedGame(id, spread, notes);
-      modal.remove();
-      location.reload();
-    } catch (err) {
-      console.error(err);
-      modal.remove();
-
-      openMessageModal({
-        title: 'Could Not Update Game',
-        message: 'The spread and notes were not saved.'
-      });
-    }
-  });
-}
-
 function attachScoreboardHandlers() {
   const removeAllBtn = document.getElementById('remove-all-games-btn');
 
@@ -186,11 +71,15 @@ function attachScoreboardHandlers() {
 
   document.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      openGameEditModal(
-        btn.dataset.id,
-        btn.dataset.spread || '',
-        btn.dataset.notes || ''
-      );
+      openGameEditModal({
+        id: btn.dataset.id,
+        spread: btn.dataset.spread || '',
+        notes: btn.dataset.notes || '',
+        onSave: async ({ id, spread, notes }) => {
+          await updateFollowedGame(id, spread, notes);
+          location.reload();
+        }
+      });
     });
   });
 
@@ -240,7 +129,6 @@ function renderSection(title, games) {
 export async function renderScoreboard() {
   try {
     const followedResult = await getFollowedGames();
-
     const games = followedResult.data || [];
     const lastUpdated = formatLastUpdated();
 

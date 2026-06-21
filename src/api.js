@@ -2,11 +2,12 @@ import { CONFIG } from './config.js';
 
 async function apiRequest(action, params = {}) {
   const url = new URL(CONFIG.API_URL);
-
   url.searchParams.set('action', action);
 
   Object.entries(params).forEach(([key, value]) => {
-    url.searchParams.set(key, value);
+    if (value !== undefined && value !== null) {
+      url.searchParams.set(key, value);
+    }
   });
 
   const response = await fetch(url);
@@ -15,59 +16,13 @@ async function apiRequest(action, params = {}) {
     throw new Error(`API Error: ${response.status}`);
   }
 
-  return response.json();
-}
+  const result = await response.json();
 
-export async function getAvailableGames(sportKey = 'ALL') {
-  return apiRequest('getAvailableGames', { sportKey });
-}
+  if (result && result.success === false) {
+    throw new Error(result.error || 'API request failed.');
+  }
 
-export async function getAvailableGolfers() {
-  return apiRequest('getAvailableGolfers');
-}
-
-export async function getGolfers() {
-  return apiRequest('getGolfers');
-}
-
-export async function getWorldCupGames() {
-  return apiRequest('getWorldCupGames');
-}
-
-export async function getFollowedTeams() {
-  return apiRequest('getFollowedTeams');
-}
-
-export async function addFollowedTeam(sport, team, spread = '', note = '', favorite = false) {
-  return apiRequest('addFollowedTeam', {
-    sport,
-    team,
-    spread,
-    note,
-    favorite
-  });
-}
-
-export async function removeFollowedTeam(sport, team) {
-  return apiRequest('removeFollowedTeam', { sport, team });
-}
-
-export async function getFollowedGolfers() {
-  return apiRequest('getFollowedGolfers');
-}
-
-export async function addFollowedGolfer(golfer, note = '', favorite = false) {
-  return apiRequest('addFollowedGolfer', {
-    golfer,
-    note,
-    favorite
-  });
-}
-
-export async function removeFollowedGolfer(golfer) {
-  return apiRequest('removeFollowedGolfer', {
-    golfer
-  });
+  return result;
 }
 
 export async function getAvailableSports() {
@@ -76,6 +31,10 @@ export async function getAvailableSports() {
 
 export async function getTeamsForSport(sport) {
   return apiRequest('getTeamsForSport', { sport });
+}
+
+export async function getAvailableGames(sportKey = 'ALL') {
+  return apiRequest('getAvailableGames', { sportKey });
 }
 
 export async function getFollowedGames() {
@@ -101,19 +60,37 @@ export async function updateFollowedGame(id, spread = '', notes = '') {
 }
 
 export async function removeFollowedGame(id) {
-  return apiRequest('removeFollowedGame', {
-    id
+  return apiRequest('removeFollowedGame', { id });
+}
+
+export async function removeAllFollowedGames() {
+  return apiRequest('removeAllFollowedGames');
+}
+
+export async function getAvailableGolfers() {
+  return apiRequest('getAvailableGolfers');
+}
+
+export async function getFollowedGolfers() {
+  return apiRequest('getFollowedGolfers');
+}
+
+export async function addFollowedGolfer(golfer, note = '', favorite = false) {
+  return apiRequest('addFollowedGolfer', {
+    golfer,
+    note,
+    favorite
   });
+}
+
+export async function removeFollowedGolfer(golfer) {
+  return apiRequest('removeFollowedGolfer', { golfer });
 }
 
 export async function updateFollowedGolferOrder(golfers) {
   return apiRequest('updateFollowedGolferOrder', {
     golfers: JSON.stringify(golfers)
   });
-}
-
-export async function removeAllFollowedGames() {
-  return apiRequest('removeAllFollowedGames');
 }
 
 export async function removeAllFollowedGolfers() {
