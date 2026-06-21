@@ -1,4 +1,4 @@
-import { getAvailableGames, addFollowedTeam } from '../api.js';
+import { getAvailableGames } from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
 import { formatLastUpdated } from '../utils/date.js';
 
@@ -71,28 +71,6 @@ function renderSection(title, games) {
         .join('')}
     </section>
   `;
-}
-
-function attachFollowTeamHandlers() {
-  document.querySelectorAll('.follow-team-btn').forEach(button => {
-    button.addEventListener('click', async () => {
-      const sport = button.dataset.sport;
-      const team = button.dataset.team;
-
-      button.disabled = true;
-      button.textContent = 'Saving...';
-
-      try {
-        await addFollowedTeam(sport, team);
-        button.textContent = 'Followed';
-      } catch (err) {
-        console.error(err);
-        button.disabled = false;
-        button.textContent = `Follow ${team}`;
-        alert('Could not follow team.');
-      }
-    });
-  });
 }
 
 export async function renderScoreboard() {
