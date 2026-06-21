@@ -48,6 +48,73 @@ function groupBySport(games) {
   }, {});
 }
 
+function openMessageModal({ title, message }) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>${title}</h3>
+      <p>${message}</p>
+
+      <div class="modal-actions">
+        <button id="close-message-modal" class="primary-btn">OK</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById('close-message-modal').addEventListener('click', () => {
+    modal.remove();
+  });
+}
+
+function openConfirmModal({ title, message, confirmText, onConfirm }) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>${title}</h3>
+      <p>${message}</p>
+
+      <div class="modal-actions">
+        <button id="cancel-confirm-modal" class="small-btn">Cancel</button>
+        <button id="confirm-modal-action" class="small-btn danger">
+          ${confirmText}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById('cancel-confirm-modal').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  document.getElementById('confirm-modal-action').addEventListener('click', async () => {
+    const confirmBtn = document.getElementById('confirm-modal-action');
+
+    confirmBtn.disabled = true;
+    confirmBtn.textContent = 'Working...';
+
+    try {
+      await onConfirm();
+      modal.remove();
+    } catch (err) {
+      console.error(err);
+      modal.remove();
+
+      openMessageModal({
+        title: 'Something went wrong',
+        message: 'The action could not be completed.'
+      });
+    }
+  });
+}
+
 function openGameEditModal(id, currentSpread, currentNotes) {
   const modal = document.createElement('div');
 
@@ -77,8 +144,12 @@ function openGameEditModal(id, currentSpread, currentNotes) {
   });
 
   document.getElementById('save-game-edit').addEventListener('click', async () => {
+    const saveBtn = document.getElementById('save-game-edit');
     const spread = document.getElementById('edit-game-spread').value.trim();
     const notes = document.getElementById('edit-game-notes').value.trim();
+
+    saveBtn.disabled = true;
+    saveBtn.textContent = 'Saving...';
 
     try {
       await updateFollowedGame(id, spread, notes);
@@ -86,61 +157,33 @@ function openGameEditModal(id, currentSpread, currentNotes) {
       location.reload();
     } catch (err) {
       console.error(err);
-      alert('Could not update game.');
-    }
-  });
-}
-
-function openConfirmModal({ title, message, confirmText, onConfirm }) {
-  const modal = document.createElement('div');
-  modal.className = 'modal-backdrop';
-
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>${title}</h3>
-      <p>${message}</p>
-
-      <div class="modal-actions">
-        <button id="cancel-confirm-modal" class="small-btn">Cancel</button>
-        <button id="confirm-modal-action" class="small-btn danger">
-          ${confirmText}
-        </button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById('cancel-confirm-modal').addEventListener('click', () => {
-    modal.remove();
-  });
-
-  document.getElementById('confirm-modal-action').addEventListener('click', async () => {
-    try {
-      await onConfirm();
-    } catch (err) {
-      console.error(err);
       modal.remove();
+
+      openMessageModal({
+        title: 'Could Not Update Game',
+        message: 'The spread and notes were not saved.'
+      });
     }
   });
 }
 
 function attachScoreboardHandlers() {
-const removeAllBtn = document.getElementById('remove-all-games-btn');
+  const removeAllBtn = document.getElementById('remove-all-games-btn');
 
-if (removeAllBtn) {
-  removeAllBtn.addEventListener('click', async () => {
-    openConfirmModal({
-    title: 'Remove All Games?',
-    message: 'This will remove all manually followed games from the scoreboard.',
-    confirmText: 'Remove All',
-    onConfirm: async () => {
-        await removeAllFollowedGames();
-        location.reload();
-    }
+  if (removeAllBtn) {
+    removeAllBtn.addEventListener('click', () => {
+      openConfirmModal({
+        title: 'Remove All Games?',
+        message: 'This will remove all manually followed games from the scoreboard.',
+        confirmText: 'Remove All',
+        onConfirm: async () => {
+          await removeAllFollowedGames();
+          location.reload();
+        }
+      });
     });
-  });
-}
+  }
+
   document.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       openGameEditModal(
@@ -152,21 +195,16 @@ if (removeAllBtn) {
   });
 
   document.querySelectorAll('.remove-followed-game-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      if (!confirm('Remove this game?')) return;
-
-      btn.disabled = true;
-      btn.textContent = 'Removing...';
-
-      try {
-        await removeFollowedGame(btn.dataset.id);
-        location.reload();
-      } catch (err) {
-        console.error(err);
-        alert('Could not remove game.');
-        btn.disabled = false;
-        btn.textContent = 'Remove';
-      }
+    btn.addEventListener('click', () => {
+      openConfirmModal({
+        title: 'Remove Game?',
+        message: 'This will remove this game from your scoreboard.',
+        confirmText: 'Remove',
+        onConfirm: async () => {
+          await removeFollowedGame(btn.dataset.id);
+          location.reload();
+        }
+      });
     });
   });
 }
@@ -215,11 +253,19 @@ export async function renderScoreboard() {
     return `
       <div class="page-header">
         <div class="page-title-row">
-            <h2>Scoreboard</h2>
-            <button id="remove-all-games-btn" class="small-btn danger">
-                Remove All
-            </button>
-            </div>
+          <h2>Scoreboard</h2>
+
+          ${
+            games.length
+              ? `
+                <button id="remove-all-games-btn" class="small-btn danger">
+                  Remove All
+                </button>
+              `
+              : ''
+          }
+        </div>
+
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
         <p>${games.length} followed games showing.</p>
       </div>
