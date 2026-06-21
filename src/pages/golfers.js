@@ -29,7 +29,7 @@ export async function renderGolfers() {
         <div class="page-header">
         <h2>Golfers</h2>
         <p>${currentRound} • Cut line: ${cutLine}</p>
-        <p class="last-updated">Last updated: ${lastUpdated}</p>
+        <p class="last-updated">Golf Last Updated: ${lastUpdated}</p>
         </div>
 
       <div class="card">
