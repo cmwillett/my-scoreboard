@@ -10,6 +10,7 @@ import {
 let currentItems = [];
 let currentGames = [];
 let selectedGame = null;
+let gamesToShowNow = [];
 
 function renderSportOptions(sports) {
   return sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
@@ -57,14 +58,14 @@ function renderGameChoices(team) {
   const liveGames = matchingGames.filter(game => getGameSection(game) === 'live');
   const upcomingGames = matchingGames.filter(game => getGameSection(game) !== 'live');
 
-  const gamesToShow = liveGames.length ? liveGames : upcomingGames;
+  gamesToShowNow = liveGames.length ? liveGames : upcomingGames;
 
   const gamesWrap = document.getElementById('game-picker-wrap');
   const gamesList = document.getElementById('game-picker-list');
 
-  selectedGame = null;
+  selectedGame = gamesToShowNow[0] || null;
 
-  if (!gamesToShow.length) {
+  if (!gamesToShowNow.length) {
     gamesWrap.style.display = 'block';
     gamesList.innerHTML = `
       <div class="empty-state small">
@@ -75,23 +76,30 @@ function renderGameChoices(team) {
   }
 
   gamesWrap.style.display = 'block';
-  gamesList.innerHTML = gamesToShow
-    .map((game, index) => renderGameChoice(game, index))
+
+  gamesList.innerHTML = gamesToShowNow
+    .map((game, index) => `
+      <button
+        type="button"
+        class="game-choice-btn ${index === 0 ? 'selected' : ''}"
+        data-game-index="${index}"
+      >
+        <strong>${game.awayTeam}</strong> at <strong>${game.homeTeam}</strong>
+        <span>${game.status || game.startTime || ''}</span>
+      </button>
+    `)
     .join('');
 
   gamesList.querySelectorAll('.game-choice-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const index = Number(btn.dataset.gameIndex);
-
-      selectedGame = gamesToShow[index];
+      selectedGame = gamesToShowNow[index];
 
       gamesList.querySelectorAll('.game-choice-btn').forEach(b => {
         b.classList.remove('selected');
       });
 
       btn.classList.add('selected');
-
-      console.log('Selected game:', selectedGame);
     });
   });
 }
@@ -223,10 +231,14 @@ function attachAddHandlers() {
       return;
     }
 
-    if (sport !== 'Golf' && !selectedGame) {
-      alert('Choose a game to follow.');
-      return;
-    }
+if (sport !== 'Golf' && !selectedGame) {
+  selectedGame = gamesToShowNow[0] || null;
+}
+
+if (sport !== 'Golf' && !selectedGame) {
+  alert('Choose a game to follow.');
+  return;
+}
 
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
