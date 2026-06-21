@@ -56,6 +56,16 @@ export async function addFollowedGame(game) {
   });
 }
 
+export async function saveFavoriteGamePick(game) {
+  return apiRequest('saveFavoriteGamePick', {
+    sportKey: game.sportKey,
+    eventId: game.eventId,
+    team: game.team,
+    spread: game.spread || '',
+    notes: game.notes || ''
+  });
+}
+
 export async function updateFollowedGame(id, spread = '', notes = '') {
   return apiRequest('updateFollowedGame', {
     id,

@@ -1,5 +1,6 @@
 import {
   getFollowedGames,
+  saveFavoriteGamePick,
   updateFollowedGame,
   removeFollowedGame,
   removeAllFollowedGames
@@ -77,6 +78,26 @@ function attachScoreboardHandlers() {
         notes: btn.dataset.notes || '',
         onSave: async ({ id, spread, notes }) => {
           await updateFollowedGame(id, spread, notes);
+          location.reload();
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll('.edit-favorite-game-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openGameEditModal({
+        id: btn.dataset.id,
+        spread: btn.dataset.spread || '',
+        notes: btn.dataset.notes || '',
+        onSave: async ({ spread, notes }) => {
+          await saveFavoriteGamePick({
+            sportKey: btn.dataset.sportKey,
+            eventId: btn.dataset.eventId,
+            team: btn.dataset.team,
+            spread,
+            notes
+          });
           location.reload();
         }
       });

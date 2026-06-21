@@ -87,3 +87,7 @@
 5. Improve refresh behavior so backend refreshes scores and frontend updates content without full-page reloads
 6. PWA install prompt/banner
 7. Ongoing cleanup/dead-code removal
+
+
+## Latest Update
+- Favorite-team games can be edited from the Scores page to add game-specific spread and notes. Editing a favorite-team game saves an override in GamesToFollow while keeping the Favorite Team label.

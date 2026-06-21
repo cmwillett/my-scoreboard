@@ -22,6 +22,8 @@ export function renderGameCard(followedGame) {
     String(game.status || '').toLowerCase().includes('live');
 
   const isFavorite = followedGame.isFavorite === true;
+  const selectedTeam = followedGame.team || game.awayTeam || game.homeTeam || '';
+  const isAutoFavorite = isFavorite && String(followedGame.id || '').startsWith('favorite_');
 
   return `
     <div class="score-card ${isFavorite ? 'favorite-score-card' : ''}" data-followed-game-id="${followedGame.id}">
@@ -76,29 +78,32 @@ export function renderGameCard(followedGame) {
           : ''
       }
 
-      ${
-        isFavorite
-          ? ''
-          : `
-            <div class="game-card-buttons">
-              <button
-                class="small-btn edit-followed-game-btn"
-                data-id="${followedGame.id}"
-                data-spread="${followedGame.spread || ''}"
-                data-notes="${followedGame.notes || ''}"
-              >
-                Edit
-              </button>
+      <div class="game-card-buttons">
+        <button
+          class="small-btn ${isAutoFavorite ? 'edit-favorite-game-btn' : 'edit-followed-game-btn'}"
+          data-id="${followedGame.id}"
+          data-sport-key="${followedGame.sportKey || game.sportKey || ''}"
+          data-event-id="${followedGame.eventId || game.eventId || ''}"
+          data-team="${selectedTeam}"
+          data-spread="${followedGame.spread || ''}"
+          data-notes="${followedGame.notes || ''}"
+        >
+          Edit
+        </button>
 
+        ${
+          isAutoFavorite
+            ? ''
+            : `
               <button
                 class="small-btn danger remove-followed-game-btn"
                 data-id="${followedGame.id}"
               >
                 Remove
               </button>
-            </div>
-          `
-      }
+            `
+        }
+      </div>
     </div>
   `;
 }
