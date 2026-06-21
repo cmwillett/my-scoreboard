@@ -8,34 +8,34 @@
 - [x] Auto-refresh scoreboard every 2 minutes
 
 ## Scoreboard
-- [ ] Better team-sport cards
-- [ ] Better golf cards
+- [X] Better team-sport cards
+- [X] Better golf cards
 - [ ] Better World Cup cards
-- [ ] Follow teams
+- [X] Follow teams
 - [ ] Favorite games/teams
 - [ ] Drag/drop card ordering
-- [ ] Add/edit notes
+- [X] Add/edit notes
 - [ ] Hide completed games option
 - [ ] Move completed games Final section automatically
-- [ ] Should have Live, Upcoming, and Final sections
+- [X] Should have Live, Upcoming, and Final sections
 - [ ] Each section should have filtering ability with a text box that filters based on text entered
-- [ ] Each section should group the cards by sport
+- [X] Each section should group the cards by sport
 - [ ] There should be a "Remove All" button that removes all non-favorited games
-- [ ] The scoreboard only displays team games
+- [X] The scoreboard only displays team games
 
 ## Golfers
-- [ ] Pick golfers to follow
-- [ ] Remove followed golfers
-- [ ] Golfer cards
+- [X] Pick golfers to follow
+- [X] Remove followed golfers
+- [X] Golfer cards
 - [ ] Golf auto-refresh
 - [ ] Favorite golfers
-- [ ] Sort by score by default, but have an option for manual sort (drag and drop)
-- [ ] Should be a table style leaderboard with all the data
-- [ ] Should have a notes section at the end with an edit button
+- [X] Sort by score by default, but have an option for manual sort (drag and drop)
+- [X] Should be a table style leaderboard with all the data
+- [X] Should have a notes section at the end with an edit button
 - [ ] Should be able to Search/Filter by golfer name when adding
 - [ ] Columns should be Player, Pos, Total, Today, Thru / Tee, Edit button, Remove button
-- [ ] At the top, it should list the cut line and current round
-- [ ] We should also have a "last golf update" message to show when the last refresh was
+- [X] At the top, it should list the cut line and current round
+- [X] We should also have a "last golf update" message to show when the last refresh was
 - [ ] There should be a "Remove All" button that removes all non-favorited golfers
 
 ## World Cup

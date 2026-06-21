@@ -111,3 +111,11 @@ export async function updateFollowedGolferOrder(golfers) {
     golfers: JSON.stringify(golfers)
   });
 }
+
+export async function removeAllFollowedGames() {
+  return apiRequest('removeAllFollowedGames');
+}
+
+export async function removeAllFollowedGolfers() {
+  return apiRequest('removeAllFollowedGolfers');
+}

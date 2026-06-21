@@ -1,7 +1,8 @@
 import {
   getFollowedGames,
   updateFollowedGame,
-  removeFollowedGame
+  removeFollowedGame,
+  removeAllFollowedGames
 } from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
 import { formatLastUpdated } from '../utils/date.js';
@@ -91,6 +92,16 @@ function openGameEditModal(id, currentSpread, currentNotes) {
 }
 
 function attachScoreboardHandlers() {
+const removeAllBtn = document.getElementById('remove-all-games-btn');
+
+if (removeAllBtn) {
+  removeAllBtn.addEventListener('click', async () => {
+    if (!confirm('Remove all followed games?')) return;
+
+    await removeAllFollowedGames();
+    location.reload();
+  });
+}
   document.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       openGameEditModal(
@@ -164,7 +175,12 @@ export async function renderScoreboard() {
 
     return `
       <div class="page-header">
-        <h2>Scoreboard</h2>
+        <div class="page-title-row">
+            <h2>Scoreboard</h2>
+            <button id="remove-all-games-btn" class="small-btn danger">
+                Remove All
+            </button>
+            </div>
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
         <p>${games.length} followed games showing.</p>
       </div>
