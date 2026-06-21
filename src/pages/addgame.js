@@ -6,48 +6,57 @@ import {
   addFollowedGolfer
 } from '../api.js';
 
+let currentItems = [];
+
 function renderSportOptions(sports) {
-  return sports
-    .map(sport => `<option value="${sport}">${sport}</option>`)
-    .join('');
-}
-
-function renderTeamOptions(teams) {
-  return teams
-    .map(team => {
-      const value = team.shortName || team.fullName || team;
-      const label = team.fullName
-        ? `${team.shortName} - ${team.fullName}`
-        : value;
-
-      return `<option value="${value}">${label}</option>`;
-    })
-    .join('');
-}
-
-function renderGolferOptions(golfers) {
-  return golfers
-    .map(g => g.golfer)
-    .filter(Boolean)
-    .sort()
-    .map(name => `<option value="${name}">${name}</option>`)
-    .join('');
+  return sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
 }
 
 function attachAddHandlers() {
   const sportSelect = document.getElementById('sport-select');
   const itemInput = document.getElementById('item-select');
-  const itemOptions = document.getElementById('item-options');
+  const itemDropdown = document.getElementById('item-dropdown');
   const itemLabel = document.getElementById('item-label');
   const spreadWrap = document.getElementById('spread-wrap');
   const saveBtn = document.getElementById('save-followed-item');
+
+  function showFilteredItems() {
+    const search = itemInput.value.toLowerCase();
+
+    const matches = currentItems
+      .filter(item => item.label.toLowerCase().includes(search))
+      .slice(0, 30);
+
+    if (!matches.length) {
+      itemDropdown.innerHTML = `<div class="dropdown-item muted">No matches</div>`;
+      itemDropdown.style.display = 'block';
+      return;
+    }
+
+    itemDropdown.innerHTML = matches.map(item => `
+      <button type="button" class="dropdown-item" data-value="${item.value}">
+        ${item.label}
+      </button>
+    `).join('');
+
+    itemDropdown.style.display = 'block';
+
+    itemDropdown.querySelectorAll('.dropdown-item').forEach(btn => {
+      btn.addEventListener('click', () => {
+        itemInput.value = btn.dataset.value;
+        itemDropdown.style.display = 'none';
+      });
+    });
+  }
 
   async function updateItems() {
     const sport = sportSelect.value;
 
     itemInput.value = '';
-    itemOptions.innerHTML = '';
     itemInput.placeholder = 'Loading...';
+    itemDropdown.innerHTML = '';
+    itemDropdown.style.display = 'none';
+    currentItems = [];
 
     if (!sport) {
       itemLabel.textContent = 'Team/Golfer';
@@ -63,9 +72,16 @@ function attachAddHandlers() {
       const result = await getAvailableGolfers();
       const golfers = result.data || [];
 
-      itemInput.placeholder = 'Search golfer...';
-      itemOptions.innerHTML = renderGolferOptions(golfers);
+      currentItems = golfers
+        .map(g => g.golfer)
+        .filter(Boolean)
+        .sort()
+        .map(name => ({
+          value: name,
+          label: name
+        }));
 
+      itemInput.placeholder = 'Search golfer...';
       return;
     }
 
@@ -75,11 +91,28 @@ function attachAddHandlers() {
     const result = await getTeamsForSport(sport);
     const teams = result.data || [];
 
+    currentItems = teams.map(team => {
+      const value = team.shortName || team.fullName || team;
+      const label = team.fullName
+        ? `${team.shortName} - ${team.fullName}`
+        : value;
+
+      return { value, label };
+    });
+
     itemInput.placeholder = 'Search team...';
-    itemOptions.innerHTML = renderTeamOptions(teams);
   }
 
   sportSelect.addEventListener('change', updateItems);
+
+  itemInput.addEventListener('input', showFilteredItems);
+  itemInput.addEventListener('focus', showFilteredItems);
+
+  document.addEventListener('click', e => {
+    if (!e.target.closest('.search-combo')) {
+      itemDropdown.style.display = 'none';
+    }
+  });
 
   saveBtn.addEventListener('click', async () => {
     const sport = sportSelect.value;
@@ -139,14 +172,15 @@ export async function renderAddGame() {
       </select>
 
       <label id="item-label">Team/Golfer</label>
-      <input
-        id="item-select"
-        list="item-options"
-        type="text"
-        placeholder="Choose sport first..."
-        autocomplete="off"
-      />
-      <datalist id="item-options"></datalist>
+      <div class="search-combo">
+        <input
+          id="item-select"
+          type="text"
+          placeholder="Choose sport first..."
+          autocomplete="off"
+        />
+        <div id="item-dropdown" class="search-dropdown"></div>
+      </div>
 
       <div id="spread-wrap">
         <label>Spread</label>
