@@ -82,7 +82,7 @@
 ## Next Features
 1. Build/finish World Cup page in GitHub frontend
 2. Build/finish Admin refresh controls
-3. Improve refresh behavior so backend refreshes scores and frontend updates content without full-page reloads
+3. Improve refresh behavior so frontend re-renders current content without full browser reloads
 4. PWA install prompt/banner
 5. Ongoing cleanup/dead-code removal
 

@@ -64,7 +64,7 @@ function attachScoreboardHandlers() {
         confirmText: 'Remove All',
         onConfirm: async () => {
           await removeAllFollowedGames();
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });
@@ -78,7 +78,7 @@ function attachScoreboardHandlers() {
         notes: btn.dataset.notes || '',
         onSave: async ({ id, spread, notes }) => {
           await updateFollowedGame(id, spread, notes);
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });
@@ -98,7 +98,7 @@ function attachScoreboardHandlers() {
             spread,
             notes
           });
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });
@@ -112,7 +112,7 @@ function attachScoreboardHandlers() {
         confirmText: 'Remove',
         onConfirm: async () => {
           await removeFollowedGame(btn.dataset.id);
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });

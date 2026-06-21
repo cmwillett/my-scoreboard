@@ -169,7 +169,7 @@ function attachAdminLoginHandlers() {
       }
 
       setAdminUnlocked();
-      location.reload();
+      window.refreshCurrentPage?.();
     } catch (err) {
       console.error(err);
       openMessageModal({
@@ -269,7 +269,7 @@ function attachAdminHandlers() {
   if (logoutBtn) {
     logoutBtn.addEventListener('click', () => {
       clearAdminUnlocked();
-      location.reload();
+      window.refreshCurrentPage?.();
     });
   }
 
@@ -311,7 +311,7 @@ function attachAdminHandlers() {
           title: 'Favorite Team Added',
           message: `${team} was added as a favorite team.`
         });
-        location.reload();
+        window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
@@ -345,7 +345,7 @@ function attachAdminHandlers() {
           title: 'Page Visibility Saved',
           message: 'The navigation will update now.'
         });
-        location.reload();
+        window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
@@ -369,7 +369,7 @@ function attachAdminHandlers() {
         confirmText: 'Remove',
         onConfirm: async () => {
           await removeFavoriteTeam(sportKey, team);
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });

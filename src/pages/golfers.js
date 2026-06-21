@@ -158,7 +158,7 @@ function attachGolferHandlers() {
         confirmText: 'Remove All',
         onConfirm: async () => {
           await removeAllFollowedGolfers();
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });
@@ -167,7 +167,7 @@ function attachGolferHandlers() {
   document.querySelectorAll('.sort-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       setSortMode(btn.dataset.sortMode);
-      location.reload();
+      window.refreshCurrentPage?.();
     });
   });
 
@@ -181,7 +181,7 @@ function attachGolferHandlers() {
         confirmText: 'Remove',
         onConfirm: async () => {
           await removeFollowedGolfer(golfer);
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });
@@ -195,7 +195,7 @@ function attachGolferHandlers() {
         favorite: btn.dataset.favorite === 'true',
         onSave: async ({ golfer, note, favorite }) => {
           await addFollowedGolfer(golfer, note, favorite);
-          location.reload();
+          window.refreshCurrentPage?.();
         }
       });
     });

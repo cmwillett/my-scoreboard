@@ -24,6 +24,8 @@ const defaultVisibility = {
 };
 
 let pageVisibility = { ...defaultVisibility };
+let currentPage = 'scoreboard';
+let renderToken = 0;
 
 function isPageVisible(pageKey) {
   if (pageKey === 'admin') return true;
@@ -69,34 +71,66 @@ async function loadPageVisibility() {
   }
 }
 
-async function renderPage(pageKey) {
+async function renderPage(pageKey, options = {}) {
+  const { showLoading = true, updateHash = true } = options;
+  const thisRender = ++renderToken;
+
   stopAutoRefresh();
 
   const targetPage = isPageVisible(pageKey) ? pageKey : getFirstVisiblePage();
   const renderer = pages[targetPage] || renderScoreboard;
 
-  content.innerHTML = `
-    <div class="card">
-      Loading...
-    </div>
-  `;
+  if (showLoading) {
+    content.innerHTML = `
+      <div class="card">
+        Loading...
+      </div>
+    `;
+  }
 
-  content.innerHTML = await renderer();
+  const html = await renderer();
+
+  if (thisRender !== renderToken) return;
+
+  content.innerHTML = html;
+  currentPage = targetPage;
 
   applyNavVisibility(targetPage);
-  window.location.hash = targetPage;
+
+  if (updateHash && window.location.hash.replace('#', '') !== targetPage) {
+    window.location.hash = targetPage;
+  }
 
   if (targetPage === 'scoreboard') {
     startAutoRefresh(() => {
-      renderPage('scoreboard');
+      refreshCurrentPage({ showLoading: false });
     }, CONFIG.REFRESH_INTERVAL);
   }
 }
+
+async function refreshCurrentPage(options = {}) {
+  await loadPageVisibility();
+  await renderPage(currentPage || getFirstVisiblePage(), {
+    showLoading: options.showLoading === true,
+    updateHash: false
+  });
+}
+
+window.refreshCurrentPage = refreshCurrentPage;
+window.navigateToPage = renderPage;
 
 navButtons.forEach(btn => {
   btn.addEventListener('click', async () => {
     await renderPage(btn.dataset.page);
   });
+});
+
+window.addEventListener('hashchange', async () => {
+  const pageFromHash = window.location.hash.replace('#', '') || getFirstVisiblePage();
+
+  if (pageFromHash !== currentPage) {
+    await renderPage(pageFromHash, { updateHash: false });
+  }
 });
 
 async function initApp() {
