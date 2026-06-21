@@ -2,6 +2,16 @@ export function renderGameCard(game) {
   const status = game.status || game.startTime || '';
   const sport = game.sport || '';
   const channel = game.channel || '';
+  const followTeamButtons = `
+  <div class="follow-actions">
+    <button class="small-btn follow-team-btn" data-sport="${sport}" data-team="${game.awayTeam}">
+      Follow ${game.awayTeam}
+    </button>
+    <button class="small-btn follow-team-btn" data-sport="${sport}" data-team="${game.homeTeam}">
+      Follow ${game.homeTeam}
+    </button>
+  </div>
+`;
 
   const awayScore = Number(game.awayScore);
   const homeScore = Number(game.homeScore);
@@ -37,10 +47,12 @@ export function renderGameCard(game) {
         </div>
 
         ${
-          channel
+        channel
             ? `<div class="game-channel">${channel}</div>`
             : ''
         }
+
+        ${followTeamButtons}
       </div>
     `;
   }
