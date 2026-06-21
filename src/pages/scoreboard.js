@@ -76,6 +76,7 @@ export async function renderScoreboard() {
   try {
     const result = await getAvailableGames('ALL');
     const games = result.data || [];
+    console.log('FIRST NON MLB:', games.find(g => g.sport !== 'MLB'));
 
     const liveGames = games.filter(game => getGameSection(game) === 'live');
     const upcomingGames = games.filter(game => getGameSection(game) === 'upcoming');
