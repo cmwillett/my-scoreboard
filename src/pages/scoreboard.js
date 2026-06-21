@@ -115,15 +115,16 @@ export async function renderScoreboard() {
       ${renderSection('Upcoming', upcomingGames)}
       ${renderSection('Final', finalGames)}
 
-      ${
+        ${
         !games.length
-          ? `
-            <div class="card">
-              No games found.
+            ? `
+            <div class="card empty-state">
+                <h3>No followed games yet</h3>
+                <p>Go to Add Game to follow a team.</p>
             </div>
-          `
-          : ''
-      }
+            `
+            : ''
+        }
     `;
   } catch (err) {
     console.error(err);
