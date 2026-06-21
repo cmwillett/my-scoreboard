@@ -40,7 +40,7 @@ function renderGameChoice(game) {
     <button
       type="button"
       class="game-choice-btn"
-      data-event-id="${game.eventId}"
+      data-event-id="${game.eventId || game.eventID || game.id}"
     >
       <strong>${game.awayTeam}</strong> at <strong>${game.homeTeam}</strong>
       <span>${status}</span>
@@ -80,7 +80,9 @@ function renderGameChoices(team) {
     btn.addEventListener('click', () => {
       const eventId = btn.dataset.eventId;
 
-      selectedGame = gamesToShow.find(game => String(game.eventId) === String(eventId));
+      selectedGame = gamesToShow.find(game =>
+        String(game.eventId || game.eventID || game.id) === String(eventId)
+        );
 
       gamesList.querySelectorAll('.game-choice-btn').forEach(b => {
         b.classList.remove('selected');
@@ -232,7 +234,7 @@ function attachAddHandlers() {
       } else {
         await addFollowedGame({
           sportKey: sport,
-          eventId: selectedGame.eventId,
+          eventId: selectedGame.eventId || selectedGame.eventID || selectedGame.id,
           team: item,
           spread,
           notes
