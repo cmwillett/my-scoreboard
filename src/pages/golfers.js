@@ -1,4 +1,5 @@
 import { getAvailableGolfers } from '../api.js';
+import { formatLastUpdated } from '../utils/date.js';
 
 function renderGolferRow(golfer) {
   return `
@@ -18,16 +19,18 @@ export async function renderGolfers() {
   try {
     const result = await getAvailableGolfers();
     const golfers = result.data || [];
+    const lastUpdated = formatLastUpdated();
 
     const firstGolfer = golfers[0] || {};
     const cutLine = firstGolfer.cutLine || '-';
     const currentRound = firstGolfer.currentRound || '-';
 
     return `
-      <div class="page-header">
+        <div class="page-header">
         <h2>Golfers</h2>
         <p>${currentRound} • Cut line: ${cutLine}</p>
-      </div>
+        <p class="last-updated">Last updated: ${lastUpdated}</p>
+        </div>
 
       <div class="card">
         <div class="table-wrap">

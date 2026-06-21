@@ -1,5 +1,6 @@
 import { getAvailableGames } from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
+import { formatLastUpdated } from '../utils/date.js';
 
 function getGameSection(game) {
   const rawStatus = game.rawStatus || '';
@@ -76,17 +77,18 @@ export async function renderScoreboard() {
   try {
     const result = await getAvailableGames('ALL');
     const games = result.data || [];
-    console.log('FIRST NON MLB:', games.find(g => g.sport !== 'MLB'));
+    const lastUpdated = formatLastUpdated();
 
     const liveGames = games.filter(game => getGameSection(game) === 'live');
     const upcomingGames = games.filter(game => getGameSection(game) === 'upcoming');
     const finalGames = games.filter(game => getGameSection(game) === 'final');
 
     return `
-      <div class="page-header">
+        <div class="page-header">
         <h2>Scoreboard</h2>
+        <p class="last-updated">Last updated: ${lastUpdated}</p>
         <p>${games.length} games available.</p>
-      </div>
+        </div>
 
       ${renderSection('Live', liveGames)}
       ${renderSection('Upcoming', upcomingGames)}

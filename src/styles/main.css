@@ -62,3 +62,9 @@ body {
   color: white;
   font-weight: bold;
 }
+
+.last-updated {
+  color: #94a3b8;
+  font-size: 14px;
+  margin-top: 4px;
+}
