@@ -97,7 +97,6 @@ function resetForm() {
   document.getElementById('item-select').value = '';
   document.getElementById('spread-input').value = '';
   document.getElementById('note-input').value = '';
-  document.getElementById('favorite-input').checked = false;
   document.getElementById('game-picker-wrap').style.display = 'none';
   selectedGame = null;
   gamesToShowNow = [];
@@ -221,7 +220,6 @@ function attachAddHandlers() {
     const item = itemInput.value.trim();
     const spread = document.getElementById('spread-input').value.trim();
     const notes = document.getElementById('note-input').value.trim();
-    const favorite = document.getElementById('favorite-input').checked;
 
     if (!sport || !item) {
       openMessageModal({
@@ -248,7 +246,7 @@ function attachAddHandlers() {
 
     try {
       if (sport === 'Golf') {
-        await addFollowedGolfer(item, notes, favorite);
+        await addFollowedGolfer(item, notes, false);
         openMessageModal({
           title: 'Golfer Added',
           message: `${item} was added.`
@@ -282,17 +280,28 @@ function attachAddHandlers() {
   });
 }
 
-export async function renderAddGame() {
+export async function renderAddGame(options = {}) {
   const result = await getAvailableSports();
   const sports = result.data || [];
 
   setTimeout(attachAddHandlers, 0);
 
+  const headerHtml = options.embedded
+    ? `
+      <div class="admin-subheader">
+        <h3>Add Game/Golfer</h3>
+        <p>Follow a specific game or golfer and optionally add a spread or note.</p>
+      </div>
+    `
+    : `
+      <div class="page-header">
+        <h2>Add Game/Golfer</h2>
+        <p>Follow a specific game or golfer and optionally add a spread or note.</p>
+      </div>
+    `;
+
   return `
-    <div class="page-header">
-      <h2>Add Game/Golfer</h2>
-      <p>Follow a specific game or golfer and optionally add a spread or note.</p>
-    </div>
+    ${headerHtml}
 
     <div class="card form-card">
       <label>Sport</label>
@@ -324,11 +333,6 @@ export async function renderAddGame() {
 
       <label>Note</label>
       <textarea id="note-input" rows="3" placeholder="Optional note..."></textarea>
-
-      <label class="checkbox-row">
-        <input id="favorite-input" type="checkbox" />
-        Favorite
-      </label>
 
       <button id="save-followed-item" class="primary-btn">
         Follow/Add

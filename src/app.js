@@ -1,7 +1,6 @@
 import { renderScoreboard } from './pages/scoreboard.js';
 import { renderGolfers } from './pages/golfers.js';
 import { renderWorldCup } from './pages/worldcup.js';
-import { renderAddGame } from './pages/addgame.js';
 import { renderAdmin } from './pages/admin.js';
 import { CONFIG } from './config.js';
 import { startAutoRefresh, stopAutoRefresh } from './services/refresh.js';
@@ -13,7 +12,6 @@ const pages = {
   scoreboard: renderScoreboard,
   golfers: renderGolfers,
   worldcup: renderWorldCup,
-  addgame: renderAddGame,
   admin: renderAdmin
 };
 

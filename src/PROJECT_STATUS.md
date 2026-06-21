@@ -91,3 +91,9 @@
 
 ## Latest Update
 - Favorite-team games can be edited from the Scores page to add game-specific spread and notes. Editing a favorite-team game saves an override in GamesToFollow while keeping the Favorite Team label.
+
+
+## Recent Update
+- Add Game/Golfer moved into Admin. Main nav is Scores | Golfers | World Cup | Admin.
+
+- Add Game/Golfer now lives in Admin. The standalone Add route is deprecated/hidden from nav.

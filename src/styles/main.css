@@ -262,3 +262,21 @@ body {
   color: #cbd5e1;
   font-size: 14px;
 }
+
+
+.admin-section .page-header {
+  display: none;
+}
+
+.admin-subheader {
+  margin: 18px 0 10px;
+}
+
+.admin-subheader h3 {
+  margin: 0 0 4px;
+}
+
+.admin-subheader p {
+  margin: 0;
+  color: #94a3b8;
+}

@@ -5,6 +5,7 @@ import {
   addFavoriteTeam,
   removeFavoriteTeam
 } from '../api.js';
+import { renderAddGame } from './addgame.js';
 import {
   openConfirmModal,
   openMessageModal
@@ -305,6 +306,8 @@ export async function renderAdmin() {
     return renderAdminLocked();
   }
 
+  const addGameHtml = await renderAddGame({ embedded: true });
+
   const [sportsResult, favoritesResult] = await Promise.all([
     getAvailableSports(),
     getFavoriteTeams()
@@ -320,13 +323,17 @@ export async function renderAdmin() {
       <div class="page-title-row">
         <div>
           <h2>Admin</h2>
-          <p>Manage app settings, favorite teams, and future admin tools.</p>
+          <p>Manage followed games, golfers, favorite teams, and app settings.</p>
         </div>
 
         <button id="admin-logout-btn" class="small-btn">
           Lock Admin
         </button>
       </div>
+    </div>
+
+    <div class="admin-section">
+      ${addGameHtml}
     </div>
 
     <div class="card form-card">
@@ -370,7 +377,7 @@ export async function renderAdmin() {
     <div class="card">
       <h3>Coming Soon</h3>
       <p class="admin-help">
-        Add Game/Golfer, page visibility toggles, refresh controls, and World Cup settings will move here next.
+Page visibility toggles, refresh controls, and World Cup settings will move here next.
       </p>
     </div>
   `;
