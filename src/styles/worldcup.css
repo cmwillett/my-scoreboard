@@ -1,0 +1,128 @@
+.worldcup-section {
+  margin-top: 18px;
+}
+
+.worldcup-add-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.worldcup-add-actions .primary-btn {
+  margin-top: 0;
+}
+
+.worldcup-team-list {
+  display: grid;
+  gap: 10px;
+}
+
+.worldcup-team-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  background: #0f172a;
+  border: 1px solid #334155;
+  border-radius: 12px;
+}
+
+.worldcup-team-row strong {
+  display: block;
+  font-size: 1rem;
+}
+
+.worldcup-team-row span {
+  display: block;
+  margin-top: 4px;
+  color: #60a5fa;
+  font-size: .85rem;
+  font-weight: 800;
+}
+
+.worldcup-team-row p {
+  margin: 6px 0 0;
+  color: #cbd5e1;
+}
+
+.worldcup-team-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.worldcup-filter {
+  width: 100%;
+  box-sizing: border-box;
+  margin: 8px 0 12px;
+  background: #0f172a;
+  color: white;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.worldcup-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #334155;
+  border-radius: 14px;
+  background: #0f172a;
+}
+
+.worldcup-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+}
+
+.worldcup-table th,
+.worldcup-table td {
+  padding: 12px 10px;
+  border-bottom: 1px solid rgba(255, 255, 255, .06);
+  text-align: left;
+  vertical-align: middle;
+}
+
+.worldcup-table th {
+  color: #93c5fd;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  font-size: .78rem;
+}
+
+.worldcup-table tr:last-child td {
+  border-bottom: 0;
+}
+
+.worldcup-empty-cell {
+  color: #94a3b8;
+  text-align: center !important;
+}
+
+.muted-text {
+  color: #94a3b8;
+  margin-bottom: 0;
+}
+
+@media (max-width: 700px) {
+  .worldcup-add-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .worldcup-team-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .worldcup-team-actions {
+    justify-content: stretch;
+  }
+
+  .worldcup-team-actions button {
+    flex: 1;
+  }
+}

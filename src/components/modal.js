@@ -148,3 +148,48 @@ export function openGolferNoteModal({ golfer, note = '', favorite = false, onSav
     }
   });
 }
+
+
+export function openTextModal({
+  title = 'Edit Note',
+  label = 'Note',
+  value = '',
+  saveText = 'Save',
+  onSave
+}) {
+  const modal = createModal(`
+    <h3>${title}</h3>
+
+    <label>${label}</label>
+    <textarea class="modal-text-input" rows="5">${value || ''}</textarea>
+
+    <div class="modal-actions">
+      <button type="button" class="small-btn modal-cancel-btn">Cancel</button>
+      <button type="button" class="primary-btn modal-save-btn">${saveText}</button>
+    </div>
+  `);
+
+  modal.querySelector('.modal-cancel-btn').addEventListener('click', () => {
+    closeModal(modal);
+  });
+
+  modal.querySelector('.modal-save-btn').addEventListener('click', async event => {
+    const button = event.currentTarget;
+    const nextValue = modal.querySelector('.modal-text-input').value.trim();
+
+    button.disabled = true;
+    button.textContent = 'Saving...';
+
+    try {
+      if (onSave) await onSave(nextValue);
+      closeModal(modal);
+    } catch (err) {
+      console.error(err);
+      closeModal(modal);
+      openMessageModal({
+        title: 'Could Not Save',
+        message: 'The note was not saved.'
+      });
+    }
+  });
+}

@@ -140,3 +140,32 @@ export async function savePageVisibility(visibility) {
     visibility: JSON.stringify(visibility)
   });
 }
+
+
+export async function getWorldCupPageData() {
+  return apiRequest('getWorldCupPageData');
+}
+
+export async function refreshWorldCupScores() {
+  return apiRequest('refreshWorldCupScores');
+}
+
+export async function addWorldCupFollowedTeam({ team, notes = '' }) {
+  return apiRequest('addWorldCupFollowedTeam', { team, notes });
+}
+
+export async function addWorldCupFavoriteTeam({ team, notes = '' }) {
+  return apiRequest('addWorldCupFavoriteTeam', { team, notes });
+}
+
+export async function removeWorldCupFollowedTeam(team) {
+  return apiRequest('removeWorldCupFollowedTeam', { team });
+}
+
+export async function removeWorldCupFavoriteTeam(team) {
+  return apiRequest('removeWorldCupFavoriteTeam', { team });
+}
+
+export async function updateWorldCupTeamNote(type, team, notes = '') {
+  return apiRequest('updateWorldCupTeamNote', { type, team, notes });
+}
