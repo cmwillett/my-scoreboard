@@ -10,7 +10,20 @@ import {
   openMessageModal
 } from '../components/modal.js';
 
+const ADMIN_AUTH_KEY = 'scoreboardAdminUnlocked';
 let favoriteTeamOptions = [];
+
+function isAdminUnlocked() {
+  return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
+}
+
+function setAdminUnlocked() {
+  localStorage.setItem(ADMIN_AUTH_KEY, 'true');
+}
+
+function clearAdminUnlocked() {
+  localStorage.removeItem(ADMIN_AUTH_KEY);
+}
 
 function renderSportOptions(sports) {
   return sports
@@ -46,6 +59,97 @@ function renderFavoriteTeamRows(favorites) {
       </button>
     </div>
   `).join('');
+}
+
+function renderAdminLocked() {
+  setTimeout(attachAdminLoginHandlers, 0);
+
+  return `
+    <div class="page-header">
+      <h2>Admin</h2>
+      <p>Enter your PIN to manage app settings.</p>
+    </div>
+
+    <div class="card form-card admin-login-card">
+      <h3>Admin Login</h3>
+
+      <label>PIN</label>
+      <input
+        id="admin-pin-input"
+        type="password"
+        inputmode="numeric"
+        autocomplete="off"
+        placeholder="Enter PIN"
+      />
+
+      <button id="admin-unlock-btn" class="primary-btn">
+        Unlock Admin
+      </button>
+    </div>
+  `;
+}
+
+async function verifyAdminPin(pin) {
+  const { checkAdminPin } = await import('../api.js');
+  const result = await checkAdminPin(pin);
+  return result.data === true;
+}
+
+function attachAdminLoginHandlers() {
+  const pinInput = document.getElementById('admin-pin-input');
+  const unlockBtn = document.getElementById('admin-unlock-btn');
+
+  if (!pinInput || !unlockBtn) return;
+
+  async function unlock() {
+    const pin = pinInput.value.trim();
+
+    if (!pin) {
+      openMessageModal({
+        title: 'PIN Required',
+        message: 'Enter the admin PIN first.'
+      });
+      return;
+    }
+
+    unlockBtn.disabled = true;
+    unlockBtn.textContent = 'Checking...';
+
+    try {
+      const ok = await verifyAdminPin(pin);
+
+      if (!ok) {
+        openMessageModal({
+          title: 'Incorrect PIN',
+          message: 'That PIN did not match the Admin PIN in AppSettings.'
+        });
+        unlockBtn.disabled = false;
+        unlockBtn.textContent = 'Unlock Admin';
+        return;
+      }
+
+      setAdminUnlocked();
+      location.reload();
+    } catch (err) {
+      console.error(err);
+      openMessageModal({
+        title: 'Could Not Check PIN',
+        message: 'The admin PIN could not be verified.'
+      });
+      unlockBtn.disabled = false;
+      unlockBtn.textContent = 'Unlock Admin';
+    }
+  }
+
+  unlockBtn.addEventListener('click', unlock);
+
+  pinInput.addEventListener('keydown', event => {
+    if (event.key === 'Enter') {
+      unlock();
+    }
+  });
+
+  setTimeout(() => pinInput.focus(), 0);
 }
 
 function showFavoriteTeamOptions() {
@@ -118,6 +222,14 @@ function attachAdminHandlers() {
   const teamInput = document.getElementById('favorite-team-input');
   const dropdown = document.getElementById('favorite-team-dropdown');
   const addBtn = document.getElementById('add-favorite-team-btn');
+  const logoutBtn = document.getElementById('admin-logout-btn');
+
+  if (logoutBtn) {
+    logoutBtn.addEventListener('click', () => {
+      clearAdminUnlocked();
+      location.reload();
+    });
+  }
 
   if (sportSelect) {
     sportSelect.addEventListener('change', loadTeamsForFavoriteSport);
@@ -189,6 +301,10 @@ function attachAdminHandlers() {
 }
 
 export async function renderAdmin() {
+  if (!isAdminUnlocked()) {
+    return renderAdminLocked();
+  }
+
   const [sportsResult, favoritesResult] = await Promise.all([
     getAvailableSports(),
     getFavoriteTeams()
@@ -201,8 +317,16 @@ export async function renderAdmin() {
 
   return `
     <div class="page-header">
-      <h2>Admin</h2>
-      <p>Manage app settings, favorite teams, and future admin tools.</p>
+      <div class="page-title-row">
+        <div>
+          <h2>Admin</h2>
+          <p>Manage app settings, favorite teams, and future admin tools.</p>
+        </div>
+
+        <button id="admin-logout-btn" class="small-btn">
+          Lock Admin
+        </button>
+      </div>
     </div>
 
     <div class="card form-card">

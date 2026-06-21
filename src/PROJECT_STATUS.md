@@ -66,6 +66,8 @@
 - Remove and Remove All use modals
 
 ### Admin
+- PIN protected using `AppSettings.pin` through `checkAdminPin` API
+- Admin unlock is remembered per device in `localStorage`
 - Favorite Teams management added
 - Add/manage tools will continue moving here over time
 

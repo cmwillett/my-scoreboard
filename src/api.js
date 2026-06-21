@@ -29,6 +29,11 @@ export async function getAvailableSports() {
   return apiRequest('getAvailableSports');
 }
 
+
+export async function checkAdminPin(pin) {
+  return apiRequest('checkAdminPin', { pin });
+}
+
 export async function getTeamsForSport(sport) {
   return apiRequest('getTeamsForSport', { sport });
 }
