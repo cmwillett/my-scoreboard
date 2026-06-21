@@ -1,4 +1,4 @@
-import { getAvailableGolfers } from '../api.js';
+import { getAvailableGolfers, getFollowedGolfers } from '../api.js';
 import { formatLastUpdated } from '../utils/date.js';
 
 function renderGolferRow(golfer) {
@@ -17,8 +17,21 @@ function renderGolferRow(golfer) {
 
 export async function renderGolfers() {
   try {
-    const result = await getAvailableGolfers();
-    const golfers = result.data || [];
+    const [availableResult, followedResult] = await Promise.all([
+    getAvailableGolfers(),
+    getFollowedGolfers()
+    ]);
+
+    const allGolfers = availableResult.data || [];
+    const followedGolfers = followedResult.data || [];
+
+    const followedSet = new Set(
+    followedGolfers.map(item => item.golfer)
+    );
+
+    const golfers = allGolfers.filter(golfer =>
+    followedSet.has(golfer.golfer)
+    );
     const lastUpdated = formatLastUpdated();
 
     const firstGolfer = golfers[0] || {};

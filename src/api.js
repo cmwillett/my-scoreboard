@@ -51,3 +51,21 @@ export async function addFollowedTeam(sport, team, spread = '', note = '', favor
 export async function removeFollowedTeam(sport, team) {
   return apiRequest('removeFollowedTeam', { sport, team });
 }
+
+export async function getFollowedGolfers() {
+  return apiRequest('getFollowedGolfers');
+}
+
+export async function addFollowedGolfer(golfer, note = '', favorite = false) {
+  return apiRequest('addFollowedGolfer', {
+    golfer,
+    note,
+    favorite
+  });
+}
+
+export async function removeFollowedGolfer(golfer) {
+  return apiRequest('removeFollowedGolfer', {
+    golfer
+  });
+}
