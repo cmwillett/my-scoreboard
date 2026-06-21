@@ -1,0 +1,31 @@
+.scoreboard-section {
+  margin-bottom: 28px;
+}
+
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 18px 0 10px;
+}
+
+.section-header h2 {
+  margin: 0;
+  font-size: 22px;
+}
+
+.section-header span {
+  color: #93c5fd;
+  font-size: 14px;
+}
+
+.sport-group {
+  margin-bottom: 18px;
+}
+
+.sport-group h3 {
+  margin: 12px 0 8px;
+  color: #93c5fd;
+  font-size: 15px;
+  font-weight: 700;
+}
