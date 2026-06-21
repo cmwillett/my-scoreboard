@@ -50,12 +50,15 @@ export function renderGameCard(followedGame) {
 ${
   followedGame.spread || followedGame.notes
     ? `
-      <div class="game-pick-box">
+      <div class="game-details">
         ${
           followedGame.spread
             ? `
-              <div class="pick-row">
-                💰 ${followedGame.spread}
+              <div class="game-detail-block">
+                <div class="game-detail-title">Spread</div>
+                <div class="game-detail-text">
+                  ${followedGame.spread}
+                </div>
               </div>
             `
             : ''
@@ -64,8 +67,11 @@ ${
         ${
           followedGame.notes
             ? `
-              <div class="pick-row">
-                📝 ${followedGame.notes}
+              <div class="game-detail-block">
+                <div class="game-detail-title">Notes</div>
+                <div class="game-detail-text">
+                  ${followedGame.notes}
+                </div>
               </div>
             `
             : ''
