@@ -1,4 +1,4 @@
-import { getAvailableGames } from '../api.js';
+import { getAvailableGames, getFollowedTeams } from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
 import { formatLastUpdated } from '../utils/date.js';
 
@@ -73,10 +73,31 @@ function renderSection(title, games) {
   `;
 }
 
+function filterFollowedGames(games, followedTeams) {
+  const followedSet = new Set(
+    followedTeams.map(item => `${item.sport}|${item.team}`)
+  );
+
+  return games.filter(game => {
+    const sport = game.sport || game.sportKey;
+
+    return (
+      followedSet.has(`${sport}|${game.awayTeam}`) ||
+      followedSet.has(`${sport}|${game.homeTeam}`)
+    );
+  });
+}
+
 export async function renderScoreboard() {
   try {
-    const result = await getAvailableGames('ALL');
-    const games = result.data || [];
+    const [gamesResult, followedResult] = await Promise.all([
+    getAvailableGames('ALL'),
+    getFollowedTeams()
+    ]);
+
+    const allGames = gamesResult.data || [];
+    const followedTeams = followedResult.data || [];
+    const games = filterFollowedGames(allGames, followedTeams);
     const lastUpdated = formatLastUpdated();
 
     const liveGames = games.filter(game => getGameSection(game) === 'live');
@@ -87,7 +108,7 @@ export async function renderScoreboard() {
         <div class="page-header">
         <h2>Scoreboard</h2>
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
-        <p>${games.length} games available.</p>
+        <p>${games.length} followed games showing.</p>
         </div>
 
       ${renderSection('Live', liveGames)}
