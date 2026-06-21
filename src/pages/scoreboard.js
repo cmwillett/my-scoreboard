@@ -5,6 +5,11 @@ export async function renderScoreboard() {
   try {
     const result = await getAvailableGames('ALL');
     const games = result.data || [];
+    const firstGolf = games.find(
+    g => g.sportKey === 'GOLF'
+    );
+
+    console.log('FIRST GOLF:', firstGolf);
 
     return `
       <div class="page-header">
