@@ -133,3 +133,15 @@
   margin-right: 10px;
   color: #64748b;
 }
+.favorite-score-card {
+  border-color: rgba(250, 204, 21, 0.45);
+}
+
+.favorite-game-label {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 10px;
+  color: #facc15;
+  font-size: 0.85rem;
+  font-weight: 800;
+}

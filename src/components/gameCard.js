@@ -2,7 +2,6 @@ export function renderGameCard(followedGame) {
   const game = followedGame.live || followedGame;
 
   const status = game.status || game.startTime || '';
-  const sport = game.sport || followedGame.sport || '';
   const channel = game.channel || '';
 
   const awayScore = Number(game.awayScore);
@@ -22,8 +21,10 @@ export function renderGameCard(followedGame) {
     game.rawStatus === 'STATUS_IN_PROGRESS' ||
     String(game.status || '').toLowerCase().includes('live');
 
+  const isFavorite = followedGame.isFavorite === true;
+
   return `
-    <div class="score-card" data-followed-game-id="${followedGame.id}">
+    <div class="score-card ${isFavorite ? 'favorite-score-card' : ''}" data-followed-game-id="${followedGame.id}">
       <div class="team-row ${awayLeading ? 'leading' : ''}">
         <span>${game.awayTeam || '-'}</span>
         <strong>${game.awayScore || '-'}</strong>
@@ -34,62 +35,70 @@ export function renderGameCard(followedGame) {
         <strong>${game.homeScore || '-'}</strong>
       </div>
 
-<div class="game-meta-line">
-  ${channel ? `<span>${channel}</span>` : ''}
-  ${status ? `<span class="${isLive ? 'game-live' : ''}">${status}</span>` : ''}
-</div>
-
-${
-  followedGame.spread || followedGame.notes
-    ? `
-      <div class="game-details">
-        ${
-          followedGame.spread
-            ? `
-              <div class="game-detail-block">
-                <div class="game-detail-title">Spread</div>
-                <div class="game-detail-text">
-                  ${followedGame.spread}
-                </div>
-              </div>
-            `
-            : ''
-        }
-
-        ${
-          followedGame.notes
-            ? `
-              <div class="game-detail-block">
-                <div class="game-detail-title">Notes</div>
-                <div class="game-detail-text">
-                  ${followedGame.notes}
-                </div>
-              </div>
-            `
-            : ''
-        }
+      <div class="game-meta-line">
+        ${channel ? `<span>${channel}</span>` : ''}
+        ${status ? `<span class="${isLive ? 'game-live' : ''}">${status}</span>` : ''}
       </div>
-    `
-    : ''
-}
 
-      <div class="game-card-buttons">
-        <button
-          class="small-btn edit-followed-game-btn"
-          data-id="${followedGame.id}"
-          data-spread="${followedGame.spread || ''}"
-          data-notes="${followedGame.notes || ''}"
-        >
-          Edit
-        </button>
+      ${
+        isFavorite
+          ? `<div class="favorite-game-label">★ Favorite Team</div>`
+          : ''
+      }
 
-        <button
-          class="small-btn danger remove-followed-game-btn"
-          data-id="${followedGame.id}"
-        >
-          Remove
-        </button>
-      </div>
+      ${
+        followedGame.spread || followedGame.notes
+          ? `
+            <div class="game-details">
+              ${
+                followedGame.spread
+                  ? `
+                    <div class="game-detail-block">
+                      <div class="game-detail-title">Spread</div>
+                      <div class="game-detail-text">${followedGame.spread}</div>
+                    </div>
+                  `
+                  : ''
+              }
+
+              ${
+                followedGame.notes
+                  ? `
+                    <div class="game-detail-block">
+                      <div class="game-detail-title">Notes</div>
+                      <div class="game-detail-text">${followedGame.notes}</div>
+                    </div>
+                  `
+                  : ''
+              }
+            </div>
+          `
+          : ''
+      }
+
+      ${
+        isFavorite
+          ? ''
+          : `
+            <div class="game-card-buttons">
+              <button
+                class="small-btn edit-followed-game-btn"
+                data-id="${followedGame.id}"
+                data-spread="${followedGame.spread || ''}"
+                data-notes="${followedGame.notes || ''}"
+              >
+                Edit
+              </button>
+
+              <button
+                class="small-btn danger remove-followed-game-btn"
+                data-id="${followedGame.id}"
+              >
+                Remove
+              </button>
+            </div>
+          `
+      }
     </div>
   `;
 }

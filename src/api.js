@@ -67,6 +67,25 @@ export async function removeAllFollowedGames() {
   return apiRequest('removeAllFollowedGames');
 }
 
+export async function getFavoriteTeams() {
+  return apiRequest('getFavoriteTeams');
+}
+
+export async function addFavoriteTeam({ sportKey, team, notes = '' }) {
+  return apiRequest('addFavoriteTeam', {
+    sportKey,
+    team,
+    notes
+  });
+}
+
+export async function removeFavoriteTeam(sportKey, team) {
+  return apiRequest('removeFavoriteTeam', {
+    sportKey,
+    team
+  });
+}
+
 export async function getAvailableGolfers() {
   return apiRequest('getAvailableGolfers');
 }
