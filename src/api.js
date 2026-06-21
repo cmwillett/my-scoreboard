@@ -77,3 +77,31 @@ export async function getAvailableSports() {
 export async function getTeamsForSport(sport) {
   return apiRequest('getTeamsForSport', { sport });
 }
+
+export async function getFollowedGames() {
+  return apiRequest('getFollowedGames');
+}
+
+export async function addFollowedGame(game) {
+  return apiRequest('addFollowedGame', {
+    sportKey: game.sportKey,
+    eventId: game.eventId,
+    team: game.team,
+    spread: game.spread || '',
+    notes: game.notes || ''
+  });
+}
+
+export async function updateFollowedGame(id, spread = '', notes = '') {
+  return apiRequest('updateFollowedGame', {
+    id,
+    spread,
+    notes
+  });
+}
+
+export async function removeFollowedGame(id) {
+  return apiRequest('removeFollowedGame', {
+    id
+  });
+}

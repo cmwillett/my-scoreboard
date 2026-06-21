@@ -1,15 +1,94 @@
 import {
   getAvailableSports,
   getTeamsForSport,
+  getAvailableGames,
   getAvailableGolfers,
-  addFollowedTeam,
+  addFollowedGame,
   addFollowedGolfer
 } from '../api.js';
 
 let currentItems = [];
+let currentGames = [];
+let selectedGame = null;
 
 function renderSportOptions(sports) {
   return sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
+}
+
+function getGameSection(game) {
+  const rawStatus = game.rawStatus || '';
+  const status = String(game.status || '').toLowerCase();
+
+  if (
+    rawStatus === 'STATUS_IN_PROGRESS' ||
+    status.includes('live') ||
+    status.includes('top') ||
+    status.includes('bot') ||
+    status.includes('half') ||
+    status.includes('period') ||
+    status.includes('quarter')
+  ) {
+    return 'live';
+  }
+
+  return 'upcoming';
+}
+
+function renderGameChoice(game) {
+  const status = game.status || game.startTime || '';
+  return `
+    <button
+      type="button"
+      class="game-choice-btn"
+      data-event-id="${game.eventId}"
+    >
+      <strong>${game.awayTeam}</strong> at <strong>${game.homeTeam}</strong>
+      <span>${status}</span>
+    </button>
+  `;
+}
+
+function renderGameChoices(team) {
+  const matchingGames = currentGames.filter(game =>
+    game.awayTeam === team || game.homeTeam === team
+  );
+
+  const liveGames = matchingGames.filter(game => getGameSection(game) === 'live');
+  const upcomingGames = matchingGames.filter(game => getGameSection(game) !== 'live');
+
+  const gamesToShow = liveGames.length ? liveGames : upcomingGames;
+
+  const gamesWrap = document.getElementById('game-picker-wrap');
+  const gamesList = document.getElementById('game-picker-list');
+
+  selectedGame = null;
+
+  if (!gamesToShow.length) {
+    gamesWrap.style.display = 'block';
+    gamesList.innerHTML = `
+      <div class="empty-state small">
+        No live or upcoming games found for ${team}.
+      </div>
+    `;
+    return;
+  }
+
+  gamesWrap.style.display = 'block';
+  gamesList.innerHTML = gamesToShow.map(renderGameChoice).join('');
+
+  gamesList.querySelectorAll('.game-choice-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const eventId = btn.dataset.eventId;
+
+      selectedGame = gamesToShow.find(game => String(game.eventId) === String(eventId));
+
+      gamesList.querySelectorAll('.game-choice-btn').forEach(b => {
+        b.classList.remove('selected');
+      });
+
+      btn.classList.add('selected');
+    });
+  });
 }
 
 function attachAddHandlers() {
@@ -18,6 +97,7 @@ function attachAddHandlers() {
   const itemDropdown = document.getElementById('item-dropdown');
   const itemLabel = document.getElementById('item-label');
   const spreadWrap = document.getElementById('spread-wrap');
+  const gamePickerWrap = document.getElementById('game-picker-wrap');
   const saveBtn = document.getElementById('save-followed-item');
 
   function showFilteredItems() {
@@ -45,6 +125,10 @@ function attachAddHandlers() {
       btn.addEventListener('click', () => {
         itemInput.value = btn.dataset.value;
         itemDropdown.style.display = 'none';
+
+        if (sportSelect.value !== 'Golf') {
+          renderGameChoices(btn.dataset.value);
+        }
       });
     });
   }
@@ -56,7 +140,10 @@ function attachAddHandlers() {
     itemInput.placeholder = 'Loading...';
     itemDropdown.innerHTML = '';
     itemDropdown.style.display = 'none';
+    gamePickerWrap.style.display = 'none';
     currentItems = [];
+    currentGames = [];
+    selectedGame = null;
 
     if (!sport) {
       itemLabel.textContent = 'Team/Golfer';
@@ -68,6 +155,7 @@ function attachAddHandlers() {
     if (sport === 'Golf') {
       itemLabel.textContent = 'Golfer';
       spreadWrap.style.display = 'none';
+      gamePickerWrap.style.display = 'none';
 
       const result = await getAvailableGolfers();
       const golfers = result.data || [];
@@ -88,8 +176,13 @@ function attachAddHandlers() {
     itemLabel.textContent = 'Team';
     spreadWrap.style.display = 'block';
 
-    const result = await getTeamsForSport(sport);
-    const teams = result.data || [];
+    const [teamsResult, gamesResult] = await Promise.all([
+      getTeamsForSport(sport),
+      getAvailableGames(sport)
+    ]);
+
+    const teams = teamsResult.data || [];
+    currentGames = gamesResult.data || [];
 
     currentItems = teams.map(team => {
       const value = team.shortName || team.fullName || team;
@@ -104,7 +197,6 @@ function attachAddHandlers() {
   }
 
   sportSelect.addEventListener('change', updateItems);
-
   itemInput.addEventListener('input', showFilteredItems);
   itemInput.addEventListener('focus', showFilteredItems);
 
@@ -118,11 +210,16 @@ function attachAddHandlers() {
     const sport = sportSelect.value;
     const item = itemInput.value.trim();
     const spread = document.getElementById('spread-input').value.trim();
-    const note = document.getElementById('note-input').value.trim();
+    const notes = document.getElementById('note-input').value.trim();
     const favorite = document.getElementById('favorite-input').checked;
 
     if (!sport || !item) {
       alert('Choose a sport and team/golfer.');
+      return;
+    }
+
+    if (sport !== 'Golf' && !selectedGame) {
+      alert('Choose a game to follow.');
       return;
     }
 
@@ -131,9 +228,15 @@ function attachAddHandlers() {
 
     try {
       if (sport === 'Golf') {
-        await addFollowedGolfer(item, note, favorite);
+        await addFollowedGolfer(item, notes, favorite);
       } else {
-        await addFollowedTeam(sport, item, spread, note, favorite);
+        await addFollowedGame({
+          sportKey: sport,
+          eventId: selectedGame.eventId,
+          team: item,
+          spread,
+          notes
+        });
       }
 
       alert(`${item} added.`);
@@ -142,6 +245,8 @@ function attachAddHandlers() {
       document.getElementById('spread-input').value = '';
       document.getElementById('note-input').value = '';
       document.getElementById('favorite-input').checked = false;
+      gamePickerWrap.style.display = 'none';
+      selectedGame = null;
     } catch (err) {
       console.error(err);
       alert('Could not add item.');
@@ -161,7 +266,7 @@ export async function renderAddGame() {
   return `
     <div class="page-header">
       <h2>Add Game/Golfer</h2>
-      <p>Follow a team or golfer and optionally add a spread or note.</p>
+      <p>Follow a specific game or golfer and optionally add a spread or note.</p>
     </div>
 
     <div class="card form-card">
@@ -180,6 +285,11 @@ export async function renderAddGame() {
           autocomplete="off"
         />
         <div id="item-dropdown" class="search-dropdown"></div>
+      </div>
+
+      <div id="game-picker-wrap" style="display:none;">
+        <label>Game</label>
+        <div id="game-picker-list" class="game-picker-list"></div>
       </div>
 
       <div id="spread-wrap">

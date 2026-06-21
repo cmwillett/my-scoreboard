@@ -1,8 +1,13 @@
-import { getAvailableGames, getFollowedTeams } from '../api.js';
+import {
+  getFollowedGames,
+  updateFollowedGame,
+  removeFollowedGame
+} from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
 import { formatLastUpdated } from '../utils/date.js';
 
-function getGameSection(game) {
+function getGameSection(followedGame) {
+  const game = followedGame.live || followedGame;
   const rawStatus = game.rawStatus || '';
   const status = (game.status || '').toLowerCase();
 
@@ -31,16 +36,89 @@ function getGameSection(game) {
 }
 
 function groupBySport(games) {
-  return games.reduce((groups, game) => {
-    const sport = game.sport || game.sportKey || 'Other';
+  return games.reduce((groups, followedGame) => {
+    const game = followedGame.live || followedGame;
+    const sport = game.sport || followedGame.sport || game.sportKey || 'Other';
 
-    if (!groups[sport]) {
-      groups[sport] = [];
-    }
+    if (!groups[sport]) groups[sport] = [];
 
-    groups[sport].push(game);
+    groups[sport].push(followedGame);
     return groups;
   }, {});
+}
+
+function openGameEditModal(id, currentSpread, currentNotes) {
+  const modal = document.createElement('div');
+
+  modal.className = 'modal-backdrop';
+
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>Edit Game</h3>
+
+      <label>Spread</label>
+      <input id="edit-game-spread" type="text" value="${currentSpread || ''}" />
+
+      <label>Notes</label>
+      <textarea id="edit-game-notes" rows="5">${currentNotes || ''}</textarea>
+
+      <div class="modal-actions">
+        <button id="cancel-game-edit" class="small-btn">Cancel</button>
+        <button id="save-game-edit" class="primary-btn">Save</button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById('cancel-game-edit').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  document.getElementById('save-game-edit').addEventListener('click', async () => {
+    const spread = document.getElementById('edit-game-spread').value.trim();
+    const notes = document.getElementById('edit-game-notes').value.trim();
+
+    try {
+      await updateFollowedGame(id, spread, notes);
+      modal.remove();
+      location.reload();
+    } catch (err) {
+      console.error(err);
+      alert('Could not update game.');
+    }
+  });
+}
+
+function attachScoreboardHandlers() {
+  document.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openGameEditModal(
+        btn.dataset.id,
+        btn.dataset.spread || '',
+        btn.dataset.notes || ''
+      );
+    });
+  });
+
+  document.querySelectorAll('.remove-followed-game-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      if (!confirm('Remove this game?')) return;
+
+      btn.disabled = true;
+      btn.textContent = 'Removing...';
+
+      try {
+        await removeFollowedGame(btn.dataset.id);
+        location.reload();
+      } catch (err) {
+        console.error(err);
+        alert('Could not remove game.');
+        btn.disabled = false;
+        btn.textContent = 'Remove';
+      }
+    });
+  });
 }
 
 function renderSportGroup(sport, games) {
@@ -53,9 +131,7 @@ function renderSportGroup(sport, games) {
 }
 
 function renderSection(title, games) {
-  if (!games.length) {
-    return '';
-  }
+  if (!games.length) return '';
 
   const groupedGames = groupBySport(games);
 
@@ -73,58 +149,40 @@ function renderSection(title, games) {
   `;
 }
 
-function filterFollowedGames(games, followedTeams) {
-  const followedSet = new Set(
-    followedTeams.map(item => `${item.sport}|${item.team}`)
-  );
-
-  return games.filter(game => {
-    const sport = game.sport || game.sportKey;
-
-    return (
-      followedSet.has(`${sport}|${game.awayTeam}`) ||
-      followedSet.has(`${sport}|${game.homeTeam}`)
-    );
-  });
-}
-
 export async function renderScoreboard() {
   try {
-    const [gamesResult, followedResult] = await Promise.all([
-    getAvailableGames('ALL'),
-    getFollowedTeams()
-    ]);
+    const followedResult = await getFollowedGames();
 
-    const allGames = gamesResult.data || [];
-    const followedTeams = followedResult.data || [];
-    const games = filterFollowedGames(allGames, followedTeams);
+    const games = followedResult.data || [];
     const lastUpdated = formatLastUpdated();
 
     const liveGames = games.filter(game => getGameSection(game) === 'live');
     const upcomingGames = games.filter(game => getGameSection(game) === 'upcoming');
     const finalGames = games.filter(game => getGameSection(game) === 'final');
 
+    setTimeout(attachScoreboardHandlers, 0);
+
     return `
-        <div class="page-header">
+      <div class="page-header">
         <h2>Scoreboard</h2>
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
         <p>${games.length} followed games showing.</p>
-        </div>
+      </div>
 
       ${renderSection('Live', liveGames)}
       ${renderSection('Upcoming', upcomingGames)}
       ${renderSection('Final', finalGames)}
 
-        ${
+      ${
         !games.length
-            ? `
+          ? `
             <div class="card empty-state">
-                <h3>No followed games yet</h3>
-                <p>Go to Add Game to follow a team.</p>
+              <h3>No followed games yet</h3>
+              <p>Go to Add Game/Golfer to follow a specific game.</p>
             </div>
-            `
-            : ''
-        }
+          `
+          : ''
+      }
     `;
   } catch (err) {
     console.error(err);
