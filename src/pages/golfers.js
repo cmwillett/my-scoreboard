@@ -34,7 +34,7 @@ export async function renderGolfers() {
     );
     const lastUpdated = formatLastUpdated();
 
-    const firstGolfer = golfers[0] || {};
+    const firstGolfer = allGolfers[0] || {};
     const cutLine = firstGolfer.cutLine || '-';
     const currentRound = firstGolfer.currentRound || '-';
 
@@ -45,26 +45,24 @@ export async function renderGolfers() {
         <p class="last-updated">Golf Last Updated: ${lastUpdated}</p>
         </div>
 
-      <div class="card">
-        <div class="table-wrap">
-          <table class="golfers-table">
-            <thead>
-              <tr>
-                <th>Player</th>
-                <th>Pos</th>
-                <th>Total</th>
-                <th>Today</th>
-                <th>Thru / Tee</th>
-                <th>Edit</th>
-                <th>Remove</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${golfers.map(renderGolferRow).join('')}
-            </tbody>
-          </table>
-        </div>
-      </div>
+        ${
+        golfers.length
+            ? `
+            <div class="card">
+                <div class="table-wrap">
+                <table class="golfers-table">
+                    ...
+                </table>
+                </div>
+            </div>
+            `
+            : `
+            <div class="card empty-state">
+                <h3>No followed golfers yet</h3>
+                <p>Go to Add Game to follow a golfer.</p>
+            </div>
+            `
+        }
     `;
   } catch (err) {
     console.error(err);
