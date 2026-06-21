@@ -111,6 +111,10 @@ function attachAddHandlers() {
   const gamePickerWrap = document.getElementById('game-picker-wrap');
   const saveBtn = document.getElementById('save-followed-item');
 
+  if (!sportSelect || !itemInput || !itemDropdown || !itemLabel || !spreadWrap || !gamePickerWrap || !saveBtn) {
+    return;
+  }
+
   function showFilteredItems() {
     const search = itemInput.value.toLowerCase();
 
@@ -179,6 +183,7 @@ function attachAddHandlers() {
         .map(name => ({ value: name, label: name }));
 
       itemInput.placeholder = 'Search golfer...';
+      showFilteredItems();
       return;
     }
 
@@ -203,6 +208,7 @@ function attachAddHandlers() {
     });
 
     itemInput.placeholder = 'Search team...';
+    showFilteredItems();
   }
 
   sportSelect.addEventListener('change', updateItems);
