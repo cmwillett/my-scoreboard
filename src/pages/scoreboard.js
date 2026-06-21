@@ -86,7 +86,7 @@ export async function renderScoreboard() {
     return `
         <div class="page-header">
         <h2>Scoreboard</h2>
-        <p class="last-updated">Last updated: ${lastUpdated}</p>
+        <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
         <p>${games.length} games available.</p>
         </div>
 
