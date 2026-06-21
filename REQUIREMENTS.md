@@ -21,6 +21,7 @@
 - [ ] Each section should have filtering ability with a text box that filters based on text entered
 - [ ] Each section should group the cards by sport
 - [ ] There should be a "Remove All" button that removes all non-favorited games
+- [ ] The scoreboard only displays team games
 
 ## Golfers
 - [ ] Pick golfers to follow

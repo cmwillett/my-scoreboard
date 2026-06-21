@@ -22,6 +22,10 @@ export async function getAvailableGames(sportKey = 'ALL') {
   return apiRequest('getAvailableGames', { sportKey });
 }
 
+export async function getAvailableGolfers() {
+  return apiRequest('getAvailableGolfers');
+}
+
 export async function getGolfers() {
   return apiRequest('getGolfers');
 }
