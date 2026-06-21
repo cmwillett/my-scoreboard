@@ -83,8 +83,6 @@ export async function renderScoreboard() {
     const upcomingGames = games.filter(game => getGameSection(game) === 'upcoming');
     const finalGames = games.filter(game => getGameSection(game) === 'final');
 
-    setTimeout(attachFollowTeamHandlers, 0);
-
     return `
         <div class="page-header">
         <h2>Scoreboard</h2>
