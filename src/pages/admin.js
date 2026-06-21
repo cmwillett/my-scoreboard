@@ -3,7 +3,9 @@ import {
   getTeamsForSport,
   getFavoriteTeams,
   addFavoriteTeam,
-  removeFavoriteTeam
+  removeFavoriteTeam,
+  getPageVisibility,
+  savePageVisibility
 } from '../api.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
@@ -60,6 +62,43 @@ function renderFavoriteTeamRows(favorites) {
       </button>
     </div>
   `).join('');
+}
+
+
+function renderPageVisibilityCard(visibility) {
+  const settings = {
+    scoreboard: visibility.scoreboard !== false,
+    golfers: visibility.golfers !== false,
+    worldcup: visibility.worldcup !== false
+  };
+
+  return `
+    <div class="card form-card">
+      <h3>Page Visibility</h3>
+      <p class="admin-help">
+        Show or hide main navigation pages without deleting their code.
+      </p>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="page-visible-scoreboard" type="checkbox" ${settings.scoreboard ? 'checked' : ''} />
+        Scores
+      </label>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="page-visible-golfers" type="checkbox" ${settings.golfers ? 'checked' : ''} />
+        Golfers
+      </label>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="page-visible-worldcup" type="checkbox" ${settings.worldcup ? 'checked' : ''} />
+        World Cup
+      </label>
+
+      <button id="save-page-visibility-btn" class="primary-btn">
+        Save Page Visibility
+      </button>
+    </div>
+  `;
 }
 
 function renderAdminLocked() {
@@ -285,6 +324,40 @@ function attachAdminHandlers() {
     });
   }
 
+
+  const saveVisibilityBtn = document.getElementById('save-page-visibility-btn');
+
+  if (saveVisibilityBtn) {
+    saveVisibilityBtn.addEventListener('click', async () => {
+      const visibility = {
+        scoreboard: document.getElementById('page-visible-scoreboard')?.checked !== false,
+        golfers: document.getElementById('page-visible-golfers')?.checked !== false,
+        worldcup: document.getElementById('page-visible-worldcup')?.checked !== false,
+        admin: true
+      };
+
+      saveVisibilityBtn.disabled = true;
+      saveVisibilityBtn.textContent = 'Saving...';
+
+      try {
+        await savePageVisibility(visibility);
+        openMessageModal({
+          title: 'Page Visibility Saved',
+          message: 'The navigation will update now.'
+        });
+        location.reload();
+      } catch (err) {
+        console.error(err);
+        openMessageModal({
+          title: 'Could Not Save Visibility',
+          message: 'The page visibility settings were not saved.'
+        });
+        saveVisibilityBtn.disabled = false;
+        saveVisibilityBtn.textContent = 'Save Page Visibility';
+      }
+    });
+  }
+
   document.querySelectorAll('.remove-favorite-team-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sportKey = btn.dataset.sportKey;
@@ -310,13 +383,15 @@ export async function renderAdmin() {
 
   const addGameHtml = await renderAddGame({ embedded: true });
 
-  const [sportsResult, favoritesResult] = await Promise.all([
+  const [sportsResult, favoritesResult, visibilityResult] = await Promise.all([
     getAvailableSports(),
-    getFavoriteTeams()
+    getFavoriteTeams(),
+    getPageVisibility()
   ]);
 
   const sports = sportsResult.data || [];
   const favorites = favoritesResult.data || [];
+  const visibility = visibilityResult.data || {};
 
   setTimeout(attachAdminHandlers, 0);
 
@@ -376,10 +451,12 @@ export async function renderAdmin() {
       </div>
     </div>
 
+    ${renderPageVisibilityCard(visibility)}
+
     <div class="card">
       <h3>Coming Soon</h3>
       <p class="admin-help">
-Page visibility toggles, refresh controls, and World Cup settings will move here next.
+        Refresh controls and World Cup settings will move here next.
       </p>
     </div>
   `;

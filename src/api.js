@@ -130,3 +130,13 @@ export async function updateFollowedGolferOrder(golfers) {
 export async function removeAllFollowedGolfers() {
   return apiRequest('removeAllFollowedGolfers');
 }
+
+export async function getPageVisibility() {
+  return apiRequest('getPageVisibility');
+}
+
+export async function savePageVisibility(visibility) {
+  return apiRequest('savePageVisibility', {
+    visibility: JSON.stringify(visibility)
+  });
+}

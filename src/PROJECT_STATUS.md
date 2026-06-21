@@ -80,16 +80,16 @@
 - Cleanup branch workflow established
 
 ## Next Features
-1. Move Add Game/Golfer into Admin fully
-2. Page visibility toggles so pages like World Cup can be hidden without deleting code
-3. Build/finish World Cup page in GitHub frontend
-4. Build/finish Admin page tools
-5. Improve refresh behavior so backend refreshes scores and frontend updates content without full-page reloads
-6. PWA install prompt/banner
-7. Ongoing cleanup/dead-code removal
+1. Build/finish World Cup page in GitHub frontend
+2. Build/finish Admin refresh controls
+3. Improve refresh behavior so backend refreshes scores and frontend updates content without full-page reloads
+4. PWA install prompt/banner
+5. Ongoing cleanup/dead-code removal
 
 
 ## Latest Update
+- Add Game/Golfer was moved into Admin.
+- Page visibility toggles were added to Admin so Scores, Golfers, and World Cup can be hidden without deleting code.
 - Favorite-team games can be edited from the Scores page to add game-specific spread and notes. Editing a favorite-team game saves an override in GamesToFollow while keeping the Favorite Team label.
 
 
