@@ -48,15 +48,26 @@ export function renderGameCard(followedGame) {
 ${
   followedGame.spread || followedGame.notes
     ? `
-      <div class="game-meta">
+      <div class="game-details">
         ${
           followedGame.spread
-            ? `<span class="game-pill">Spread: ${followedGame.spread}</span>`
+            ? `
+              <div class="game-detail-row">
+                <span class="game-detail-label">Spread</span>
+                <span class="game-detail-value">${followedGame.spread}</span>
+              </div>
+            `
             : ''
         }
+
         ${
           followedGame.notes
-            ? `<span class="game-note">${followedGame.notes}</span>`
+            ? `
+              <div class="game-detail-row">
+                <span class="game-detail-label">Notes</span>
+                <span class="game-detail-value">${followedGame.notes}</span>
+              </div>
+            `
             : ''
         }
       </div>
