@@ -38,8 +38,14 @@ export async function getFollowedTeams() {
   return apiRequest('getFollowedTeams');
 }
 
-export async function addFollowedTeam(sport, team) {
-  return apiRequest('addFollowedTeam', { sport, team });
+export async function addFollowedTeam(sport, team, spread = '', note = '', favorite = false) {
+  return apiRequest('addFollowedTeam', {
+    sport,
+    team,
+    spread,
+    note,
+    favorite
+  });
 }
 
 export async function removeFollowedTeam(sport, team) {

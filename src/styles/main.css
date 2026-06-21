@@ -68,3 +68,45 @@ body {
   font-size: 14px;
   margin-top: 4px;
 }
+
+.form-card label {
+  display: block;
+  margin: 14px 0 6px;
+  color: #cbd5e1;
+  font-weight: 700;
+}
+
+.form-card select,
+.form-card input,
+.form-card textarea {
+  width: 100%;
+  box-sizing: border-box;
+  background: #0f172a;
+  color: white;
+  border: 1px solid #334155;
+  border-radius: 10px;
+  padding: 10px;
+  font-size: 16px;
+}
+
+.checkbox-row {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+}
+
+.checkbox-row input {
+  width: auto;
+}
+
+.primary-btn {
+  margin-top: 16px;
+  width: 100%;
+  border: none;
+  border-radius: 12px;
+  padding: 12px;
+  background: #22c55e;
+  color: #052e16;
+  font-weight: 800;
+  font-size: 16px;
+}
