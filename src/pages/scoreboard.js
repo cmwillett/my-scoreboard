@@ -91,15 +91,54 @@ function openGameEditModal(id, currentSpread, currentNotes) {
   });
 }
 
+function openConfirmModal({ title, message, confirmText, onConfirm }) {
+  const modal = document.createElement('div');
+  modal.className = 'modal-backdrop';
+
+  modal.innerHTML = `
+    <div class="modal-card">
+      <h3>${title}</h3>
+      <p>${message}</p>
+
+      <div class="modal-actions">
+        <button id="cancel-confirm-modal" class="small-btn">Cancel</button>
+        <button id="confirm-modal-action" class="small-btn danger">
+          ${confirmText}
+        </button>
+      </div>
+    </div>
+  `;
+
+  document.body.appendChild(modal);
+
+  document.getElementById('cancel-confirm-modal').addEventListener('click', () => {
+    modal.remove();
+  });
+
+  document.getElementById('confirm-modal-action').addEventListener('click', async () => {
+    try {
+      await onConfirm();
+    } catch (err) {
+      console.error(err);
+      modal.remove();
+    }
+  });
+}
+
 function attachScoreboardHandlers() {
 const removeAllBtn = document.getElementById('remove-all-games-btn');
 
 if (removeAllBtn) {
   removeAllBtn.addEventListener('click', async () => {
-    if (!confirm('Remove all followed games?')) return;
-
-    await removeAllFollowedGames();
-    location.reload();
+    openConfirmModal({
+    title: 'Remove All Games?',
+    message: 'This will remove all manually followed games from the scoreboard.',
+    confirmText: 'Remove All',
+    onConfirm: async () => {
+        await removeAllFollowedGames();
+        location.reload();
+    }
+    });
   });
 }
   document.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
