@@ -102,7 +102,7 @@ function resetForm() {
   gamesToShowNow = [];
 }
 
-function attachAddHandlers() {
+export function attachAddHandlers() {
   const sportSelect = document.getElementById('sport-select');
   const itemInput = document.getElementById('item-select');
   const itemDropdown = document.getElementById('item-dropdown');
@@ -290,7 +290,9 @@ export async function renderAddGame(options = {}) {
   const result = await getAvailableSports();
   const sports = result.data || [];
 
-  setTimeout(attachAddHandlers, 0);
+  if (!options.embedded) {
+    setTimeout(attachAddHandlers, 0);
+  }
 
   const headerHtml = options.embedded
     ? `

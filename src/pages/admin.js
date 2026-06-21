@@ -5,7 +5,7 @@ import {
   addFavoriteTeam,
   removeFavoriteTeam
 } from '../api.js';
-import { renderAddGame } from './addgame.js';
+import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
   openConfirmModal,
   openMessageModal
@@ -219,6 +219,8 @@ async function loadTeamsForFavoriteSport() {
 }
 
 function attachAdminHandlers() {
+  attachAddHandlers();
+
   const sportSelect = document.getElementById('favorite-sport-select');
   const teamInput = document.getElementById('favorite-team-input');
   const dropdown = document.getElementById('favorite-team-dropdown');
