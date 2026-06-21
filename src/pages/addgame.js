@@ -6,6 +6,7 @@ import {
   addFollowedGame,
   addFollowedGolfer
 } from '../api.js';
+import { openMessageModal } from '../components/modal.js';
 
 let currentItems = [];
 let currentGames = [];
@@ -41,7 +42,7 @@ function renderGameChoice(game, index) {
   return `
     <button
       type="button"
-      class="game-choice-btn"
+      class="game-choice-btn ${index === 0 ? 'selected' : ''}"
       data-game-index="${index}"
     >
       <strong>${game.awayTeam}</strong> at <strong>${game.homeTeam}</strong>
@@ -76,32 +77,30 @@ function renderGameChoices(team) {
   }
 
   gamesWrap.style.display = 'block';
-
-  gamesList.innerHTML = gamesToShowNow
-    .map((game, index) => `
-      <button
-        type="button"
-        class="game-choice-btn ${index === 0 ? 'selected' : ''}"
-        data-game-index="${index}"
-      >
-        <strong>${game.awayTeam}</strong> at <strong>${game.homeTeam}</strong>
-        <span>${game.status || game.startTime || ''}</span>
-      </button>
-    `)
-    .join('');
+  gamesList.innerHTML = gamesToShowNow.map(renderGameChoice).join('');
 
   gamesList.querySelectorAll('.game-choice-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const index = Number(btn.dataset.gameIndex);
       selectedGame = gamesToShowNow[index];
 
-      gamesList.querySelectorAll('.game-choice-btn').forEach(b => {
-        b.classList.remove('selected');
+      gamesList.querySelectorAll('.game-choice-btn').forEach(button => {
+        button.classList.remove('selected');
       });
 
       btn.classList.add('selected');
     });
   });
+}
+
+function resetForm() {
+  document.getElementById('item-select').value = '';
+  document.getElementById('spread-input').value = '';
+  document.getElementById('note-input').value = '';
+  document.getElementById('favorite-input').checked = false;
+  document.getElementById('game-picker-wrap').style.display = 'none';
+  selectedGame = null;
+  gamesToShowNow = [];
 }
 
 function attachAddHandlers() {
@@ -121,7 +120,7 @@ function attachAddHandlers() {
       .slice(0, 30);
 
     if (!matches.length) {
-      itemDropdown.innerHTML = `<div class="dropdown-item muted">No matches</div>`;
+      itemDropdown.innerHTML = '<div class="dropdown-item muted">No matches</div>';
       itemDropdown.style.display = 'block';
       return;
     }
@@ -157,6 +156,7 @@ function attachAddHandlers() {
     currentItems = [];
     currentGames = [];
     selectedGame = null;
+    gamesToShowNow = [];
 
     if (!sport) {
       itemLabel.textContent = 'Team/Golfer';
@@ -177,10 +177,7 @@ function attachAddHandlers() {
         .map(g => g.golfer)
         .filter(Boolean)
         .sort()
-        .map(name => ({
-          value: name,
-          label: name
-        }));
+        .map(name => ({ value: name, label: name }));
 
       itemInput.placeholder = 'Search golfer...';
       return;
@@ -213,8 +210,8 @@ function attachAddHandlers() {
   itemInput.addEventListener('input', showFilteredItems);
   itemInput.addEventListener('focus', showFilteredItems);
 
-  document.addEventListener('click', e => {
-    if (!e.target.closest('.search-combo')) {
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.search-combo')) {
       itemDropdown.style.display = 'none';
     }
   });
@@ -227,18 +224,24 @@ function attachAddHandlers() {
     const favorite = document.getElementById('favorite-input').checked;
 
     if (!sport || !item) {
-      alert('Choose a sport and team/golfer.');
+      openMessageModal({
+        title: 'Choose an Item',
+        message: 'Choose a sport and team/golfer first.'
+      });
       return;
     }
 
-if (sport !== 'Golf' && !selectedGame) {
-  selectedGame = gamesToShowNow[0] || null;
-}
+    if (sport !== 'Golf' && !selectedGame) {
+      selectedGame = gamesToShowNow[0] || null;
+    }
 
-if (sport !== 'Golf' && !selectedGame) {
-  alert('Choose a game to follow.');
-  return;
-}
+    if (sport !== 'Golf' && !selectedGame) {
+      openMessageModal({
+        title: 'Choose a Game',
+        message: 'Choose a game to follow.'
+      });
+      return;
+    }
 
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
@@ -246,6 +249,10 @@ if (sport !== 'Golf' && !selectedGame) {
     try {
       if (sport === 'Golf') {
         await addFollowedGolfer(item, notes, favorite);
+        openMessageModal({
+          title: 'Golfer Added',
+          message: `${item} was added.`
+        });
       } else {
         await addFollowedGame({
           sportKey: sport,
@@ -254,23 +261,20 @@ if (sport !== 'Golf' && !selectedGame) {
           spread,
           notes
         });
+
+        openMessageModal({
+          title: 'Game Added',
+          message: `${selectedGame.awayTeam} at ${selectedGame.homeTeam} was added.`
+        });
       }
 
-if (sport === 'Golf') {
-  alert(`${item} added.`);
-} else {
-  alert(`${selectedGame.awayTeam} at ${selectedGame.homeTeam} added.`);
-}
-
-      itemInput.value = '';
-      document.getElementById('spread-input').value = '';
-      document.getElementById('note-input').value = '';
-      document.getElementById('favorite-input').checked = false;
-      gamePickerWrap.style.display = 'none';
-      selectedGame = null;
+      resetForm();
     } catch (err) {
       console.error(err);
-      alert('Could not add item.');
+      openMessageModal({
+        title: 'Could Not Add Item',
+        message: 'The item was not added. It may already be followed.'
+      });
     }
 
     saveBtn.disabled = false;

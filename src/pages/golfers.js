@@ -5,6 +5,11 @@ import {
   updateFollowedGolferOrder,
   removeAllFollowedGolfers
 } from '../api.js';
+import {
+  openConfirmModal,
+  openGolferNoteModal,
+  openMessageModal
+} from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
 
 const SORT_MODE_KEY = 'golfersSortMode';
@@ -15,7 +20,9 @@ function parseGolfScore(value) {
   if (!text || text === '-') return 999;
   if (text.toUpperCase() === 'E') return 0;
   if (text.startsWith('+')) return Number(text.slice(1));
-  return Number(text);
+
+  const parsed = Number(text);
+  return Number.isNaN(parsed) ? 999 : parsed;
 }
 
 function getSortMode() {
@@ -28,7 +35,9 @@ function setSortMode(mode) {
 
 function sortGolfers(golfers, mode) {
   if (mode === 'manual') {
-    return [...golfers].sort((a, b) => Number(a.sortOrder || 999) - Number(b.sortOrder || 999));
+    return [...golfers].sort(
+      (a, b) => Number(a.sortOrder || 999) - Number(b.sortOrder || 999)
+    );
   }
 
   return [...golfers].sort((a, b) => {
@@ -43,6 +52,7 @@ function sortGolfers(golfers, mode) {
 
 function renderGolferRow(golfer, sortMode) {
   const draggable = sortMode === 'manual';
+  const note = golfer.note || golfer.notes || '';
 
   return `
     <tr
@@ -50,22 +60,18 @@ function renderGolferRow(golfer, sortMode) {
       data-golfer="${golfer.golfer}"
       draggable="${draggable}"
     >
-      ${
-        draggable
-          ? `<td class="drag-handle">☰</td>`
-          : ''
-      }
+      ${draggable ? '<td class="drag-handle">☰</td>' : ''}
       <td>${golfer.golfer || '-'}</td>
       <td>${golfer.position || '-'}</td>
       <td>${golfer.overall || '-'}</td>
       <td>${golfer.today || '-'}</td>
       <td>${golfer.thru || golfer.teeTime || '-'}</td>
-      <td>${golfer.note || golfer.notes || '-'}</td>
+      <td>${note || '-'}</td>
       <td>
         <button
           class="small-btn edit-golfer-note-btn"
           data-golfer="${golfer.golfer}"
-          data-note="${golfer.note || golfer.notes || ''}"
+          data-note="${note}"
           data-favorite="${golfer.favorite ? 'true' : 'false'}"
         >
           Edit
@@ -80,43 +86,19 @@ function renderGolferRow(golfer, sortMode) {
   `;
 }
 
-function openGolferNoteModal(golfer, currentNote, favorite) {
-  const modal = document.createElement('div');
+function getDragAfterElement(container, y) {
+  const rows = [...container.querySelectorAll('.golfer-row:not(.dragging)')];
 
-  modal.className = 'modal-backdrop';
+  return rows.reduce((closest, child) => {
+    const box = child.getBoundingClientRect();
+    const offset = y - box.top - box.height / 2;
 
-  modal.innerHTML = `
-    <div class="modal-card">
-      <h3>Edit Note</h3>
-      <p><strong>${golfer}</strong></p>
-
-      <textarea id="golfer-note-modal-input" rows="5">${currentNote || ''}</textarea>
-
-      <div class="modal-actions">
-        <button id="cancel-golfer-note" class="small-btn">Cancel</button>
-        <button id="save-golfer-note" class="primary-btn">Save</button>
-      </div>
-    </div>
-  `;
-
-  document.body.appendChild(modal);
-
-  document.getElementById('cancel-golfer-note').addEventListener('click', () => {
-    modal.remove();
-  });
-
-  document.getElementById('save-golfer-note').addEventListener('click', async () => {
-    const note = document.getElementById('golfer-note-modal-input').value.trim();
-
-    try {
-      await addFollowedGolfer(golfer, note, favorite);
-      modal.remove();
-      location.reload();
-    } catch (err) {
-      console.error(err);
-      alert('Could not save note.');
+    if (offset < 0 && offset > closest.offset) {
+      return { offset, element: child };
     }
-  });
+
+    return closest;
+  }, { offset: Number.NEGATIVE_INFINITY }).element;
 }
 
 function attachDragHandlers() {
@@ -142,16 +124,19 @@ function attachDragHandlers() {
         await updateFollowedGolferOrder(golfers);
       } catch (err) {
         console.error(err);
-        alert('Could not save golfer order.');
+        openMessageModal({
+          title: 'Could Not Save Order',
+          message: 'The manual golfer order was not saved.'
+        });
       }
 
       draggedRow = null;
     });
 
-    row.addEventListener('dragover', e => {
-      e.preventDefault();
+    row.addEventListener('dragover', event => {
+      event.preventDefault();
 
-      const afterElement = getDragAfterElement(tbody, e.clientY);
+      const afterElement = getDragAfterElement(tbody, event.clientY);
 
       if (!afterElement) {
         tbody.appendChild(draggedRow);
@@ -162,43 +147,23 @@ function attachDragHandlers() {
   });
 }
 
-function getDragAfterElement(container, y) {
-  const rows = [...container.querySelectorAll('.golfer-row:not(.dragging)')];
-
-  return rows.reduce((closest, child) => {
-    const box = child.getBoundingClientRect();
-    const offset = y - box.top - box.height / 2;
-
-    if (offset < 0 && offset > closest.offset) {
-      return {
-        offset,
-        element: child
-      };
-    }
-
-    return closest;
-  }, { offset: Number.NEGATIVE_INFINITY }).element;
-}
-
 function attachGolferHandlers() {
-const removeAllBtn = document.getElementById(
-  'remove-all-golfers-btn'
-);
+  const removeAllBtn = document.getElementById('remove-all-golfers-btn');
 
-if (removeAllBtn) {
-  removeAllBtn.addEventListener('click', () => {
-    openConfirmModal({
-      title: 'Remove All Golfers?',
-      message:
-        'This will remove all followed golfers and their notes.',
-      confirmText: 'Remove All',
-      onConfirm: async () => {
-        await removeAllFollowedGolfers();
-        location.reload();
-      }
+  if (removeAllBtn) {
+    removeAllBtn.addEventListener('click', () => {
+      openConfirmModal({
+        title: 'Remove All Golfers?',
+        message: 'This will remove all followed golfers and their notes.',
+        confirmText: 'Remove All',
+        onConfirm: async () => {
+          await removeAllFollowedGolfers();
+          location.reload();
+        }
+      });
     });
-  });
-}
+  }
+
   document.querySelectorAll('.sort-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       setSortMode(btn.dataset.sortMode);
@@ -207,33 +172,32 @@ if (removeAllBtn) {
   });
 
   document.querySelectorAll('.remove-golfer-btn').forEach(btn => {
-    btn.addEventListener('click', async () => {
+    btn.addEventListener('click', () => {
       const golfer = btn.dataset.golfer;
 
-      if (!confirm(`Remove ${golfer}?`)) return;
-
-      btn.disabled = true;
-      btn.textContent = 'Removing...';
-
-      try {
-        await removeFollowedGolfer(golfer);
-        location.reload();
-      } catch (err) {
-        console.error(err);
-        alert('Could not remove golfer.');
-        btn.disabled = false;
-        btn.textContent = 'Remove';
-      }
+      openConfirmModal({
+        title: 'Remove Golfer?',
+        message: `This will remove ${golfer} from your followed golfers.`,
+        confirmText: 'Remove',
+        onConfirm: async () => {
+          await removeFollowedGolfer(golfer);
+          location.reload();
+        }
+      });
     });
   });
 
   document.querySelectorAll('.edit-golfer-note-btn').forEach(btn => {
     btn.addEventListener('click', () => {
-      openGolferNoteModal(
-        btn.dataset.golfer,
-        btn.dataset.note || '',
-        btn.dataset.favorite === 'true'
-      );
+      openGolferNoteModal({
+        golfer: btn.dataset.golfer,
+        note: btn.dataset.note || '',
+        favorite: btn.dataset.favorite === 'true',
+        onSave: async ({ golfer, note, favorite }) => {
+          await addFollowedGolfer(golfer, note, favorite);
+          location.reload();
+        }
+      });
     });
   });
 
@@ -249,7 +213,6 @@ export async function renderGolfers() {
 
     const sortMode = getSortMode();
     const golfers = sortGolfers(followedGolfers, sortMode);
-
     const lastUpdated = formatLastUpdated();
 
     const firstGolfer = golfers[0] || {};
@@ -261,20 +224,19 @@ export async function renderGolfers() {
     return `
       <div class="page-header">
         <div class="page-title-row">
-            <h2>Golfers</h2>
+          <h2>Golfers</h2>
 
-            ${
-                followed.length
-                ? `
-                    <button
-                    id="remove-all-golfers-btn"
-                    class="small-btn danger">
-                    Remove All
-                    </button>
-                `
-                : ''
-            }
-            </div>
+          ${
+            golfers.length
+              ? `
+                <button id="remove-all-golfers-btn" class="small-btn danger">
+                  Remove All
+                </button>
+              `
+              : ''
+          }
+        </div>
+
         <p>${currentRound} • Cut line: ${cutLine}</p>
         <p class="last-updated">Golf Last Updated: ${lastUpdated}</p>
       </div>
@@ -297,7 +259,7 @@ export async function renderGolfers() {
 
       ${
         sortMode === 'manual'
-          ? `<p class="manual-sort-note">Drag golfers to reorder them.</p>`
+          ? '<p class="manual-sort-note">Drag golfers to reorder them.</p>'
           : ''
       }
 

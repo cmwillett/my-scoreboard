@@ -19,8 +19,8 @@ const pages = {
 
 async function renderPage(pageKey) {
   stopAutoRefresh();
-  const renderer =
-    pages[pageKey] || renderScoreboard;
+
+  const renderer = pages[pageKey] || renderScoreboard;
 
   content.innerHTML = `
     <div class="card">
@@ -31,29 +31,25 @@ async function renderPage(pageKey) {
   content.innerHTML = await renderer();
 
   navButtons.forEach(btn => {
-    btn.classList.toggle(
-      'active',
-      btn.dataset.page === pageKey
-    );
+    btn.classList.toggle('active', btn.dataset.page === pageKey);
   });
 
   window.location.hash = pageKey;
+
   if (pageKey === 'scoreboard') {
-  startAutoRefresh(() => {
-    renderPage('scoreboard');
-  }, CONFIG.REFRESH_INTERVAL);
-}
+    startAutoRefresh(() => {
+      renderPage('scoreboard');
+    }, CONFIG.REFRESH_INTERVAL);
+  }
 }
 
 navButtons.forEach(btn => {
-    btn.addEventListener('click', async () => {
+  btn.addEventListener('click', async () => {
     await renderPage(btn.dataset.page);
-    });
+  });
 });
 
-const startingPage =
-  window.location.hash.replace('#', '') || 'scoreboard';
-
+const startingPage = window.location.hash.replace('#', '') || 'scoreboard';
 renderPage(startingPage);
 
 if ('serviceWorker' in navigator) {
@@ -61,19 +57,3 @@ if ('serviceWorker' in navigator) {
     .register('./service-worker.js')
     .catch(err => console.error('SW registration failed:', err));
 }
-
-window.testApi = async function () {
-  try {
-    const result = await fetch(
-      `${CONFIG.API_URL}?action=getAvailableGames&sportKey=ALL`
-    );
-
-    const data = await result.json();
-
-    console.log('API SUCCESS:', data);
-    alert(`Loaded ${data.data?.length || 0} games`);
-  } catch (err) {
-    console.error(err);
-    alert(err.message);
-  }
-};
