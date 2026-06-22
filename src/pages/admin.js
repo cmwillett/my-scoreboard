@@ -118,11 +118,10 @@ function renderWorldCupTeamRows(data = {}) {
   `).join('');
 }
 
-function renderWorldCupManagementCard(data = {}) {
-  const selectedCount = (data.favorites || []).length + (data.followedTeams || []).length;
-
+function renderWorldCupAddCard() {
   return `
     <div class="card form-card">
+      <h3>World Cup Team</h3>
       <p class="admin-help">
         Choose World Cup teams here. The World Cup tab and Roku app are display-only and use these choices.
       </p>
@@ -150,11 +149,17 @@ function renderWorldCupManagementCard(data = {}) {
         </button>
       </div>
     </div>
+  `;
+}
 
+function renderWorldCupCurrentCard(data = {}) {
+  const selectedCount = (data.favorites || []).length + (data.followedTeams || []).length;
+
+  return `
     <div class="card">
       <div class="card-header-row">
         <div>
-          <h3>Current World Cup Teams</h3>
+          <h3>Current Followed World Cup Teams</h3>
           <p class="admin-help">${selectedCount} selected</p>
         </div>
       </div>
@@ -204,7 +209,21 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
     golfers: visibility.golfers !== false,
     worldcup: visibility.worldcup !== false
   };
-  const worldCupEnabled = worldCupRefresh.autoRefresh === true;
+
+  const refreshRows = [
+    ...refreshSports.map(sport => ({
+      sportKey: sport.sportKey,
+      label: sport.label || sport.sportKey,
+      enabled: sport.enabled === true,
+      isWorldCup: false
+    })),
+    {
+      sportKey: 'WorldCup',
+      label: 'World Cup',
+      enabled: worldCupRefresh.autoRefresh === true,
+      isWorldCup: true
+    }
+  ];
 
   return `
     <div class="card form-card sports-data-card">
@@ -232,44 +251,29 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
     </div>
 
     <div class="card form-card sports-data-card">
-      <h3>Sport Auto Refresh</h3>
+      <h3>Auto Refresh</h3>
       <p class="admin-help">Turn sports off when they are out of season. Smart refresh skips disabled sports.</p>
 
       <div class="admin-list refresh-control-list">
-        ${refreshSports.length ? refreshSports.map(sport => `
+        ${refreshRows.length ? refreshRows.map(sport => `
           <label class="checkbox-row admin-checkbox-row refresh-control-row">
             <input
               class="sport-refresh-toggle"
               type="checkbox"
               data-sport-key="${sport.sportKey}"
+              data-worldcup="${sport.isWorldCup ? 'true' : 'false'}"
               ${sport.enabled ? 'checked' : ''}
             />
             <span>
-              <strong>${sport.label || sport.sportKey}</strong>
-              <small>${sport.sportKey}</small>
+              <strong>${sport.label}</strong>
+              <small>${sport.isWorldCup ? 'temporary event' : sport.sportKey}</small>
             </span>
           </label>
         `).join('') : '<p class="admin-help">No sport refresh settings were found.</p>'}
       </div>
 
       <button id="save-sports-refresh-btn" class="primary-btn">
-        Save Sport Refresh Settings
-      </button>
-    </div>
-
-    <div class="card form-card sports-data-card">
-      <h3>World Cup Refresh</h3>
-      <p class="admin-help">
-        World Cup is temporary. Turn this off when the tournament is over.
-      </p>
-
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="worldcup-auto-refresh" type="checkbox" ${worldCupEnabled ? 'checked' : ''} />
-        Auto-refresh World Cup scores during smart refresh
-      </label>
-
-      <button id="save-worldcup-refresh-btn" class="primary-btn">
-        Save World Cup Refresh Setting
+        Save Auto Refresh Settings
       </button>
 
       <button id="admin-refresh-worldcup-btn" class="secondary-btn" type="button">
@@ -684,51 +688,32 @@ function attachAdminHandlers() {
 
   if (saveSportsRefreshBtn) {
     saveSportsRefreshBtn.addEventListener('click', async () => {
-      const sports = Array.from(document.querySelectorAll('.sport-refresh-toggle')).map(input => ({
-        sportKey: input.dataset.sportKey,
-        enabled: input.checked === true
-      }));
+      const toggles = Array.from(document.querySelectorAll('.sport-refresh-toggle'));
+      const sports = toggles
+        .filter(input => input.dataset.worldcup !== 'true')
+        .map(input => ({
+          sportKey: input.dataset.sportKey,
+          enabled: input.checked === true
+        }));
+      const worldCupToggle = toggles.find(input => input.dataset.worldcup === 'true');
+      const worldCupEnabled = worldCupToggle?.checked === true;
 
       saveSportsRefreshBtn.disabled = true;
       saveSportsRefreshBtn.textContent = 'Saving...';
 
       try {
         await saveSportsRefreshSettings(sports);
-        showToast('Sports refresh settings saved.');
+        await saveWorldCupRefreshSettings(worldCupEnabled);
+        showToast('Auto refresh settings saved.');
         await window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
-          title: 'Could Not Save Sports Refresh',
-          message: 'The sports refresh settings were not saved.'
+          title: 'Could Not Save Auto Refresh',
+          message: 'The auto refresh settings were not saved.'
         });
         saveSportsRefreshBtn.disabled = false;
-        saveSportsRefreshBtn.textContent = 'Save Sports Refresh Settings';
-      }
-    });
-  }
-
-  const saveWorldCupRefreshBtn = document.getElementById('save-worldcup-refresh-btn');
-
-  if (saveWorldCupRefreshBtn) {
-    saveWorldCupRefreshBtn.addEventListener('click', async () => {
-      const enabled = document.getElementById('worldcup-auto-refresh')?.checked === true;
-
-      saveWorldCupRefreshBtn.disabled = true;
-      saveWorldCupRefreshBtn.textContent = 'Saving...';
-
-      try {
-        await saveWorldCupRefreshSettings(enabled);
-        showToast('World Cup refresh setting saved.');
-        await window.refreshCurrentPage?.();
-      } catch (err) {
-        console.error(err);
-        openMessageModal({
-          title: 'Could Not Save World Cup Refresh',
-          message: 'The World Cup refresh setting was not saved.'
-        });
-        saveWorldCupRefreshBtn.disabled = false;
-        saveWorldCupRefreshBtn.textContent = 'Save World Cup Refresh Setting';
+        saveSportsRefreshBtn.textContent = 'Save Auto Refresh Settings';
       }
     });
   }
@@ -905,11 +890,11 @@ export async function renderAdmin() {
       </div>
     </div>
 
-    ${renderCollapsibleSection('Scoreboard Management', favorites.length + ' favorites', `
+    ${renderCollapsibleSection('Add Game/Golfer/Team', 'Add controls', `
       ${addGameHtml}
 
       <div class="card form-card">
-        <h3>Favorite Teams</h3>
+        <h3>Favorite Team</h3>
         <p class="admin-help">
           Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
         </p>
@@ -939,16 +924,20 @@ export async function renderAdmin() {
         </button>
       </div>
 
+      ${renderWorldCupAddCard()}
+    `)}
+
+    ${renderCollapsibleSection('Current Followed/Favorite Teams/Games', favorites.length + ' favorites • ' + ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' WC teams', `
       <div class="card">
         <h3>Current Favorite Teams</h3>
         <div class="admin-list">
           ${renderFavoriteTeamRows(favorites)}
         </div>
       </div>
-`)}
 
-    ${renderCollapsibleSection('World Cup Management', ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' teams', renderWorldCupManagementCard(worldCupData))}
+      ${renderWorldCupCurrentCard(worldCupData)}
+    `)}
 
-    ${renderCollapsibleSection('Sports Data', refreshSports.filter(s => s.enabled).length + '/' + refreshSports.length + ' refresh on', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
+    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' refresh on', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
   `;
 }
