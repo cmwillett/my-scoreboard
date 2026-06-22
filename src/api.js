@@ -169,3 +169,14 @@ export async function removeWorldCupFavoriteTeam(team) {
 export async function updateWorldCupTeamNote(type, team, notes = '') {
   return apiRequest('updateWorldCupTeamNote', { type, team, notes });
 }
+
+
+export async function getSettingsData() {
+  return apiRequest('getSettingsData');
+}
+
+export async function saveWorldCupRefreshSettings(enabled) {
+  return apiRequest('saveWorldCupRefreshSettings', {
+    enabled: enabled ? 'true' : 'false'
+  });
+}

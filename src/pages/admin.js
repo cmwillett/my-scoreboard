@@ -5,7 +5,9 @@ import {
   addFavoriteTeam,
   removeFavoriteTeam,
   getPageVisibility,
-  savePageVisibility
+  savePageVisibility,
+  getSettingsData,
+  saveWorldCupRefreshSettings
 } from '../api.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
@@ -64,6 +66,30 @@ function renderFavoriteTeamRows(favorites) {
   `).join('');
 }
 
+
+
+function renderWorldCupRefreshCard(settings = {}) {
+  const enabled = settings.autoRefresh === true;
+
+  return `
+    <div class="card form-card">
+      <h3>World Cup Refresh</h3>
+      <p class="admin-help">
+        World Cup is a temporary event, so this controls whether smart refresh includes World Cup scores.
+        Turn it off when the tournament is over.
+      </p>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="worldcup-auto-refresh" type="checkbox" ${enabled ? 'checked' : ''} />
+        Auto-refresh World Cup scores during smart refresh
+      </label>
+
+      <button id="save-worldcup-refresh-btn" class="primary-btn">
+        Save World Cup Refresh Setting
+      </button>
+    </div>
+  `;
+}
 
 function renderPageVisibilityCard(visibility) {
   const settings = {
@@ -358,6 +384,37 @@ function attachAdminHandlers() {
     });
   }
 
+  const saveWorldCupRefreshBtn = document.getElementById('save-worldcup-refresh-btn');
+
+  if (saveWorldCupRefreshBtn) {
+    saveWorldCupRefreshBtn.addEventListener('click', async () => {
+      const enabled = document.getElementById('worldcup-auto-refresh')?.checked === true;
+
+      saveWorldCupRefreshBtn.disabled = true;
+      saveWorldCupRefreshBtn.textContent = 'Saving...';
+
+      try {
+        await saveWorldCupRefreshSettings(enabled);
+        openMessageModal({
+          title: 'World Cup Refresh Saved',
+          message: enabled
+            ? 'World Cup scores will be included in smart refresh.'
+            : 'World Cup scores will no longer be included in smart refresh.'
+        });
+        window.refreshCurrentPage?.();
+      } catch (err) {
+        console.error(err);
+        openMessageModal({
+          title: 'Could Not Save World Cup Refresh',
+          message: 'The World Cup refresh setting was not saved.'
+        });
+        saveWorldCupRefreshBtn.disabled = false;
+        saveWorldCupRefreshBtn.textContent = 'Save World Cup Refresh Setting';
+      }
+    });
+  }
+
+
   document.querySelectorAll('.remove-favorite-team-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sportKey = btn.dataset.sportKey;
@@ -383,15 +440,17 @@ export async function renderAdmin() {
 
   const addGameHtml = await renderAddGame({ embedded: true });
 
-  const [sportsResult, favoritesResult, visibilityResult] = await Promise.all([
+  const [sportsResult, favoritesResult, visibilityResult, settingsResult] = await Promise.all([
     getAvailableSports(),
     getFavoriteTeams(),
-    getPageVisibility()
+    getPageVisibility(),
+    getSettingsData()
   ]);
 
   const sports = sportsResult.data || [];
   const favorites = favoritesResult.data || [];
   const visibility = visibilityResult.data || {};
+  const worldCupRefresh = settingsResult.data?.worldCupRefresh || {};
 
   setTimeout(attachAdminHandlers, 0);
 
@@ -453,11 +512,6 @@ export async function renderAdmin() {
 
     ${renderPageVisibilityCard(visibility)}
 
-    <div class="card">
-      <h3>Coming Soon</h3>
-      <p class="admin-help">
-        Refresh controls and World Cup settings will move here next.
-      </p>
-    </div>
+    ${renderWorldCupRefreshCard(worldCupRefresh)}
   `;
 }
