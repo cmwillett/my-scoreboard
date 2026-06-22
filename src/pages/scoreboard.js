@@ -8,7 +8,8 @@ import {
 import { renderGameCard } from '../components/gameCard.js';
 import {
   openConfirmModal,
-  openGameEditModal
+  openGameEditModal,
+  showToast
 } from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
 
@@ -64,7 +65,8 @@ function attachScoreboardHandlers() {
         confirmText: 'Remove All',
         onConfirm: async () => {
           await removeAllFollowedGames();
-          window.refreshCurrentPage?.();
+          showToast('All games removed.');
+          await window.refreshCurrentPage?.();
         }
       });
     });
@@ -78,7 +80,8 @@ function attachScoreboardHandlers() {
         notes: btn.dataset.notes || '',
         onSave: async ({ id, spread, notes }) => {
           await updateFollowedGame(id, spread, notes);
-          window.refreshCurrentPage?.();
+          showToast('Game saved.');
+          await window.refreshCurrentPage?.();
         }
       });
     });
@@ -98,7 +101,8 @@ function attachScoreboardHandlers() {
             spread,
             notes
           });
-          window.refreshCurrentPage?.();
+          showToast('Favorite game saved.');
+          await window.refreshCurrentPage?.();
         }
       });
     });
@@ -112,7 +116,8 @@ function attachScoreboardHandlers() {
         confirmText: 'Remove',
         onConfirm: async () => {
           await removeFollowedGame(btn.dataset.id);
-          window.refreshCurrentPage?.();
+          showToast('Game removed.');
+          await window.refreshCurrentPage?.();
         }
       });
     });

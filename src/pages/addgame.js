@@ -6,7 +6,7 @@ import {
   addFollowedGame,
   addFollowedGolfer
 } from '../api.js';
-import { openMessageModal } from '../components/modal.js';
+import { openMessageModal, showToast } from '../components/modal.js';
 
 let currentItems = [];
 let currentGames = [];
@@ -253,10 +253,7 @@ export function attachAddHandlers() {
     try {
       if (sport === 'Golf') {
         await addFollowedGolfer(item, notes, false);
-        openMessageModal({
-          title: 'Golfer Added',
-          message: `${item} was added.`
-        });
+        showToast(`${item} added.`);
       } else {
         await addFollowedGame({
           sportKey: sport,
@@ -266,10 +263,7 @@ export function attachAddHandlers() {
           notes
         });
 
-        openMessageModal({
-          title: 'Game Added',
-          message: `${selectedGame.awayTeam} at ${selectedGame.homeTeam} was added.`
-        });
+        showToast(`${selectedGame.awayTeam} at ${selectedGame.homeTeam} added.`);
       }
 
       resetForm();

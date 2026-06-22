@@ -424,3 +424,73 @@ body {
   font-size: 12px;
   font-weight: 700;
 }
+
+/* Interaction polish */
+button,
+[role="button"],
+summary,
+.bottom-nav button,
+.primary-btn,
+.small-btn,
+.sort-toggle-btn,
+.game-choice-btn,
+.dropdown-item,
+.card button,
+.worldcup-team-row button,
+.install-btn,
+.pwa-install-actions button,
+input[type="checkbox"],
+input[type="radio"],
+select,
+label.checkbox-row {
+  cursor: pointer;
+}
+
+button:disabled,
+.primary-btn:disabled,
+.small-btn:disabled,
+.sort-toggle-btn:disabled,
+.game-choice-btn:disabled,
+.dropdown-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.65;
+}
+
+button:hover:not(:disabled),
+.primary-btn:hover:not(:disabled),
+.small-btn:hover:not(:disabled),
+.sort-toggle-btn:hover:not(:disabled),
+.game-choice-btn:hover:not(:disabled),
+.bottom-nav button:hover,
+.collapsible-section summary:hover {
+  filter: brightness(1.08);
+}
+
+.collapsible-section summary:hover {
+  background: rgba(96, 165, 250, 0.08);
+}
+
+.app-toast {
+  position: fixed;
+  left: 50%;
+  bottom: 84px;
+  z-index: 2000;
+  transform: translate(-50%, 16px);
+  padding: 12px 16px;
+  min-width: 160px;
+  max-width: calc(100vw - 32px);
+  border-radius: 999px;
+  background: #22c55e;
+  color: #052e16;
+  font-weight: 900;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+}
+
+.app-toast.show {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}

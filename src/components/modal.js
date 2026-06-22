@@ -1,3 +1,21 @@
+
+export function showToast(message = 'Saved') {
+  const existing = document.querySelector('.app-toast');
+  if (existing) existing.remove();
+
+  const toast = document.createElement('div');
+  toast.className = 'app-toast';
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  requestAnimationFrame(() => toast.classList.add('show'));
+
+  window.setTimeout(() => {
+    toast.classList.remove('show');
+    window.setTimeout(() => toast.remove(), 220);
+  }, 1800);
+}
+
 function closeModal(modal) {
   if (modal) modal.remove();
 }

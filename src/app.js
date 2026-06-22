@@ -72,8 +72,43 @@ async function loadPageVisibility() {
   }
 }
 
+
+function getUiSnapshot() {
+  const openSections = Array.from(document.querySelectorAll('details.collapsible-section'))
+    .map((details, index) => ({
+      index,
+      title: details.querySelector('summary span:first-child')?.textContent?.trim() || '',
+      open: details.open === true
+    }));
+
+  return {
+    scrollY: window.scrollY || document.documentElement.scrollTop || 0,
+    openSections
+  };
+}
+
+function restoreUiSnapshot(snapshot) {
+  if (!snapshot) return;
+
+  const detailsList = Array.from(document.querySelectorAll('details.collapsible-section'));
+
+  snapshot.openSections?.forEach(section => {
+    const match = detailsList.find((details, index) => {
+      const title = details.querySelector('summary span:first-child')?.textContent?.trim() || '';
+      return title === section.title || index === section.index;
+    });
+
+    if (match) match.open = section.open === true;
+  });
+
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: snapshot.scrollY || 0, left: 0, behavior: 'auto' });
+  });
+}
+
 async function renderPage(pageKey, options = {}) {
-  const { showLoading = true, updateHash = true } = options;
+  const { showLoading = true, updateHash = true, preserveUi = false } = options;
+  const uiSnapshot = preserveUi ? getUiSnapshot() : null;
   const thisRender = ++renderToken;
 
   stopAutoRefresh();
@@ -94,6 +129,7 @@ async function renderPage(pageKey, options = {}) {
   if (thisRender !== renderToken) return;
 
   content.innerHTML = html;
+  restoreUiSnapshot(uiSnapshot);
   currentPage = targetPage;
 
   applyNavVisibility(targetPage);
@@ -117,7 +153,8 @@ async function refreshCurrentPage(options = {}) {
   await loadPageVisibility();
   await renderPage(currentPage || getFirstVisiblePage(), {
     showLoading: options.showLoading === true,
-    updateHash: false
+    updateHash: false,
+    preserveUi: options.preserveUi !== false
   });
 }
 

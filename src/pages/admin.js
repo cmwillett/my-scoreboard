@@ -13,7 +13,8 @@ import {
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
   openConfirmModal,
-  openMessageModal
+  openMessageModal,
+  showToast
 } from '../components/modal.js';
 
 const ADMIN_AUTH_KEY = 'scoreboardAdminUnlocked';
@@ -387,11 +388,8 @@ function attachAdminHandlers() {
 
       try {
         await addFavoriteTeam({ sportKey, team, notes });
-        openMessageModal({
-          title: 'Favorite Team Added',
-          message: `${team} was added as a favorite team.`
-        });
-        window.refreshCurrentPage?.();
+        showToast(`${team} added.`);
+        await window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
@@ -421,11 +419,8 @@ function attachAdminHandlers() {
 
       try {
         await savePageVisibility(visibility);
-        openMessageModal({
-          title: 'Page Visibility Saved',
-          message: 'The navigation will update now.'
-        });
-        window.refreshCurrentPage?.();
+        showToast('Page visibility saved.');
+        await window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
@@ -452,11 +447,8 @@ function attachAdminHandlers() {
 
       try {
         await saveSportsRefreshSettings(sports);
-        openMessageModal({
-          title: 'Sports Refresh Saved',
-          message: 'Smart refresh settings were updated for all sports.'
-        });
-        window.refreshCurrentPage?.();
+        showToast('Sports refresh settings saved.');
+        await window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
@@ -480,13 +472,8 @@ function attachAdminHandlers() {
 
       try {
         await saveWorldCupRefreshSettings(enabled);
-        openMessageModal({
-          title: 'World Cup Refresh Saved',
-          message: enabled
-            ? 'World Cup scores will be included in smart refresh.'
-            : 'World Cup scores will no longer be included in smart refresh.'
-        });
-        window.refreshCurrentPage?.();
+        showToast('World Cup refresh setting saved.');
+        await window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
@@ -511,7 +498,8 @@ function attachAdminHandlers() {
         confirmText: 'Remove',
         onConfirm: async () => {
           await removeFavoriteTeam(sportKey, team);
-          window.refreshCurrentPage?.();
+          showToast(`${team} removed.`);
+          await window.refreshCurrentPage?.();
         }
       });
     });

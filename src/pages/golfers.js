@@ -8,7 +8,8 @@ import {
 import {
   openConfirmModal,
   openGolferNoteModal,
-  openMessageModal
+  openMessageModal,
+  showToast
 } from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
 
@@ -158,7 +159,8 @@ function attachGolferHandlers() {
         confirmText: 'Remove All',
         onConfirm: async () => {
           await removeAllFollowedGolfers();
-          window.refreshCurrentPage?.();
+          showToast('All golfers removed.');
+          await window.refreshCurrentPage?.();
         }
       });
     });
@@ -167,7 +169,7 @@ function attachGolferHandlers() {
   document.querySelectorAll('.sort-toggle-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       setSortMode(btn.dataset.sortMode);
-      window.refreshCurrentPage?.();
+      window.refreshCurrentPage?.({ preserveUi: true });
     });
   });
 
@@ -181,7 +183,8 @@ function attachGolferHandlers() {
         confirmText: 'Remove',
         onConfirm: async () => {
           await removeFollowedGolfer(golfer);
-          window.refreshCurrentPage?.();
+          showToast(`${golfer} removed.`);
+          await window.refreshCurrentPage?.();
         }
       });
     });
@@ -195,7 +198,8 @@ function attachGolferHandlers() {
         favorite: btn.dataset.favorite === 'true',
         onSave: async ({ golfer, note, favorite }) => {
           await addFollowedGolfer(golfer, note, favorite);
-          window.refreshCurrentPage?.();
+          showToast('Golfer note saved.');
+          await window.refreshCurrentPage?.();
         }
       });
     });

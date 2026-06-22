@@ -10,7 +10,8 @@ import {
 import {
   openConfirmModal,
   openMessageModal,
-  openTextModal
+  openTextModal,
+  showToast
 } from '../components/modal.js';
 
 let worldCupState = null;
@@ -230,11 +231,8 @@ function attachWorldCupHandlers() {
         await addWorldCupFollowedTeam({ team, notes });
       }
 
-      openMessageModal({
-        title: type === 'favorite' ? 'Favorite Added' : 'Team Followed',
-        message: `${team} was saved.`
-      });
-      window.refreshCurrentPage?.();
+      showToast(`${team} saved.`);
+      await window.refreshCurrentPage?.();
     } catch (err) {
       console.error(err);
       openMessageModal({
@@ -253,7 +251,8 @@ function attachWorldCupHandlers() {
 
     try {
       await refreshWorldCupScores();
-      window.refreshCurrentPage?.();
+      showToast('World Cup scores refreshed.');
+      await window.refreshCurrentPage?.();
     } catch (err) {
       console.error(err);
       openMessageModal({
@@ -283,7 +282,8 @@ function attachWorldCupHandlers() {
             await removeWorldCupFollowedTeam(team);
           }
 
-          window.refreshCurrentPage?.();
+          showToast(`${team} removed.`);
+          await window.refreshCurrentPage?.();
         }
       });
     });
@@ -301,7 +301,8 @@ function attachWorldCupHandlers() {
         value: notes,
         onSave: async nextNotes => {
           await updateWorldCupTeamNote(type, team, nextNotes);
-          window.refreshCurrentPage?.();
+          showToast('Note saved.');
+          await window.refreshCurrentPage?.();
         }
       });
     });
