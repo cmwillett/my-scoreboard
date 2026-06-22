@@ -26,6 +26,21 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+
+function isRealWorldCupTeamName(team) {
+  const name = String(team || '').trim();
+  const lower = name.toLowerCase();
+
+  if (!name) return false;
+  if (lower === 'tbd') return false;
+  if (lower.includes('group')) return false;
+  if (lower.includes('/')) return false;
+  if (/^\d/.test(name)) return false;
+  if (/^(winner|loser)\b/i.test(name)) return false;
+
+  return /[a-z]/i.test(name);
+}
+
 function isWorldCupGameLive(game) {
   const raw = String(game.rawStatus || '').toLowerCase();
   const status = String(game.status || '').toLowerCase();
@@ -315,7 +330,7 @@ export async function renderWorldCup() {
     const data = result.data || {};
 
     worldCupState = data;
-    teamOptions = data.teams || [];
+    teamOptions = (data.teams || []).filter(isRealWorldCupTeamName).sort();
 
     const selectedGames = data.selectedGames || [];
     const upcomingGames = data.upcomingGames || [];
