@@ -317,8 +317,7 @@ export async function renderWorldCup() {
     teamOptions = data.teams || [];
 
     const selectedGames = data.selectedGames || [];
-    const upcomingGames = (data.upcomingGames || [])
-      .filter(game => !isWorldCupGameLive(game));
+    const upcomingGames = data.upcomingGames || [];
 
     setTimeout(attachWorldCupHandlers, 0);
 
@@ -337,66 +336,81 @@ export async function renderWorldCup() {
         </div>
       </div>
 
-      <div class="card form-card">
-        <h3>Add World Cup Team</h3>
+      <details class="collapsible-section worldcup-section">
+        <summary>
+          <span>Add World Cup Team</span>
+          <span class="section-count">Follow/Favorite</span>
+        </summary>
+        <div class="collapsible-body">
+          <div class="card form-card">
+            <label>Team</label>
+            <div class="search-combo worldcup-team-search">
+              <input
+                id="worldcup-team-input"
+                type="text"
+                placeholder="Search team..."
+                autocomplete="off"
+              />
+              <div id="worldcup-team-dropdown" class="search-dropdown"></div>
+            </div>
 
-        <label>Team</label>
-        <div class="search-combo worldcup-team-search">
+            <label>Note</label>
+            <textarea id="worldcup-team-notes" rows="3" placeholder="Optional note..."></textarea>
+
+            <div class="worldcup-add-actions">
+              <button id="add-worldcup-followed-btn" class="primary-btn" type="button">
+                Follow Team
+              </button>
+              <button id="add-worldcup-favorite-btn" class="primary-btn" type="button">
+                Favorite Team
+              </button>
+            </div>
+          </div>
+        </div>
+      </details>
+
+      <details class="collapsible-section worldcup-section">
+        <summary>
+          <span>⚽ My Games</span>
+          <span class="section-count">${selectedGames.length}</span>
+        </summary>
+        <div class="collapsible-body">
+          ${renderGamesTable(selectedGames, { selectedOnly: true })}
+        </div>
+      </details>
+
+      <details class="collapsible-section worldcup-section">
+        <summary>
+          <span>🗓️ Upcoming Schedule</span>
+          <span class="section-count">${upcomingGames.length}</span>
+        </summary>
+        <div class="collapsible-body">
           <input
-            id="worldcup-team-input"
+            id="worldcup-upcoming-filter"
+            class="worldcup-filter"
             type="text"
-            placeholder="Search team..."
-            autocomplete="off"
+            placeholder="Filter upcoming games by team..."
           />
-          <div id="worldcup-team-dropdown" class="search-dropdown"></div>
+
+          <div id="worldcup-upcoming-table">
+            ${renderGamesTable(upcomingGames)}
+          </div>
         </div>
+      </details>
 
-        <label>Note</label>
-        <textarea id="worldcup-team-notes" rows="3" placeholder="Optional note..."></textarea>
-
-        <div class="worldcup-add-actions">
-          <button id="add-worldcup-followed-btn" class="primary-btn" type="button">
-            Follow Team
-          </button>
-          <button id="add-worldcup-favorite-btn" class="primary-btn" type="button">
-            Favorite Team
-          </button>
+      <details class="collapsible-section worldcup-section">
+        <summary>
+          <span>Selected Teams</span>
+          <span class="section-count">${(data.favorites || []).length + (data.followedTeams || []).length}</span>
+        </summary>
+        <div class="collapsible-body">
+          <div class="card">
+            <div class="worldcup-team-list">
+              ${renderSelectedTeamRows(data)}
+            </div>
+          </div>
         </div>
-      </div>
-
-      <div class="card">
-        <h3>Selected Teams</h3>
-        <div class="worldcup-team-list">
-          ${renderSelectedTeamRows(data)}
-        </div>
-      </div>
-
-      <section class="worldcup-section">
-        <div class="section-header">
-          <h2>⚽ My Games</h2>
-          <span>${selectedGames.length}</span>
-        </div>
-
-        ${renderGamesTable(selectedGames, { selectedOnly: true })}
-      </section>
-
-      <section class="worldcup-section">
-        <div class="section-header">
-          <h2>🗓️ Upcoming Games</h2>
-          <span>${upcomingGames.length}</span>
-        </div>
-
-        <input
-          id="worldcup-upcoming-filter"
-          class="worldcup-filter"
-          type="text"
-          placeholder="Filter upcoming games by team..."
-        />
-
-        <div id="worldcup-upcoming-table">
-          ${renderGamesTable(upcomingGames)}
-        </div>
-      </section>
+      </details>
     `;
   } catch (err) {
     console.error(err);

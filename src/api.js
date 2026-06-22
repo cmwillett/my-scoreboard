@@ -175,6 +175,12 @@ export async function getSettingsData() {
   return apiRequest('getSettingsData');
 }
 
+export async function saveSportsRefreshSettings(sports) {
+  return apiRequest('saveSportsRefreshSettings', {
+    sports: JSON.stringify(sports)
+  });
+}
+
 export async function saveWorldCupRefreshSettings(enabled) {
   return apiRequest('saveWorldCupRefreshSettings', {
     enabled: enabled ? 'true' : 'false'

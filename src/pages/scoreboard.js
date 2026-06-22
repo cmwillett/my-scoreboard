@@ -129,21 +129,23 @@ function renderSportGroup(sport, games) {
 }
 
 function renderSection(title, games) {
-  if (!games.length) return '';
-
   const groupedGames = groupBySport(games);
+  const body = games.length
+    ? Object.entries(groupedGames)
+      .map(([sport, sportGames]) => renderSportGroup(sport, sportGames))
+      .join('')
+    : '<div class="card empty-state small"><p>No games in this section.</p></div>';
 
   return `
-    <section class="scoreboard-section">
-      <div class="section-header">
-        <h2>${title}</h2>
-        <span>${games.length}</span>
+    <details class="collapsible-section scoreboard-section">
+      <summary>
+        <span>${title}</span>
+        <span class="section-count">${games.length}</span>
+      </summary>
+      <div class="collapsible-body">
+        ${body}
       </div>
-
-      ${Object.entries(groupedGames)
-        .map(([sport, sportGames]) => renderSportGroup(sport, sportGames))
-        .join('')}
-    </section>
+    </details>
   `;
 }
 

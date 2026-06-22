@@ -7,6 +7,7 @@ import {
   getPageVisibility,
   savePageVisibility,
   getSettingsData,
+  saveSportsRefreshSettings,
   saveWorldCupRefreshSettings
 } from '../api.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
@@ -67,6 +68,59 @@ function renderFavoriteTeamRows(favorites) {
 }
 
 
+
+function renderCollapsibleSection(title, meta, bodyHtml) {
+  return `
+    <details class="collapsible-section admin-collapsible">
+      <summary>
+        <span>${title}</span>
+        ${meta ? `<span class="section-count">${meta}</span>` : ''}
+      </summary>
+      <div class="collapsible-body">
+        ${bodyHtml}
+      </div>
+    </details>
+  `;
+}
+
+function renderSportsRefreshCard(sports = []) {
+  if (!sports.length) {
+    return `
+      <div class="card form-card">
+        <p class="admin-help">No sports refresh settings were found.</p>
+      </div>
+    `;
+  }
+
+  return `
+    <div class="card form-card">
+      <p class="admin-help">
+        Turn sports off when they are out of season. Smart refresh will skip disabled sports.
+      </p>
+
+      <div class="admin-list refresh-control-list">
+        ${sports.map(sport => `
+          <label class="checkbox-row admin-checkbox-row refresh-control-row">
+            <input
+              class="sport-refresh-toggle"
+              type="checkbox"
+              data-sport-key="${sport.sportKey}"
+              ${sport.enabled ? 'checked' : ''}
+            />
+            <span>
+              <strong>${sport.label || sport.sportKey}</strong>
+              <small>${sport.sportKey}</small>
+            </span>
+          </label>
+        `).join('')}
+      </div>
+
+      <button id="save-sports-refresh-btn" class="primary-btn">
+        Save Sports Refresh Settings
+      </button>
+    </div>
+  `;
+}
 
 function renderWorldCupRefreshCard(settings = {}) {
   const enabled = settings.autoRefresh === true;
@@ -384,6 +438,37 @@ function attachAdminHandlers() {
     });
   }
 
+  const saveSportsRefreshBtn = document.getElementById('save-sports-refresh-btn');
+
+  if (saveSportsRefreshBtn) {
+    saveSportsRefreshBtn.addEventListener('click', async () => {
+      const sports = Array.from(document.querySelectorAll('.sport-refresh-toggle')).map(input => ({
+        sportKey: input.dataset.sportKey,
+        enabled: input.checked === true
+      }));
+
+      saveSportsRefreshBtn.disabled = true;
+      saveSportsRefreshBtn.textContent = 'Saving...';
+
+      try {
+        await saveSportsRefreshSettings(sports);
+        openMessageModal({
+          title: 'Sports Refresh Saved',
+          message: 'Smart refresh settings were updated for all sports.'
+        });
+        window.refreshCurrentPage?.();
+      } catch (err) {
+        console.error(err);
+        openMessageModal({
+          title: 'Could Not Save Sports Refresh',
+          message: 'The sports refresh settings were not saved.'
+        });
+        saveSportsRefreshBtn.disabled = false;
+        saveSportsRefreshBtn.textContent = 'Save Sports Refresh Settings';
+      }
+    });
+  }
+
   const saveWorldCupRefreshBtn = document.getElementById('save-worldcup-refresh-btn');
 
   if (saveWorldCupRefreshBtn) {
@@ -450,7 +535,9 @@ export async function renderAdmin() {
   const sports = sportsResult.data || [];
   const favorites = favoritesResult.data || [];
   const visibility = visibilityResult.data || {};
-  const worldCupRefresh = settingsResult.data?.worldCupRefresh || {};
+  const settingsData = settingsResult.data || {};
+  const refreshSports = settingsData.sports || [];
+  const worldCupRefresh = settingsData.worldCupRefresh || {};
 
   setTimeout(attachAdminHandlers, 0);
 
@@ -468,50 +555,52 @@ export async function renderAdmin() {
       </div>
     </div>
 
-    <div class="admin-section">
-      ${addGameHtml}
-    </div>
+    ${renderCollapsibleSection('Add Game/Golfer', '', addGameHtml)}
 
-    <div class="card form-card">
-      <h3>Favorite Teams</h3>
-      <p class="admin-help">
-        Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
-      </p>
+    ${renderCollapsibleSection('Favorite Teams', '', `
+      <div class="card form-card">
+        <p class="admin-help">
+          Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
+        </p>
 
-      <label>Sport</label>
-      <select id="favorite-sport-select">
-        <option value="">Choose sport...</option>
-        ${renderSportOptions(sports)}
-      </select>
+        <label>Sport</label>
+        <select id="favorite-sport-select">
+          <option value="">Choose sport...</option>
+          ${renderSportOptions(sports)}
+        </select>
 
-      <label>Team</label>
-      <div class="search-combo">
-        <input
-          id="favorite-team-input"
-          type="text"
-          placeholder="Choose sport first..."
-          autocomplete="off"
-        />
-        <div id="favorite-team-dropdown" class="search-dropdown"></div>
+        <label>Team</label>
+        <div class="search-combo">
+          <input
+            id="favorite-team-input"
+            type="text"
+            placeholder="Choose sport first..."
+            autocomplete="off"
+          />
+          <div id="favorite-team-dropdown" class="search-dropdown"></div>
+        </div>
+
+        <label>Notes</label>
+        <textarea id="favorite-team-notes" rows="3" placeholder="Optional note..."></textarea>
+
+        <button id="add-favorite-team-btn" class="primary-btn">
+          Add Favorite Team
+        </button>
       </div>
+`)}
 
-      <label>Notes</label>
-      <textarea id="favorite-team-notes" rows="3" placeholder="Optional note..."></textarea>
-
-      <button id="add-favorite-team-btn" class="primary-btn">
-        Add Favorite Team
-      </button>
-    </div>
-
-    <div class="card">
-      <h3>Current Favorite Teams</h3>
-      <div class="admin-list">
-        ${renderFavoriteTeamRows(favorites)}
+    ${renderCollapsibleSection('Current Favorite Teams', favorites.length, `
+      <div class="card">
+        <div class="admin-list">
+          ${renderFavoriteTeamRows(favorites)}
+        </div>
       </div>
-    </div>
+`)}
 
-    ${renderPageVisibilityCard(visibility)}
+    ${renderCollapsibleSection('Page Visibility', '', renderPageVisibilityCard(visibility))}
 
-    ${renderWorldCupRefreshCard(worldCupRefresh)}
+    ${renderCollapsibleSection('Sports Refresh', refreshSports.filter(s => s.enabled).length + '/' + refreshSports.length + ' on', renderSportsRefreshCard(refreshSports))}
+
+    ${renderCollapsibleSection('World Cup Refresh', worldCupRefresh.autoRefresh ? 'On' : 'Off', renderWorldCupRefreshCard(worldCupRefresh))}
   `;
 }
