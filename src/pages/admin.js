@@ -226,61 +226,67 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
   ];
 
   return `
-    <div class="card form-card sports-data-card">
-      <h3>Page Visibility</h3>
-      <p class="admin-help">Show or hide main display pages without deleting their data.</p>
+    ${renderNestedCollapsibleSection('Page Visibility', 'Display pages', `
+      <div class="card form-card sports-data-card">
+        <p class="admin-help">Show or hide main display pages without deleting their data.</p>
 
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="page-visible-scoreboard" type="checkbox" ${settings.scoreboard ? 'checked' : ''} />
-        Scores
-      </label>
+        <label class="checkbox-row admin-checkbox-row">
+          <input id="page-visible-scoreboard" type="checkbox" ${settings.scoreboard ? 'checked' : ''} />
+          Scores
+        </label>
 
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="page-visible-golfers" type="checkbox" ${settings.golfers ? 'checked' : ''} />
-        Golfers
-      </label>
+        <label class="checkbox-row admin-checkbox-row">
+          <input id="page-visible-golfers" type="checkbox" ${settings.golfers ? 'checked' : ''} />
+          Golfers
+        </label>
 
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="page-visible-worldcup" type="checkbox" ${settings.worldcup ? 'checked' : ''} />
-        World Cup
-      </label>
+        <label class="checkbox-row admin-checkbox-row">
+          <input id="page-visible-worldcup" type="checkbox" ${settings.worldcup ? 'checked' : ''} />
+          World Cup
+        </label>
 
-      <button id="save-page-visibility-btn" class="primary-btn">
-        Save Page Visibility
-      </button>
-    </div>
-
-    <div class="card form-card sports-data-card">
-      <h3>Auto Refresh</h3>
-      <p class="admin-help">Turn sports off when they are out of season. Smart refresh skips disabled sports.</p>
-
-      <div class="admin-list refresh-control-list">
-        ${refreshRows.length ? refreshRows.map(sport => `
-          <label class="checkbox-row admin-checkbox-row refresh-control-row">
-            <input
-              class="sport-refresh-toggle"
-              type="checkbox"
-              data-sport-key="${sport.sportKey}"
-              data-worldcup="${sport.isWorldCup ? 'true' : 'false'}"
-              ${sport.enabled ? 'checked' : ''}
-            />
-            <span>
-              <strong>${sport.label}</strong>
-              <small>${sport.sportKey}</small>
-            </span>
-          </label>
-        `).join('') : '<p class="admin-help">No sport refresh settings were found.</p>'}
+        <button id="save-page-visibility-btn" class="primary-btn">
+          Save Page Visibility
+        </button>
       </div>
+    `)}
 
-      <button id="save-sports-refresh-btn" class="primary-btn">
-        Save Auto Refresh Settings
-      </button>
+    ${renderNestedCollapsibleSection('Auto Refresh', `${refreshRows.filter(s => s.enabled).length}/${refreshRows.length} on`, `
+      <div class="card form-card sports-data-card">
+        <p class="admin-help">Turn sports off when they are out of season. Smart refresh skips disabled sports.</p>
 
-      <div class="admin-subsection-label">Manual Refresh</div>
-      <button id="admin-refresh-worldcup-btn" class="secondary-btn" type="button">
-        Refresh World Cup Scores Now
-      </button>
-    </div>
+        <div class="admin-list refresh-control-list">
+          ${refreshRows.length ? refreshRows.map(sport => `
+            <label class="checkbox-row admin-checkbox-row refresh-control-row">
+              <input
+                class="sport-refresh-toggle"
+                type="checkbox"
+                data-sport-key="${sport.sportKey}"
+                data-worldcup="${sport.isWorldCup ? 'true' : 'false'}"
+                ${sport.enabled ? 'checked' : ''}
+              />
+              <span>
+                <strong>${sport.label}</strong>
+                <small>${sport.sportKey}</small>
+              </span>
+            </label>
+          `).join('') : '<p class="admin-help">No sport refresh settings were found.</p>'}
+        </div>
+
+        <button id="save-sports-refresh-btn" class="primary-btn">
+          Save Auto Refresh Settings
+        </button>
+      </div>
+    `)}
+
+    ${renderNestedCollapsibleSection('Manual Refresh', 'Run now', `
+      <div class="card form-card sports-data-card">
+        <p class="admin-help">Manually refresh temporary or special-event data.</p>
+        <button id="admin-refresh-worldcup-btn" class="secondary-btn" type="button">
+          Refresh World Cup Scores Now
+        </button>
+      </div>
+    `)}
   `;
 }
 
@@ -325,6 +331,20 @@ function renderFavoriteTeamRows(favorites) {
 function renderCollapsibleSection(title, meta, bodyHtml) {
   return `
     <details class="collapsible-section admin-collapsible" data-default-collapsed="true">
+      <summary>
+        <span>${title}</span>
+        ${meta ? `<span class="section-count">${meta}</span>` : ''}
+      </summary>
+      <div class="collapsible-body">
+        ${bodyHtml}
+      </div>
+    </details>
+  `;
+}
+
+function renderNestedCollapsibleSection(title, meta, bodyHtml) {
+  return `
+    <details class="collapsible-section admin-nested-collapsible" data-default-collapsed="true">
       <summary>
         <span>${title}</span>
         ${meta ? `<span class="section-count">${meta}</span>` : ''}
@@ -796,51 +816,53 @@ export async function renderAdmin() {
     </div>
 
     ${renderCollapsibleSection('Add Game/Golfer/Team', 'Games, golfers, teams', `
-      ${addGameHtml}
+      ${renderNestedCollapsibleSection('Add Game/Golfer', 'Follow one item', addGameHtml)}
 
-      <div class="card form-card">
-        <h3>Favorite Team</h3>
-        <p class="admin-help">
-          Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
-        </p>
+      ${renderNestedCollapsibleSection('Add Favorite Team', 'Auto-display team', `
+        <div class="card form-card">
+          <p class="admin-help">
+            Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
+          </p>
 
-        <label>Sport</label>
-        <select id="favorite-sport-select">
-          <option value="">Choose sport...</option>
-          ${renderSportOptions(sports)}
-        </select>
+          <label>Sport</label>
+          <select id="favorite-sport-select">
+            <option value="">Choose sport...</option>
+            ${renderSportOptions(sports)}
+          </select>
 
-        <label>Team</label>
-        <div class="search-combo">
-          <input
-            id="favorite-team-input"
-            type="text"
-            placeholder="Choose sport first..."
-            autocomplete="off"
-          />
-          <div id="favorite-team-dropdown" class="search-dropdown"></div>
+          <label>Team</label>
+          <div class="search-combo">
+            <input
+              id="favorite-team-input"
+              type="text"
+              placeholder="Choose sport first..."
+              autocomplete="off"
+            />
+            <div id="favorite-team-dropdown" class="search-dropdown"></div>
+          </div>
+
+          <label>Notes</label>
+          <textarea id="favorite-team-notes" rows="3" placeholder="Optional note..."></textarea>
+
+          <button id="add-favorite-team-btn" class="primary-btn">
+            Add Favorite Team
+          </button>
         </div>
+      `)}
 
-        <label>Notes</label>
-        <textarea id="favorite-team-notes" rows="3" placeholder="Optional note..."></textarea>
-
-        <button id="add-favorite-team-btn" class="primary-btn">
-          Add Favorite Team
-        </button>
-      </div>
-
-      ${renderWorldCupAddCard()}
+      ${renderNestedCollapsibleSection('Add World Cup Team', 'Follow/favorite country', renderWorldCupAddCard())}
     `)}
 
     ${renderCollapsibleSection('Current Followed/Favorite Teams/Games', favorites.length + ' favorites • ' + ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' World Cup teams', `
-      <div class="card">
-        <h3>Current Favorite Teams</h3>
-        <div class="admin-list">
-          ${renderFavoriteTeamRows(favorites)}
+      ${renderNestedCollapsibleSection('Current Favorite Teams', `${favorites.length} teams`, `
+        <div class="card">
+          <div class="admin-list">
+            ${renderFavoriteTeamRows(favorites)}
+          </div>
         </div>
-      </div>
+      `)}
 
-      ${renderWorldCupCurrentCard(worldCupData)}
+      ${renderNestedCollapsibleSection('Current World Cup Teams', `${(worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length} teams`, renderWorldCupCurrentCard(worldCupData))}
     `)}
 
     ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' refresh on', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
