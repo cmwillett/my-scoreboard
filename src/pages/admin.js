@@ -121,9 +121,9 @@ function renderWorldCupTeamRows(data = {}) {
 function renderWorldCupAddCard() {
   return `
     <div class="card form-card">
-      <h3>World Cup Team</h3>
+      <h3>Add World Cup Team</h3>
       <p class="admin-help">
-        Choose World Cup teams here. The World Cup tab and Roku app are display-only and use these choices.
+        Add a followed or favorite World Cup team. It behaves like the other team controls; the World Cup tab and Roku app are display-only.
       </p>
 
       <label>Team</label>
@@ -159,7 +159,7 @@ function renderWorldCupCurrentCard(data = {}) {
     <div class="card">
       <div class="card-header-row">
         <div>
-          <h3>Current Followed World Cup Teams</h3>
+          <h3>Current World Cup Teams</h3>
           <p class="admin-help">${selectedCount} selected</p>
         </div>
       </div>
@@ -266,7 +266,7 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
             />
             <span>
               <strong>${sport.label}</strong>
-              <small>${sport.isWorldCup ? 'temporary event' : sport.sportKey}</small>
+              <small>${sport.sportKey}</small>
             </span>
           </label>
         `).join('') : '<p class="admin-help">No sport refresh settings were found.</p>'}
@@ -276,6 +276,7 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
         Save Auto Refresh Settings
       </button>
 
+      <div class="admin-subsection-label">Manual Refresh</div>
       <button id="admin-refresh-worldcup-btn" class="secondary-btn" type="button">
         Refresh World Cup Scores Now
       </button>
@@ -323,7 +324,7 @@ function renderFavoriteTeamRows(favorites) {
 
 function renderCollapsibleSection(title, meta, bodyHtml) {
   return `
-    <details class="collapsible-section admin-collapsible">
+    <details class="collapsible-section admin-collapsible" data-default-collapsed="true">
       <summary>
         <span>${title}</span>
         ${meta ? `<span class="section-count">${meta}</span>` : ''}
@@ -335,103 +336,7 @@ function renderCollapsibleSection(title, meta, bodyHtml) {
   `;
 }
 
-function renderSportsRefreshCard(sports = []) {
-  if (!sports.length) {
-    return `
-      <div class="card form-card">
-        <p class="admin-help">No sports refresh settings were found.</p>
-      </div>
-    `;
-  }
-
-  return `
-    <div class="card form-card">
-      <p class="admin-help">
-        Turn sports off when they are out of season. Smart refresh will skip disabled sports.
-      </p>
-
-      <div class="admin-list refresh-control-list">
-        ${sports.map(sport => `
-          <label class="checkbox-row admin-checkbox-row refresh-control-row">
-            <input
-              class="sport-refresh-toggle"
-              type="checkbox"
-              data-sport-key="${sport.sportKey}"
-              ${sport.enabled ? 'checked' : ''}
-            />
-            <span>
-              <strong>${sport.label || sport.sportKey}</strong>
-              <small>${sport.sportKey}</small>
-            </span>
-          </label>
-        `).join('')}
-      </div>
-
-      <button id="save-sports-refresh-btn" class="primary-btn">
-        Save Sports Refresh Settings
-      </button>
-    </div>
-  `;
-}
-
-function renderWorldCupRefreshCard(settings = {}) {
-  const enabled = settings.autoRefresh === true;
-
-  return `
-    <div class="card form-card">
-      <h3>World Cup Refresh</h3>
-      <p class="admin-help">
-        World Cup is a temporary event, so this controls whether smart refresh includes World Cup scores.
-        Turn it off when the tournament is over.
-      </p>
-
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="worldcup-auto-refresh" type="checkbox" ${enabled ? 'checked' : ''} />
-        Auto-refresh World Cup scores during smart refresh
-      </label>
-
-      <button id="save-worldcup-refresh-btn" class="primary-btn">
-        Save World Cup Refresh Setting
-      </button>
-    </div>
-  `;
-}
-
-function renderPageVisibilityCard(visibility) {
-  const settings = {
-    scoreboard: visibility.scoreboard !== false,
-    golfers: visibility.golfers !== false,
-    worldcup: visibility.worldcup !== false
-  };
-
-  return `
-    <div class="card form-card">
-      <h3>Page Visibility</h3>
-      <p class="admin-help">
-        Show or hide main navigation pages without deleting their code.
-      </p>
-
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="page-visible-scoreboard" type="checkbox" ${settings.scoreboard ? 'checked' : ''} />
-        Scores
-      </label>
-
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="page-visible-golfers" type="checkbox" ${settings.golfers ? 'checked' : ''} />
-        Golfers
-      </label>
-
-      <label class="checkbox-row admin-checkbox-row">
-        <input id="page-visible-worldcup" type="checkbox" ${settings.worldcup ? 'checked' : ''} />
-        World Cup
-      </label>
-
-      <button id="save-page-visibility-btn" class="primary-btn">
-        Save Page Visibility
-      </button>
-    </div>
-  `;
-}
+/* Legacy separate refresh/visibility cards removed in v0.7.4. */
 
 function renderAdminLocked() {
   setTimeout(attachAdminLoginHandlers, 0);
@@ -890,7 +795,7 @@ export async function renderAdmin() {
       </div>
     </div>
 
-    ${renderCollapsibleSection('Add Game/Golfer/Team', 'Add controls', `
+    ${renderCollapsibleSection('Add Game/Golfer/Team', 'Games, golfers, teams', `
       ${addGameHtml}
 
       <div class="card form-card">
@@ -927,7 +832,7 @@ export async function renderAdmin() {
       ${renderWorldCupAddCard()}
     `)}
 
-    ${renderCollapsibleSection('Current Followed/Favorite Teams/Games', favorites.length + ' favorites • ' + ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' WC teams', `
+    ${renderCollapsibleSection('Current Followed/Favorite Teams/Games', favorites.length + ' favorites • ' + ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' World Cup teams', `
       <div class="card">
         <h3>Current Favorite Teams</h3>
         <div class="admin-list">

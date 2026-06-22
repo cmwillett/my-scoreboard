@@ -1,5 +1,6 @@
-Admin reorganized to:
-- Add Game/Golfer/Team
-- Current Followed/Favorite Teams/Games
-- Site Data
-World Cup refresh is displayed inside the standard Auto Refresh list and is saved through the same button, while still using the existing backend World Cup refresh setting.
+# Admin Reorg Update v0.7.4
+
+- All Admin sections are collapsed by default on initial load.
+- Removed the separate World Cup grouping.
+- World Cup team controls now live inside the same Add Game/Golfer/Team and Current Followed/Favorite Teams/Games sections as the other sports.
+- World Cup refresh appears in the normal Site Data auto-refresh list.
