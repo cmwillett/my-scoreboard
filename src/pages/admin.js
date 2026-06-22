@@ -8,17 +8,26 @@ import {
   savePageVisibility,
   getSettingsData,
   saveSportsRefreshSettings,
-  saveWorldCupRefreshSettings
+  saveWorldCupRefreshSettings,
+  getWorldCupPageData,
+  addWorldCupFollowedTeam,
+  addWorldCupFavoriteTeam,
+  removeWorldCupFollowedTeam,
+  removeWorldCupFavoriteTeam,
+  updateWorldCupTeamNote,
+  refreshWorldCupScores
 } from '../api.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
   openConfirmModal,
   openMessageModal,
+  openTextModal,
   showToast
 } from '../components/modal.js';
 
 const ADMIN_AUTH_KEY = 'scoreboardAdminUnlocked';
 let favoriteTeamOptions = [];
+let worldCupTeamOptions = [];
 
 function isAdminUnlocked() {
   return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
@@ -30,6 +39,244 @@ function setAdminUnlocked() {
 
 function clearAdminUnlocked() {
   localStorage.removeItem(ADMIN_AUTH_KEY);
+}
+
+
+function escapeHtml(value) {
+  return String(value || '')
+    .replaceAll('&', '&amp;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;')
+    .replaceAll('"', '&quot;')
+    .replaceAll("'", '&#039;');
+}
+
+function isRealWorldCupTeamName(team) {
+  const name = String(team || '').trim();
+  const lower = name.toLowerCase();
+
+  if (!name) return false;
+  if (lower === 'tbd') return false;
+  if (lower.includes('group')) return false;
+  if (lower.includes('/')) return false;
+  if (/^\d/.test(name)) return false;
+  if (/^(winner|loser)\b/i.test(name)) return false;
+
+  return /[a-z]/i.test(name);
+}
+
+function renderWorldCupTeamRows(data = {}) {
+  const favoriteRows = (data.favorites || []).map(team => ({
+    ...team,
+    type: 'favorite'
+  }));
+
+  const followedRows = (data.followedTeams || []).map(team => ({
+    ...team,
+    type: 'followed'
+  }));
+
+  const rows = [...favoriteRows, ...followedRows].sort((a, b) => {
+    const teamA = String(a.team || '').toLowerCase();
+    const teamB = String(b.team || '').toLowerCase();
+    return teamA.localeCompare(teamB);
+  });
+
+  if (!rows.length) {
+    return '<p class="muted-text">No World Cup teams selected yet.</p>';
+  }
+
+  return rows.map(row => `
+    <div class="worldcup-team-row admin-list-row">
+      <div>
+        <strong>${row.type === 'favorite' ? '⭐ ' : ''}${escapeHtml(row.team)}</strong>
+        <span>${row.type === 'favorite' ? 'Favorite' : 'Followed'}</span>
+        ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ''}
+      </div>
+
+      <div class="worldcup-team-actions">
+        <button
+          type="button"
+          class="small-btn edit-worldcup-team-note-btn"
+          data-type="${row.type}"
+          data-team="${escapeHtml(row.team)}"
+          data-notes="${escapeHtml(row.notes || '')}"
+        >
+          Edit Note
+        </button>
+
+        <button
+          type="button"
+          class="small-btn danger remove-worldcup-team-btn"
+          data-type="${row.type}"
+          data-team="${escapeHtml(row.team)}"
+        >
+          Remove
+        </button>
+      </div>
+    </div>
+  `).join('');
+}
+
+function renderWorldCupManagementCard(data = {}) {
+  const selectedCount = (data.favorites || []).length + (data.followedTeams || []).length;
+
+  return `
+    <div class="card form-card">
+      <p class="admin-help">
+        Choose World Cup teams here. The World Cup tab and Roku app are display-only and use these choices.
+      </p>
+
+      <label>Team</label>
+      <div class="search-combo worldcup-team-search">
+        <input
+          id="admin-worldcup-team-input"
+          type="text"
+          placeholder="Search country..."
+          autocomplete="off"
+        />
+        <div id="admin-worldcup-team-dropdown" class="search-dropdown"></div>
+      </div>
+
+      <label>Note</label>
+      <textarea id="admin-worldcup-team-notes" rows="3" placeholder="Optional note..."></textarea>
+
+      <div class="worldcup-add-actions">
+        <button id="admin-add-worldcup-followed-btn" class="primary-btn" type="button">
+          Follow Team
+        </button>
+        <button id="admin-add-worldcup-favorite-btn" class="primary-btn" type="button">
+          Favorite Team
+        </button>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header-row">
+        <div>
+          <h3>Current World Cup Teams</h3>
+          <p class="admin-help">${selectedCount} selected</p>
+        </div>
+      </div>
+      <div class="worldcup-team-list admin-list">
+        ${renderWorldCupTeamRows(data)}
+      </div>
+    </div>
+  `;
+}
+
+function showWorldCupTeamOptions() {
+  const input = document.getElementById('admin-worldcup-team-input');
+  const dropdown = document.getElementById('admin-worldcup-team-dropdown');
+
+  if (!input || !dropdown) return;
+
+  const search = input.value.trim().toLowerCase();
+  const matches = worldCupTeamOptions
+    .filter(team => team.toLowerCase().includes(search))
+    .slice(0, 40);
+
+  if (!matches.length) {
+    dropdown.innerHTML = '<div class="dropdown-item muted">No matches</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  dropdown.innerHTML = matches.map(team => `
+    <button type="button" class="dropdown-item" data-team="${escapeHtml(team)}">
+      ${escapeHtml(team)}
+    </button>
+  `).join('');
+
+  dropdown.style.display = 'block';
+
+  dropdown.querySelectorAll('.dropdown-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      input.value = btn.dataset.team;
+      dropdown.style.display = 'none';
+    });
+  });
+}
+
+function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = {}) {
+  const settings = {
+    scoreboard: visibility.scoreboard !== false,
+    golfers: visibility.golfers !== false,
+    worldcup: visibility.worldcup !== false
+  };
+  const worldCupEnabled = worldCupRefresh.autoRefresh === true;
+
+  return `
+    <div class="card form-card sports-data-card">
+      <h3>Page Visibility</h3>
+      <p class="admin-help">Show or hide main display pages without deleting their data.</p>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="page-visible-scoreboard" type="checkbox" ${settings.scoreboard ? 'checked' : ''} />
+        Scores
+      </label>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="page-visible-golfers" type="checkbox" ${settings.golfers ? 'checked' : ''} />
+        Golfers
+      </label>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="page-visible-worldcup" type="checkbox" ${settings.worldcup ? 'checked' : ''} />
+        World Cup
+      </label>
+
+      <button id="save-page-visibility-btn" class="primary-btn">
+        Save Page Visibility
+      </button>
+    </div>
+
+    <div class="card form-card sports-data-card">
+      <h3>Sport Auto Refresh</h3>
+      <p class="admin-help">Turn sports off when they are out of season. Smart refresh skips disabled sports.</p>
+
+      <div class="admin-list refresh-control-list">
+        ${refreshSports.length ? refreshSports.map(sport => `
+          <label class="checkbox-row admin-checkbox-row refresh-control-row">
+            <input
+              class="sport-refresh-toggle"
+              type="checkbox"
+              data-sport-key="${sport.sportKey}"
+              ${sport.enabled ? 'checked' : ''}
+            />
+            <span>
+              <strong>${sport.label || sport.sportKey}</strong>
+              <small>${sport.sportKey}</small>
+            </span>
+          </label>
+        `).join('') : '<p class="admin-help">No sport refresh settings were found.</p>'}
+      </div>
+
+      <button id="save-sports-refresh-btn" class="primary-btn">
+        Save Sport Refresh Settings
+      </button>
+    </div>
+
+    <div class="card form-card sports-data-card">
+      <h3>World Cup Refresh</h3>
+      <p class="admin-help">
+        World Cup is temporary. Turn this off when the tournament is over.
+      </p>
+
+      <label class="checkbox-row admin-checkbox-row">
+        <input id="worldcup-auto-refresh" type="checkbox" ${worldCupEnabled ? 'checked' : ''} />
+        Auto-refresh World Cup scores during smart refresh
+      </label>
+
+      <button id="save-worldcup-refresh-btn" class="primary-btn">
+        Save World Cup Refresh Setting
+      </button>
+
+      <button id="admin-refresh-worldcup-btn" class="secondary-btn" type="button">
+        Refresh World Cup Scores Now
+      </button>
+    </div>
+  `;
 }
 
 function renderSportOptions(sports) {
@@ -487,6 +734,118 @@ function attachAdminHandlers() {
   }
 
 
+  const wcTeamInput = document.getElementById('admin-worldcup-team-input');
+  const wcDropdown = document.getElementById('admin-worldcup-team-dropdown');
+  const wcFollowBtn = document.getElementById('admin-add-worldcup-followed-btn');
+  const wcFavoriteBtn = document.getElementById('admin-add-worldcup-favorite-btn');
+  const wcRefreshBtn = document.getElementById('admin-refresh-worldcup-btn');
+
+  if (wcTeamInput) {
+    wcTeamInput.addEventListener('input', showWorldCupTeamOptions);
+    wcTeamInput.addEventListener('focus', showWorldCupTeamOptions);
+  }
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.worldcup-team-search') && wcDropdown) {
+      wcDropdown.style.display = 'none';
+    }
+  });
+
+  async function addWorldCupTeam(type) {
+    const team = wcTeamInput?.value.trim() || '';
+    const notes = document.getElementById('admin-worldcup-team-notes')?.value.trim() || '';
+
+    if (!team) {
+      openMessageModal({
+        title: 'Choose a Team',
+        message: 'Choose a World Cup team first.'
+      });
+      return;
+    }
+
+    try {
+      if (type === 'favorite') {
+        await addWorldCupFavoriteTeam({ team, notes });
+      } else {
+        await addWorldCupFollowedTeam({ team, notes });
+      }
+
+      showToast(`${team} saved.`);
+      await window.refreshCurrentPage?.();
+    } catch (err) {
+      console.error(err);
+      openMessageModal({
+        title: 'Could Not Save Team',
+        message: 'The World Cup team was not saved.'
+      });
+    }
+  }
+
+  wcFollowBtn?.addEventListener('click', () => addWorldCupTeam('followed'));
+  wcFavoriteBtn?.addEventListener('click', () => addWorldCupTeam('favorite'));
+
+  wcRefreshBtn?.addEventListener('click', async () => {
+    wcRefreshBtn.disabled = true;
+    wcRefreshBtn.textContent = 'Refreshing...';
+
+    try {
+      await refreshWorldCupScores();
+      showToast('World Cup scores refreshed.');
+      await window.refreshCurrentPage?.();
+    } catch (err) {
+      console.error(err);
+      openMessageModal({
+        title: 'Could Not Refresh World Cup Scores',
+        message: 'The World Cup scores were not refreshed.'
+      });
+      wcRefreshBtn.disabled = false;
+      wcRefreshBtn.textContent = 'Refresh World Cup Scores Now';
+    }
+  });
+
+  document.querySelectorAll('.remove-worldcup-team-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.type;
+      const team = btn.dataset.team;
+
+      openConfirmModal({
+        title: 'Remove World Cup Team?',
+        message: `Remove ${team} from ${type === 'favorite' ? 'favorites' : 'followed teams'}?`,
+        confirmText: 'Remove',
+        onConfirm: async () => {
+          if (type === 'favorite') {
+            await removeWorldCupFavoriteTeam(team);
+          } else {
+            await removeWorldCupFollowedTeam(team);
+          }
+
+          showToast(`${team} removed.`);
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll('.edit-worldcup-team-note-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const type = btn.dataset.type;
+      const team = btn.dataset.team;
+      const notes = btn.dataset.notes || '';
+
+      openTextModal({
+        title: `Edit ${team} Note`,
+        label: 'Note',
+        value: notes,
+        onSave: async nextNotes => {
+          await updateWorldCupTeamNote(type, team, nextNotes);
+          showToast('Note saved.');
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  });
+
+
   document.querySelectorAll('.remove-favorite-team-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sportKey = btn.dataset.sportKey;
@@ -513,11 +872,12 @@ export async function renderAdmin() {
 
   const addGameHtml = await renderAddGame({ embedded: true });
 
-  const [sportsResult, favoritesResult, visibilityResult, settingsResult] = await Promise.all([
+  const [sportsResult, favoritesResult, visibilityResult, settingsResult, worldCupResult] = await Promise.all([
     getAvailableSports(),
     getFavoriteTeams(),
     getPageVisibility(),
-    getSettingsData()
+    getSettingsData(),
+    getWorldCupPageData()
   ]);
 
   const sports = sportsResult.data || [];
@@ -526,6 +886,8 @@ export async function renderAdmin() {
   const settingsData = settingsResult.data || {};
   const refreshSports = settingsData.sports || [];
   const worldCupRefresh = settingsData.worldCupRefresh || {};
+  const worldCupData = worldCupResult.data || {};
+  worldCupTeamOptions = (worldCupData.teams || []).filter(isRealWorldCupTeamName).sort();
 
   setTimeout(attachAdminHandlers, 0);
 
@@ -534,7 +896,7 @@ export async function renderAdmin() {
       <div class="page-title-row">
         <div>
           <h2>Admin</h2>
-          <p>Manage followed games, golfers, favorite teams, and app settings.</p>
+          <p>Control what appears on the PWA and Roku scoreboard.</p>
         </div>
 
         <button id="admin-logout-btn" class="small-btn">
@@ -543,10 +905,11 @@ export async function renderAdmin() {
       </div>
     </div>
 
-    ${renderCollapsibleSection('Add Game/Golfer', '', addGameHtml)}
+    ${renderCollapsibleSection('Scoreboard Management', favorites.length + ' favorites', `
+      ${addGameHtml}
 
-    ${renderCollapsibleSection('Favorite Teams', '', `
       <div class="card form-card">
+        <h3>Favorite Teams</h3>
         <p class="admin-help">
           Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
         </p>
@@ -575,20 +938,17 @@ export async function renderAdmin() {
           Add Favorite Team
         </button>
       </div>
-`)}
 
-    ${renderCollapsibleSection('Current Favorite Teams', favorites.length, `
       <div class="card">
+        <h3>Current Favorite Teams</h3>
         <div class="admin-list">
           ${renderFavoriteTeamRows(favorites)}
         </div>
       </div>
 `)}
 
-    ${renderCollapsibleSection('Page Visibility', '', renderPageVisibilityCard(visibility))}
+    ${renderCollapsibleSection('World Cup Management', ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' teams', renderWorldCupManagementCard(worldCupData))}
 
-    ${renderCollapsibleSection('Sports Refresh', refreshSports.filter(s => s.enabled).length + '/' + refreshSports.length + ' on', renderSportsRefreshCard(refreshSports))}
-
-    ${renderCollapsibleSection('World Cup Refresh', worldCupRefresh.autoRefresh ? 'On' : 'Off', renderWorldCupRefreshCard(worldCupRefresh))}
+    ${renderCollapsibleSection('Sports Data', refreshSports.filter(s => s.enabled).length + '/' + refreshSports.length + ' refresh on', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
   `;
 }

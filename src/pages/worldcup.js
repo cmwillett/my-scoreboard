@@ -1,14 +1,9 @@
 import {
   getWorldCupPageData,
   refreshWorldCupScores,
-  addWorldCupFollowedTeam,
-  addWorldCupFavoriteTeam,
-  removeWorldCupFollowedTeam,
-  removeWorldCupFavoriteTeam,
   updateWorldCupTeamNote
 } from '../api.js';
 import {
-  openConfirmModal,
   openMessageModal,
   openTextModal,
   showToast
@@ -209,56 +204,8 @@ function filterUpcomingGames() {
 }
 
 function attachWorldCupHandlers() {
-  const teamInput = document.getElementById('worldcup-team-input');
-  const dropdown = document.getElementById('worldcup-team-dropdown');
-  const addFollowedBtn = document.getElementById('add-worldcup-followed-btn');
-  const addFavoriteBtn = document.getElementById('add-worldcup-favorite-btn');
   const refreshBtn = document.getElementById('refresh-worldcup-btn');
   const upcomingFilter = document.getElementById('worldcup-upcoming-filter');
-
-  if (teamInput) {
-    teamInput.addEventListener('input', showTeamOptions);
-    teamInput.addEventListener('focus', showTeamOptions);
-  }
-
-  document.addEventListener('click', event => {
-    if (!event.target.closest('.worldcup-team-search') && dropdown) {
-      dropdown.style.display = 'none';
-    }
-  });
-
-  async function addTeam(type) {
-    const team = teamInput?.value.trim() || '';
-    const notes = document.getElementById('worldcup-team-notes')?.value.trim() || '';
-
-    if (!team) {
-      openMessageModal({
-        title: 'Choose a Team',
-        message: 'Choose a World Cup team first.'
-      });
-      return;
-    }
-
-    try {
-      if (type === 'favorite') {
-        await addWorldCupFavoriteTeam({ team, notes });
-      } else {
-        await addWorldCupFollowedTeam({ team, notes });
-      }
-
-      showToast(`${team} saved.`);
-      await window.refreshCurrentPage?.();
-    } catch (err) {
-      console.error(err);
-      openMessageModal({
-        title: 'Could Not Save Team',
-        message: 'The World Cup team was not saved.'
-      });
-    }
-  }
-
-  addFollowedBtn?.addEventListener('click', () => addTeam('followed'));
-  addFavoriteBtn?.addEventListener('click', () => addTeam('favorite'));
 
   refreshBtn?.addEventListener('click', async () => {
     refreshBtn.disabled = true;
@@ -281,30 +228,7 @@ function attachWorldCupHandlers() {
 
   upcomingFilter?.addEventListener('input', filterUpcomingGames);
 
-  document.querySelectorAll('.remove-worldcup-team-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const type = btn.dataset.type;
-      const team = btn.dataset.team;
-
-      openConfirmModal({
-        title: 'Remove World Cup Team?',
-        message: `Remove ${team} from ${type === 'favorite' ? 'favorites' : 'followed teams'}?`,
-        confirmText: 'Remove',
-        onConfirm: async () => {
-          if (type === 'favorite') {
-            await removeWorldCupFavoriteTeam(team);
-          } else {
-            await removeWorldCupFollowedTeam(team);
-          }
-
-          showToast(`${team} removed.`);
-          await window.refreshCurrentPage?.();
-        }
-      });
-    });
-  });
-
-  document.querySelectorAll('.edit-worldcup-team-note-btn, .edit-worldcup-game-note-btn').forEach(btn => {
+  document.querySelectorAll('.edit-worldcup-game-note-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const type = btn.dataset.type;
       const team = btn.dataset.team;
@@ -342,7 +266,7 @@ export async function renderWorldCup() {
         <div class="page-title-row">
           <div>
             <h2>World Cup</h2>
-            <p>Follow teams, favorite teams, and view the full upcoming schedule.</p>
+            <p>View your selected teams and the full upcoming schedule. Manage teams in Admin.</p>
             <p class="last-updated">World Cup Last Updated: ${escapeHtml(data.lastWorldCupUpdated || 'Not updated yet')}</p>
           </div>
 
@@ -351,39 +275,6 @@ export async function renderWorldCup() {
           </button>
         </div>
       </div>
-
-      <details class="collapsible-section worldcup-section">
-        <summary>
-          <span>Add World Cup Team</span>
-          <span class="section-count">Follow/Favorite</span>
-        </summary>
-        <div class="collapsible-body">
-          <div class="card form-card">
-            <label>Team</label>
-            <div class="search-combo worldcup-team-search">
-              <input
-                id="worldcup-team-input"
-                type="text"
-                placeholder="Search team..."
-                autocomplete="off"
-              />
-              <div id="worldcup-team-dropdown" class="search-dropdown"></div>
-            </div>
-
-            <label>Note</label>
-            <textarea id="worldcup-team-notes" rows="3" placeholder="Optional note..."></textarea>
-
-            <div class="worldcup-add-actions">
-              <button id="add-worldcup-followed-btn" class="primary-btn" type="button">
-                Follow Team
-              </button>
-              <button id="add-worldcup-favorite-btn" class="primary-btn" type="button">
-                Favorite Team
-              </button>
-            </div>
-          </div>
-        </div>
-      </details>
 
       <details class="collapsible-section worldcup-section">
         <summary>
@@ -410,20 +301,6 @@ export async function renderWorldCup() {
 
           <div id="worldcup-upcoming-table">
             ${renderGamesTable(upcomingGames)}
-          </div>
-        </div>
-      </details>
-
-      <details class="collapsible-section worldcup-section">
-        <summary>
-          <span>Selected Teams</span>
-          <span class="section-count">${(data.favorites || []).length + (data.followedTeams || []).length}</span>
-        </summary>
-        <div class="collapsible-body">
-          <div class="card">
-            <div class="worldcup-team-list">
-              ${renderSelectedTeamRows(data)}
-            </div>
           </div>
         </div>
       </details>
