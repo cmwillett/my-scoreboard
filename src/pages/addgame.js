@@ -329,7 +329,7 @@ export function attachAddHandlers() {
     }
 
     saveBtn.disabled = false;
-    saveBtn.textContent = 'Follow/Add';
+    saveBtn.textContent = 'Follow Team';
   });
 }
 
@@ -344,13 +344,13 @@ export async function renderAddGame(options = {}) {
   const headerHtml = options.embedded
     ? `
       <div class="admin-subheader">
-        <h3>${options.teamOnly ? 'Add Team' : 'Add Team/Golfer'}</h3>
+        <h3>${options.teamOnly ? 'Follow Team' : 'Follow Team/Golfer'}</h3>
         <p>${options.teamOnly ? 'Follow a team and optionally add a spread or note.' : 'Follow a team or golfer and optionally add a spread or note.'}</p>
       </div>
     `
     : `
       <div class="page-header">
-        <h2>Add Team/Golfer</h2>
+        <h2>Follow Team/Golfer</h2>
         <p>Follow a team or golfer and optionally add a spread or note.</p>
       </div>
     `;
@@ -390,7 +390,7 @@ export async function renderAddGame(options = {}) {
       <textarea id="note-input" rows="3" placeholder="Optional note..."></textarea>
 
       <button id="save-followed-item" class="primary-btn">
-        Follow/Add
+        Follow Team
       </button>
     </div>
   `;

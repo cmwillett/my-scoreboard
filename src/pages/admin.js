@@ -203,7 +203,7 @@ function renderAddGolferCard() {
       <textarea id="admin-golfer-notes" rows="3" placeholder="Optional note..."></textarea>
 
       <button id="admin-add-golfer-btn" class="primary-btn" type="button">
-        Add Golfer
+        Follow Golfer
       </button>
     </div>
   `;
@@ -908,7 +908,7 @@ function attachAdminHandlers() {
           message: 'The golfer was not saved.'
         });
         adminAddGolferBtn.disabled = false;
-        adminAddGolferBtn.textContent = 'Add Golfer';
+        adminAddGolferBtn.textContent = 'Follow Golfer';
       }
     });
   }
@@ -1286,10 +1286,10 @@ export async function renderAdmin() {
       </div>
     </div>
 
-    ${renderCollapsibleSection('Add Golfer/Team', 'Teams and golfers', `
-      ${renderNestedCollapsibleSection('Add Team', 'Follow one team', addGameHtml)}
+    ${renderCollapsibleSection('Follow Golfer/Team', 'Teams and golfers', `
+      ${renderNestedCollapsibleSection('Follow Team', 'Follow one team', addGameHtml)}
 
-      ${renderNestedCollapsibleSection('Add Golfer', 'Follow one golfer', renderAddGolferCard())}
+      ${renderNestedCollapsibleSection('Follow Golfer', 'Follow one golfer', renderAddGolferCard())}
 
       ${renderNestedCollapsibleSection('Add Favorite Team', 'Auto-display team', `
         <div class="card form-card">
@@ -1324,7 +1324,7 @@ export async function renderAdmin() {
       `)}
     `)}
 
-    ${renderCollapsibleSection('Current Selected Teams/Golfers', getFollowedTeamRows(followedGames, worldCupData).length + ' followed • ' + getFavoriteTeamRows(favorites, worldCupData).length + ' favorites • ' + followedGolfers.length + ' golfers', `
+    ${renderCollapsibleSection('Followed Golfers/Teams', getFollowedTeamRows(followedGames, worldCupData).length + ' followed • ' + getFavoriteTeamRows(favorites, worldCupData).length + ' favorites • ' + followedGolfers.length + ' golfers', `
       ${renderNestedCollapsibleSection('Followed Teams', `${getFollowedTeamRows(followedGames, worldCupData).length} teams`, `
         ${renderSportGroupedPanels(
           groupRowsBySport(getFollowedTeamRows(followedGames, worldCupData), row => row.sportKey),
