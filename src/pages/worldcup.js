@@ -258,6 +258,7 @@ export async function renderWorldCup() {
 
     const selectedGames = data.selectedGames || [];
     const upcomingGames = data.upcomingGames || [];
+    const recentFinalGames = data.recentFinalGames || [];
 
     setTimeout(attachWorldCupHandlers, 0);
 
@@ -283,6 +284,16 @@ export async function renderWorldCup() {
         </summary>
         <div class="collapsible-body">
           ${renderGamesTable(selectedGames, { selectedOnly: true })}
+        </div>
+      </details>
+
+      <details class="collapsible-section worldcup-section">
+        <summary>
+          <span>🏁 Recent Finals</span>
+          <span class="section-count">${recentFinalGames.length}</span>
+        </summary>
+        <div class="collapsible-body">
+          ${renderGamesTable(recentFinalGames, { selectedOnly: true })}
         </div>
       </details>
 
