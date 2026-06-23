@@ -126,3 +126,18 @@
     flex: 1;
   }
 }
+
+
+.worldcup-winner {
+  color: #6ee7b7;
+  font-weight: 900;
+}
+
+.worldcup-loser {
+  color: #cbd5e1;
+}
+
+.worldcup-vs {
+  color: #94a3b8;
+  font-weight: 700;
+}

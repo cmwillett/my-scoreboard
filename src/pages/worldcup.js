@@ -141,12 +141,33 @@ function renderGameRows(games, { selectedOnly = false } = {}) {
 
   return games.map(game => {
     const typeIcon = game.selectedType === 'favorite' ? '⭐ ' : '';
-    const scoreText = `${escapeHtml(game.awayTeam)} ${escapeHtml(game.awayScore || '0')} at ${escapeHtml(game.homeTeam)} ${escapeHtml(game.homeScore || '0')}`;
+    const awayScoreNum = Number(game.awayScore);
+    const homeScoreNum = Number(game.homeScore);
+    const hasScores = !Number.isNaN(awayScoreNum) && !Number.isNaN(homeScoreNum);
+    const rawStatus = String(game.rawStatus || '').toUpperCase();
+    const statusText = String(game.status || '').toLowerCase();
+    const isFinal =
+      rawStatus === 'STATUS_FINAL' ||
+      rawStatus === 'STATUS_COMPLETE' ||
+      rawStatus === 'STATUS_FULL_TIME' ||
+      statusText.includes('final') ||
+      statusText.includes('complete');
+    const awayWinner = hasScores && isFinal && awayScoreNum > homeScoreNum;
+    const homeWinner = hasScores && isFinal && homeScoreNum > awayScoreNum;
+    const awayClass = awayWinner ? 'worldcup-winner' : homeWinner ? 'worldcup-loser' : '';
+    const homeClass = homeWinner ? 'worldcup-winner' : awayWinner ? 'worldcup-loser' : '';
 
     return `
       <tr>
         <td>${escapeHtml(game.date || '-')}</td>
-        <td><strong>${typeIcon}${scoreText}</strong></td>
+        <td>
+          <strong>
+            ${typeIcon}
+            <span class="${awayClass}">${awayWinner ? '🏆 ' : ''}${escapeHtml(game.awayTeam)} ${escapeHtml(game.awayScore || '0')}</span>
+            <span class="worldcup-vs"> at </span>
+            <span class="${homeClass}">${homeWinner ? '🏆 ' : ''}${escapeHtml(game.homeTeam)} ${escapeHtml(game.homeScore || '0')}</span>
+          </strong>
+        </td>
         <td>${escapeHtml(game.status || '-')}</td>
         <td>${escapeHtml(game.channel || '-')}</td>
         <td>${game.notes ? `📝 ${escapeHtml(game.notes)}` : '-'}</td>

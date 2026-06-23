@@ -7,15 +7,19 @@ export function renderGameCard(followedGame) {
   const awayScore = Number(game.awayScore);
   const homeScore = Number(game.homeScore);
 
-  const awayLeading =
-    !Number.isNaN(awayScore) &&
-    !Number.isNaN(homeScore) &&
-    awayScore > homeScore;
+  const hasScores = !Number.isNaN(awayScore) && !Number.isNaN(homeScore);
 
-  const homeLeading =
-    !Number.isNaN(awayScore) &&
-    !Number.isNaN(homeScore) &&
-    homeScore > awayScore;
+  const rawStatus = String(game.rawStatus || '').toUpperCase();
+  const statusText = String(game.status || '').toLowerCase();
+  const isFinal =
+    rawStatus === 'STATUS_FINAL' ||
+    rawStatus === 'STATUS_COMPLETE' ||
+    rawStatus === 'STATUS_FULL_TIME' ||
+    statusText.includes('final') ||
+    statusText.includes('complete');
+
+  const awayWinner = hasScores && isFinal && awayScore > homeScore;
+  const homeWinner = hasScores && isFinal && homeScore > awayScore;
 
   const isLive =
     game.rawStatus === 'STATUS_IN_PROGRESS' ||
@@ -27,13 +31,13 @@ export function renderGameCard(followedGame) {
 
   return `
     <div class="score-card ${isFavorite ? 'favorite-score-card' : ''}" data-followed-game-id="${followedGame.id}">
-      <div class="team-row ${awayLeading ? 'leading' : ''}">
-        <span>${game.awayTeam || '-'}</span>
+      <div class="team-row ${awayWinner ? 'final-winner' : homeWinner ? 'final-loser' : ''}">
+        <span>${awayWinner ? '🏆 ' : ''}${game.awayTeam || '-'}</span>
         <strong>${game.awayScore || '-'}</strong>
       </div>
 
-      <div class="team-row ${homeLeading ? 'leading' : ''}">
-        <span>${game.homeTeam || '-'}</span>
+      <div class="team-row ${homeWinner ? 'final-winner' : awayWinner ? 'final-loser' : ''}">
+        <span>${homeWinner ? '🏆 ' : ''}${game.homeTeam || '-'}</span>
         <strong>${game.homeScore || '-'}</strong>
       </div>
 
