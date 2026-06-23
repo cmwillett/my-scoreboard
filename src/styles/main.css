@@ -546,3 +546,155 @@ button:hover:not(:disabled),
 .manual-refresh-sport-btn {
   width: 100%;
 }
+
+
+/* v0.8.0 visual hierarchy polish */
+:root {
+  --page-bg: #070d1c;
+  --surface-1: #0b1224;
+  --surface-2: #101b33;
+  --surface-3: #18263f;
+  --surface-4: #22314e;
+  --surface-5: #2b3b5c;
+  --border-soft: rgba(96, 165, 250, 0.22);
+  --border-strong: rgba(147, 197, 253, 0.32);
+  --accent-blue: #60a5fa;
+  --accent-green: #34d399;
+}
+
+body {
+  background: radial-gradient(circle at top left, rgba(30, 64, 175, 0.24), transparent 34%), var(--page-bg);
+}
+
+.top-bar,
+.bottom-nav {
+  background: #071124;
+  border-color: rgba(96, 165, 250, 0.18);
+}
+
+.card,
+.form-card,
+.score-card {
+  background: var(--surface-3);
+  border-color: var(--border-soft);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.16);
+}
+
+.collapsible-section {
+  background: var(--surface-1);
+  border-color: var(--border-strong);
+  box-shadow: 0 14px 34px rgba(0, 0, 0, 0.2);
+}
+
+.collapsible-section > summary {
+  background: linear-gradient(90deg, #111f3a 0%, #0d1830 100%);
+  border-bottom: 1px solid rgba(96, 165, 250, 0.18);
+  position: relative;
+}
+
+.collapsible-section > summary::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--accent-blue);
+}
+
+.collapsible-section[open] > summary {
+  background: linear-gradient(90deg, #152a50 0%, #0f1c36 100%);
+}
+
+.collapsible-section > .collapsible-body {
+  background: var(--surface-2);
+  padding: 14px;
+}
+
+.admin-nested-collapsible {
+  background: var(--surface-2);
+  border-color: rgba(147, 197, 253, 0.24);
+  margin-left: 10px;
+}
+
+.admin-nested-collapsible > summary {
+  background: linear-gradient(90deg, #182640 0%, #132039 100%);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+  font-size: 16px;
+}
+
+.admin-nested-collapsible > summary::after {
+  width: 3px;
+  background: #38bdf8;
+}
+
+.admin-nested-collapsible[open] > summary {
+  background: linear-gradient(90deg, #213352 0%, #172640 100%);
+}
+
+.admin-nested-collapsible > .collapsible-body {
+  background: var(--surface-3);
+  padding: 14px;
+}
+
+.admin-nested-collapsible .card,
+.admin-nested-collapsible .form-card {
+  background: var(--surface-4);
+  border-color: rgba(203, 213, 225, 0.18);
+}
+
+.form-card select,
+.form-card input,
+.form-card textarea,
+.modal-card input,
+.modal-card textarea {
+  background: #0a1224;
+  border-color: rgba(148, 163, 184, 0.3);
+}
+
+.admin-list-row {
+  background: #101a30;
+  border-color: rgba(148, 163, 184, 0.22);
+}
+
+.admin-nested-collapsible .admin-list-row {
+  background: #17243d;
+}
+
+.section-count {
+  color: #bfdbfe;
+}
+
+.primary-btn {
+  background: #16a34a;
+  color: #ecfdf5;
+  box-shadow: 0 8px 18px rgba(22, 163, 74, 0.18);
+}
+
+.primary-btn:hover:not(:disabled) {
+  background: #22c55e;
+}
+
+.small-btn,
+.manual-refresh-sport-btn {
+  background: #132039;
+  color: #dbeafe;
+  border-color: rgba(147, 197, 253, 0.28);
+}
+
+.admin-help,
+.last-updated,
+.page-header p {
+  color: #93b8e8;
+}
+
+.collapsible-section summary:hover {
+  background: linear-gradient(90deg, #1e3a66 0%, #132342 100%);
+  filter: none;
+}
+
+@media (max-width: 640px) {
+  .admin-nested-collapsible {
+    margin-left: 0;
+  }
+}
