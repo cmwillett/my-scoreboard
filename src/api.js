@@ -150,6 +150,14 @@ export async function refreshWorldCupScores() {
   return apiRequest('refreshWorldCupScores');
 }
 
+export async function manualRefreshSport(sportKey) {
+  return apiRequest('manualRefreshSport', { sportKey });
+}
+
+export async function manualRefreshAllSports() {
+  return apiRequest('manualRefreshAllSports');
+}
+
 export async function addWorldCupFollowedTeam({ team, notes = '' }) {
   return apiRequest('addWorldCupFollowedTeam', { team, notes });
 }

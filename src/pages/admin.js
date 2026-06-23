@@ -15,7 +15,9 @@ import {
   removeWorldCupFollowedTeam,
   removeWorldCupFavoriteTeam,
   updateWorldCupTeamNote,
-  refreshWorldCupScores
+  refreshWorldCupScores,
+  manualRefreshSport,
+  manualRefreshAllSports
 } from '../api.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
@@ -281,9 +283,24 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
 
     ${renderNestedCollapsibleSection('Manual Refresh', 'Run now', `
       <div class="card form-card sports-data-card">
-        <p class="admin-help">Manually refresh temporary or special-event data.</p>
-        <button id="admin-refresh-worldcup-btn" class="secondary-btn" type="button">
-          Refresh World Cup Scores Now
+        <p class="admin-help">Manually refresh any sport on demand. This does not change auto-refresh settings.</p>
+
+        <div class="manual-refresh-grid">
+          ${refreshRows.length ? refreshRows.map(sport => `
+            <button
+              id="admin-refresh-${sport.sportKey}-btn"
+              class="secondary-btn manual-refresh-sport-btn"
+              type="button"
+              data-sport-key="${sport.sportKey}"
+              data-sport-label="${sport.label}"
+            >
+              Refresh ${sport.label}
+            </button>
+          `).join('') : '<p class="admin-help">No sports were found.</p>'}
+        </div>
+
+        <button id="admin-refresh-all-sports-btn" class="primary-btn" type="button">
+          Refresh All Sports
         </button>
       </div>
     `)}
@@ -648,7 +665,8 @@ function attachAdminHandlers() {
   const wcDropdown = document.getElementById('admin-worldcup-team-dropdown');
   const wcFollowBtn = document.getElementById('admin-add-worldcup-followed-btn');
   const wcFavoriteBtn = document.getElementById('admin-add-worldcup-favorite-btn');
-  const wcRefreshBtn = document.getElementById('admin-refresh-worldcup-btn');
+  const manualRefreshBtns = Array.from(document.querySelectorAll('.manual-refresh-sport-btn'));
+  const refreshAllSportsBtn = document.getElementById('admin-refresh-all-sports-btn');
 
   if (wcTeamInput) {
     wcTeamInput.addEventListener('input', showWorldCupTeamOptions);
@@ -694,22 +712,50 @@ function attachAdminHandlers() {
   wcFollowBtn?.addEventListener('click', () => addWorldCupTeam('followed'));
   wcFavoriteBtn?.addEventListener('click', () => addWorldCupTeam('favorite'));
 
-  wcRefreshBtn?.addEventListener('click', async () => {
-    wcRefreshBtn.disabled = true;
-    wcRefreshBtn.textContent = 'Refreshing...';
+  manualRefreshBtns.forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const sportKey = btn.dataset.sportKey;
+      const sportLabel = btn.dataset.sportLabel || sportKey;
+      const originalText = btn.textContent;
+
+      btn.disabled = true;
+      btn.textContent = 'Refreshing...';
+
+      try {
+        await manualRefreshSport(sportKey);
+        showToast(`${sportLabel} refreshed.`);
+        await window.refreshCurrentPage?.();
+      } catch (err) {
+        console.error(err);
+        openMessageModal({
+          title: `Could Not Refresh ${sportLabel}`,
+          message: `${sportLabel} was not refreshed.`
+        });
+      } finally {
+        btn.disabled = false;
+        btn.textContent = originalText;
+      }
+    });
+  });
+
+  refreshAllSportsBtn?.addEventListener('click', async () => {
+    const originalText = refreshAllSportsBtn.textContent;
+    refreshAllSportsBtn.disabled = true;
+    refreshAllSportsBtn.textContent = 'Refreshing...';
 
     try {
-      await refreshWorldCupScores();
-      showToast('World Cup scores refreshed.');
+      await manualRefreshAllSports();
+      showToast('All sports refreshed.');
       await window.refreshCurrentPage?.();
     } catch (err) {
       console.error(err);
       openMessageModal({
-        title: 'Could Not Refresh World Cup Scores',
-        message: 'The World Cup scores were not refreshed.'
+        title: 'Could Not Refresh All Sports',
+        message: 'One or more sports were not refreshed.'
       });
-      wcRefreshBtn.disabled = false;
-      wcRefreshBtn.textContent = 'Refresh World Cup Scores Now';
+    } finally {
+      refreshAllSportsBtn.disabled = false;
+      refreshAllSportsBtn.textContent = originalText;
     }
   });
 
