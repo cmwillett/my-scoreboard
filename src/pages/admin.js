@@ -1,5 +1,10 @@
 import {
   getAvailableSports,
+  getFollowedGames,
+  updateFollowedGame,
+  removeFollowedGame,
+  getFollowedGolfers,
+  removeFollowedGolfer,
   getTeamsForSport,
   getFavoriteTeams,
   addFavoriteTeam,
@@ -22,6 +27,7 @@ import {
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
   openConfirmModal,
+  openGameEditModal,
   openMessageModal,
   openTextModal,
   showToast
@@ -343,6 +349,104 @@ function renderFavoriteTeamRows(favorites) {
   `).join('');
 }
 
+function getFollowedGameLabel(followedGame) {
+  const game = followedGame.live || followedGame || {};
+  const away = game.awayTeam || followedGame.awayTeam || '';
+  const home = game.homeTeam || followedGame.homeTeam || '';
+  const awayScore = game.awayScore ?? followedGame.awayScore ?? '';
+  const homeScore = game.homeScore ?? followedGame.homeScore ?? '';
+
+  if (away || home) {
+    return `${away || '-'} ${awayScore || 0} at ${home || '-'} ${homeScore || 0}`;
+  }
+
+  return followedGame.team || followedGame.name || followedGame.eventId || 'Followed game';
+}
+
+function renderFollowedGameRows(games = []) {
+  const manualGames = games.filter(game => game.isFavorite !== true);
+
+  if (!manualGames.length) {
+    return `
+      <div class="empty-state">
+        <p>No manually followed games yet.</p>
+      </div>
+    `;
+  }
+
+  return manualGames.map(followedGame => {
+    const game = followedGame.live || followedGame || {};
+    const label = getFollowedGameLabel(followedGame);
+    const sport = followedGame.sport || game.sport || followedGame.sportKey || game.sportKey || 'Sport';
+    const status = game.status || followedGame.status || game.startTime || followedGame.startTime || '-';
+
+    return `
+      <div class="admin-list-row">
+        <div>
+          <strong>${escapeHtml(label)}</strong>
+          <span>${escapeHtml(sport)} • ${escapeHtml(status)}</span>
+          ${followedGame.spread ? `<p>Spread: ${escapeHtml(followedGame.spread)}</p>` : ''}
+          ${followedGame.notes ? `<p>${escapeHtml(followedGame.notes)}</p>` : ''}
+        </div>
+
+        <div class="admin-row-actions">
+          <button
+            type="button"
+            class="small-btn edit-current-followed-game-btn"
+            data-id="${escapeHtml(followedGame.id)}"
+            data-spread="${escapeHtml(followedGame.spread || '')}"
+            data-notes="${escapeHtml(followedGame.notes || '')}"
+          >
+            Edit
+          </button>
+
+          <button
+            type="button"
+            class="small-btn danger remove-current-followed-game-btn"
+            data-id="${escapeHtml(followedGame.id)}"
+          >
+            Remove
+          </button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderFollowedGolferRows(golfers = []) {
+  if (!golfers.length) {
+    return `
+      <div class="empty-state">
+        <p>No followed golfers yet.</p>
+      </div>
+    `;
+  }
+
+  return golfers.map(golfer => {
+    const note = golfer.note || golfer.notes || '';
+    const status = [golfer.position, golfer.overall, golfer.thru || golfer.teeTime]
+      .filter(Boolean)
+      .join(' • ');
+
+    return `
+      <div class="admin-list-row">
+        <div>
+          <strong>${golfer.favorite ? '⭐ ' : ''}${escapeHtml(golfer.golfer)}</strong>
+          <span>${escapeHtml(status || 'Golfer')}</span>
+          ${note ? `<p>${escapeHtml(note)}</p>` : ''}
+        </div>
+
+        <button
+          type="button"
+          class="small-btn danger remove-current-golfer-btn"
+          data-golfer="${escapeHtml(golfer.golfer)}"
+        >
+          Remove
+        </button>
+      </div>
+    `;
+  }).join('');
+}
 
 
 function renderCollapsibleSection(title, meta, bodyHtml) {
@@ -802,6 +906,54 @@ function attachAdminHandlers() {
   });
 
 
+
+  document.querySelectorAll('.edit-current-followed-game-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openGameEditModal({
+        id: btn.dataset.id,
+        spread: btn.dataset.spread || '',
+        notes: btn.dataset.notes || '',
+        onSave: async ({ id, spread, notes }) => {
+          await updateFollowedGame(id, spread, notes);
+          showToast('Game saved.');
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll('.remove-current-followed-game-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      openConfirmModal({
+        title: 'Remove Followed Game?',
+        message: 'This will remove this game from your followed games.',
+        confirmText: 'Remove',
+        onConfirm: async () => {
+          await removeFollowedGame(btn.dataset.id);
+          showToast('Game removed.');
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  });
+
+  document.querySelectorAll('.remove-current-golfer-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const golfer = btn.dataset.golfer;
+
+      openConfirmModal({
+        title: 'Remove Golfer?',
+        message: `Remove ${golfer} from your followed golfers?`,
+        confirmText: 'Remove',
+        onConfirm: async () => {
+          await removeFollowedGolfer(golfer);
+          showToast(`${golfer} removed.`);
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  });
+
   document.querySelectorAll('.remove-favorite-team-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sportKey = btn.dataset.sportKey;
@@ -828,8 +980,10 @@ export async function renderAdmin() {
 
   const addGameHtml = await renderAddGame({ embedded: true });
 
-  const [sportsResult, favoritesResult, visibilityResult, settingsResult, worldCupResult] = await Promise.all([
+  const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult] = await Promise.all([
     getAvailableSports(),
+    getFollowedGames(),
+    getFollowedGolfers(),
     getFavoriteTeams(),
     getPageVisibility(),
     getSettingsData(),
@@ -837,6 +991,8 @@ export async function renderAdmin() {
   ]);
 
   const sports = sportsResult.data || [];
+  const followedGames = (followedGamesResult.data || []).filter(game => game.isFavorite !== true);
+  const followedGolfers = followedGolfersResult.data || [];
   const favorites = favoritesResult.data || [];
   const visibility = visibilityResult.data || {};
   const settingsData = settingsResult.data || {};
@@ -899,7 +1055,23 @@ export async function renderAdmin() {
       ${renderNestedCollapsibleSection('Add World Cup Team', 'Follow/favorite country', renderWorldCupAddCard())}
     `)}
 
-    ${renderCollapsibleSection('Current Followed/Favorite Teams/Games', favorites.length + ' favorites • ' + ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' World Cup teams', `
+    ${renderCollapsibleSection('Current Followed/Favorite Teams/Games', followedGames.length + ' games • ' + followedGolfers.length + ' golfers • ' + favorites.length + ' favorites • ' + ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' World Cup teams', `
+      ${renderNestedCollapsibleSection('Current Followed Games', `${followedGames.length} games`, `
+        <div class="card">
+          <div class="admin-list">
+            ${renderFollowedGameRows(followedGames)}
+          </div>
+        </div>
+      `)}
+
+      ${renderNestedCollapsibleSection('Current Followed Golfers', `${followedGolfers.length} golfers`, `
+        <div class="card">
+          <div class="admin-list">
+            ${renderFollowedGolferRows(followedGolfers)}
+          </div>
+        </div>
+      `)}
+
       ${renderNestedCollapsibleSection('Current Favorite Teams', `${favorites.length} teams`, `
         <div class="card">
           <div class="admin-list">
