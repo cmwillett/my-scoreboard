@@ -3,6 +3,8 @@ import {
   getTeamsForSport,
   getAvailableGames,
   getAvailableGolfers,
+  getWorldCupPageData,
+  addWorldCupFollowedTeam,
   addFollowedGame,
   addFollowedGolfer
 } from '../api.js';
@@ -13,8 +15,16 @@ let currentGames = [];
 let selectedGame = null;
 let gamesToShowNow = [];
 
-function renderSportOptions(sports) {
-  return sports.map(sport => `<option value="${sport}">${sport}</option>`).join('');
+function renderSportOptions(sports, optionsArg = {}) {
+  const options = optionsArg.teamOnly
+    ? sports.filter(sport => sport !== 'Golf')
+    : [...sports];
+  if (!options.includes('WorldCup')) options.push('WorldCup');
+
+  return options.map(sport => {
+    const label = sport === 'WorldCup' ? 'World Cup' : sport;
+    return `<option value="${sport}">${label}</option>`;
+  }).join('');
 }
 
 function getGameSection(game) {
@@ -168,6 +178,26 @@ export function attachAddHandlers() {
       return;
     }
 
+    if (sport === 'WorldCup') {
+      itemLabel.textContent = 'Team';
+      spreadWrap.style.display = 'none';
+      gamePickerWrap.style.display = 'none';
+
+      const result = await getWorldCupPageData();
+      const teams = (result.data?.teams || [])
+        .filter(team => {
+          const name = String(team || '').trim();
+          const lower = name.toLowerCase();
+          return name && lower !== 'tbd' && !lower.includes('group') && !name.includes('/') && !/^\d/.test(name);
+        })
+        .sort();
+
+      currentItems = teams.map(name => ({ value: name, label: name }));
+      itemInput.placeholder = 'Search World Cup team...';
+      showFilteredItems();
+      return;
+    }
+
     if (sport === 'Golf') {
       itemLabel.textContent = 'Golfer';
       spreadWrap.style.display = 'none';
@@ -251,8 +281,31 @@ export function attachAddHandlers() {
     saveBtn.textContent = 'Saving...';
 
     try {
-      if (sport === 'Golf') {
+      if (sport === 'WorldCup') {
+      itemLabel.textContent = 'Team';
+      spreadWrap.style.display = 'none';
+      gamePickerWrap.style.display = 'none';
+
+      const result = await getWorldCupPageData();
+      const teams = (result.data?.teams || [])
+        .filter(team => {
+          const name = String(team || '').trim();
+          const lower = name.toLowerCase();
+          return name && lower !== 'tbd' && !lower.includes('group') && !name.includes('/') && !/^\d/.test(name);
+        })
+        .sort();
+
+      currentItems = teams.map(name => ({ value: name, label: name }));
+      itemInput.placeholder = 'Search World Cup team...';
+      showFilteredItems();
+      return;
+    }
+
+    if (sport === 'Golf') {
         await addFollowedGolfer(item, notes, false);
+        showToast(`${item} added.`);
+      } else if (sport === 'WorldCup') {
+        await addWorldCupFollowedTeam({ team: item, notes });
         showToast(`${item} added.`);
       } else {
         await addFollowedGame({
@@ -291,14 +344,14 @@ export async function renderAddGame(options = {}) {
   const headerHtml = options.embedded
     ? `
       <div class="admin-subheader">
-        <h3>Add Game/Golfer</h3>
-        <p>Follow a specific game or golfer and optionally add a spread or note.</p>
+        <h3>${options.teamOnly ? 'Add Team' : 'Add Team/Golfer'}</h3>
+        <p>${options.teamOnly ? 'Follow a team and optionally add a spread or note.' : 'Follow a team or golfer and optionally add a spread or note.'}</p>
       </div>
     `
     : `
       <div class="page-header">
-        <h2>Add Game/Golfer</h2>
-        <p>Follow a specific game or golfer and optionally add a spread or note.</p>
+        <h2>Add Team/Golfer</h2>
+        <p>Follow a team or golfer and optionally add a spread or note.</p>
       </div>
     `;
 
@@ -309,7 +362,7 @@ export async function renderAddGame(options = {}) {
       <label>Sport</label>
       <select id="sport-select">
         <option value="">Choose sport...</option>
-        ${renderSportOptions(sports)}
+        ${renderSportOptions(sports, options)}
       </select>
 
       <label id="item-label">Team/Golfer</label>

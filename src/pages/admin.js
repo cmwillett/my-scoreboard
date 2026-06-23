@@ -4,8 +4,11 @@ import {
   updateFollowedGame,
   removeFollowedGame,
   getFollowedGolfers,
+  getAvailableGolfers,
+  addFollowedGolfer,
   removeFollowedGolfer,
   getTeamsForSport,
+  getAvailableGames,
   getFavoriteTeams,
   addFavoriteTeam,
   removeFavoriteTeam,
@@ -36,6 +39,7 @@ import {
 const ADMIN_AUTH_KEY = 'scoreboardAdminUnlocked';
 let favoriteTeamOptions = [];
 let worldCupTeamOptions = [];
+let golferOptions = [];
 
 function isAdminUnlocked() {
   return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
@@ -178,6 +182,66 @@ function renderWorldCupCurrentCard(data = {}) {
   `;
 }
 
+
+function renderAddGolferCard() {
+  return `
+    <div class="card form-card">
+      <p class="admin-help">Follow a golfer on the Golf page and Roku leaderboard.</p>
+
+      <label>Golfer</label>
+      <div class="search-combo admin-golfer-search">
+        <input
+          id="admin-golfer-input"
+          type="text"
+          placeholder="Search golfer..."
+          autocomplete="off"
+        />
+        <div id="admin-golfer-dropdown" class="search-dropdown"></div>
+      </div>
+
+      <label>Note</label>
+      <textarea id="admin-golfer-notes" rows="3" placeholder="Optional note..."></textarea>
+
+      <button id="admin-add-golfer-btn" class="primary-btn" type="button">
+        Add Golfer
+      </button>
+    </div>
+  `;
+}
+
+function showGolferOptions() {
+  const input = document.getElementById('admin-golfer-input');
+  const dropdown = document.getElementById('admin-golfer-dropdown');
+
+  if (!input || !dropdown) return;
+
+  const search = input.value.trim().toLowerCase();
+  const matches = golferOptions
+    .filter(golfer => golfer.toLowerCase().includes(search))
+    .slice(0, 40);
+
+  if (!matches.length) {
+    dropdown.innerHTML = '<div class="dropdown-item muted">No matches</div>';
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  dropdown.innerHTML = matches.map(golfer => `
+    <button type="button" class="dropdown-item" data-golfer="${escapeHtml(golfer)}">
+      ${escapeHtml(golfer)}
+    </button>
+  `).join('');
+
+  dropdown.style.display = 'block';
+
+  dropdown.querySelectorAll('.dropdown-item').forEach(btn => {
+    btn.addEventListener('click', () => {
+      input.value = btn.dataset.golfer;
+      dropdown.style.display = 'none';
+    });
+  });
+}
+
 function showWorldCupTeamOptions() {
   const input = document.getElementById('admin-worldcup-team-input');
   const dropdown = document.getElementById('admin-worldcup-team-dropdown');
@@ -314,9 +378,14 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
 }
 
 function renderSportOptions(sports) {
-  return sports
-    .filter(sport => sport !== 'Golf')
-    .map(sport => `<option value="${sport}">${sport}</option>`)
+  const options = sports.filter(sport => sport !== 'Golf');
+  if (!options.includes('WorldCup')) options.push('WorldCup');
+
+  return options
+    .map(sport => {
+      const label = sport === 'WorldCup' ? 'World Cup' : sport;
+      return `<option value="${sport}">${label}</option>`;
+    })
     .join('');
 }
 
@@ -347,6 +416,145 @@ function renderFavoriteTeamRows(favorites) {
       </button>
     </div>
   `).join('');
+}
+
+
+function groupRowsBySport(rows = [], sportGetter = row => row.sportKey || row.sport || 'Other') {
+  return rows.reduce((groups, row) => {
+    const sport = sportGetter(row) || 'Other';
+    if (!groups[sport]) groups[sport] = [];
+    groups[sport].push(row);
+    return groups;
+  }, {});
+}
+
+function renderSportGroupedPanels(groups, rowRenderer, emptyMessage) {
+  const sportKeys = Object.keys(groups).sort();
+
+  if (!sportKeys.length) {
+    return `<div class="empty-state"><p>${emptyMessage}</p></div>`;
+  }
+
+  return sportKeys.map(sport => renderNestedCollapsibleSection(
+    sport === 'WorldCup' ? 'World Cup' : sport,
+    `${groups[sport].length} selected`,
+    `<div class="card"><div class="admin-list">${groups[sport].map(rowRenderer).join('')}</div></div>`
+  )).join('');
+}
+
+function getFollowedTeamRows(games = [], worldCupData = {}) {
+  const manualGames = games.filter(game => game.isFavorite !== true);
+  const rows = manualGames.map(game => ({
+    ...game,
+    sportKey: game.sportKey || game.sport || game.live?.sportKey || game.live?.sport || 'Other',
+    team: game.team || game.followedTeam || game.selectedTeam || '',
+    type: 'followed'
+  }));
+
+  (worldCupData.followedTeams || []).forEach(team => {
+    rows.push({
+      sportKey: 'WorldCup',
+      team: team.team,
+      notes: team.notes || '',
+      type: 'followed-worldcup'
+    });
+  });
+
+  return rows;
+}
+
+function renderFollowedTeamRow(row) {
+  const game = row.live || row || {};
+  const team = row.team || row.name || getFollowedGameLabel(row);
+  const status = game.status || row.status || game.startTime || row.startTime || '';
+
+  return `
+    <div class="admin-list-row">
+      <div>
+        <strong>${escapeHtml(team)}</strong>
+        <span>${escapeHtml(row.sportKey || 'Sport')}${status ? ` • ${escapeHtml(status)}` : ''}</span>
+        ${row.spread ? `<p>Spread: ${escapeHtml(row.spread)}</p>` : ''}
+        ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ''}
+      </div>
+
+      ${row.type === 'followed-worldcup' ? `
+        <button
+          type="button"
+          class="small-btn danger remove-worldcup-team-btn"
+          data-type="followed"
+          data-team="${escapeHtml(row.team)}"
+        >
+          Remove
+        </button>
+      ` : `
+        <div class="admin-row-actions">
+          <button
+            type="button"
+            class="small-btn edit-current-followed-game-btn"
+            data-id="${escapeHtml(row.id)}"
+            data-spread="${escapeHtml(row.spread || '')}"
+            data-notes="${escapeHtml(row.notes || '')}"
+          >
+            Edit
+          </button>
+          <button
+            type="button"
+            class="small-btn danger remove-current-followed-game-btn"
+            data-id="${escapeHtml(row.id)}"
+          >
+            Remove
+          </button>
+        </div>
+      `}
+    </div>
+  `;
+}
+
+function getFavoriteTeamRows(favorites = [], worldCupData = {}) {
+  const rows = favorites.map(favorite => ({ ...favorite, type: 'favorite' }));
+
+  (worldCupData.favorites || []).forEach(team => {
+    rows.push({
+      sportKey: 'WorldCup',
+      team: team.team,
+      notes: team.notes || '',
+      type: 'favorite-worldcup'
+    });
+  });
+
+  return rows;
+}
+
+function renderFavoriteTeamRow(row) {
+  return `
+    <div class="admin-list-row">
+      <div>
+        <strong>${escapeHtml(row.team)}</strong>
+        <span>${escapeHtml(row.sportKey || 'Sport')}</span>
+        ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ''}
+      </div>
+
+      ${row.type === 'favorite-worldcup' ? `
+        <button
+          type="button"
+          class="small-btn danger remove-worldcup-team-btn"
+          data-type="favorite"
+          data-team="${escapeHtml(row.team)}"
+        >
+          Remove
+        </button>
+      ` : `
+        <button
+          type="button"
+          class="small-btn danger remove-favorite-team-btn"
+          data-sport-key="${escapeHtml(row.sportKey)}"
+          data-team="${escapeHtml(row.team)}"
+        >
+          Remove
+        </button>
+      `}
+    </div>
+  `;
 }
 
 function getFollowedGameLabel(followedGame) {
@@ -620,6 +828,12 @@ async function loadTeamsForFavoriteSport() {
 
   if (!sport) return;
 
+  if (sport === 'WorldCup') {
+    favoriteTeamOptions = worldCupTeamOptions.map(team => ({ value: team, label: team }));
+    teamInput.placeholder = 'Search World Cup team...';
+    return;
+  }
+
   const result = await getTeamsForSport(sport);
   const teams = result.data || [];
 
@@ -650,6 +864,55 @@ function attachAdminHandlers() {
       window.refreshCurrentPage?.();
     });
   }
+
+
+  const adminGolferInput = document.getElementById('admin-golfer-input');
+  const adminGolferDropdown = document.getElementById('admin-golfer-dropdown');
+  const adminAddGolferBtn = document.getElementById('admin-add-golfer-btn');
+
+  if (adminGolferInput) {
+    adminGolferInput.addEventListener('input', showGolferOptions);
+    adminGolferInput.addEventListener('focus', showGolferOptions);
+  }
+
+  document.addEventListener('click', event => {
+    if (!event.target.closest('.admin-golfer-search') && adminGolferDropdown) {
+      adminGolferDropdown.style.display = 'none';
+    }
+  });
+
+  if (adminAddGolferBtn) {
+    adminAddGolferBtn.addEventListener('click', async () => {
+      const golfer = adminGolferInput.value.trim();
+      const notes = document.getElementById('admin-golfer-notes')?.value.trim() || '';
+
+      if (!golfer) {
+        openMessageModal({
+          title: 'Choose a Golfer',
+          message: 'Choose a golfer before saving.'
+        });
+        return;
+      }
+
+      adminAddGolferBtn.disabled = true;
+      adminAddGolferBtn.textContent = 'Saving...';
+
+      try {
+        await addFollowedGolfer(golfer, notes, false);
+        showToast(`${golfer} added.`);
+        await window.refreshCurrentPage?.();
+      } catch (err) {
+        console.error(err);
+        openMessageModal({
+          title: 'Could Not Add Golfer',
+          message: 'The golfer was not saved.'
+        });
+        adminAddGolferBtn.disabled = false;
+        adminAddGolferBtn.textContent = 'Add Golfer';
+      }
+    });
+  }
+
 
   if (sportSelect) {
     sportSelect.addEventListener('change', loadTeamsForFavoriteSport);
@@ -684,7 +947,11 @@ function attachAdminHandlers() {
       addBtn.textContent = 'Saving...';
 
       try {
-        await addFavoriteTeam({ sportKey, team, notes });
+        if (sportKey === 'WorldCup') {
+          await addWorldCupFavoriteTeam({ team, notes });
+        } else {
+          await addFavoriteTeam({ sportKey, team, notes });
+        }
         showToast(`${team} added.`);
         await window.refreshCurrentPage?.();
       } catch (err) {
@@ -978,16 +1245,17 @@ export async function renderAdmin() {
     return renderAdminLocked();
   }
 
-  const addGameHtml = await renderAddGame({ embedded: true });
+  const addGameHtml = await renderAddGame({ embedded: true, teamOnly: true });
 
-  const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult] = await Promise.all([
+  const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult, availableGolfersResult] = await Promise.all([
     getAvailableSports(),
     getFollowedGames(),
     getFollowedGolfers(),
     getFavoriteTeams(),
     getPageVisibility(),
     getSettingsData(),
-    getWorldCupPageData()
+    getWorldCupPageData(),
+    getAvailableGolfers()
   ]);
 
   const sports = sportsResult.data || [];
@@ -1000,6 +1268,7 @@ export async function renderAdmin() {
   const worldCupRefresh = settingsData.worldCupRefresh || {};
   const worldCupData = worldCupResult.data || {};
   worldCupTeamOptions = (worldCupData.teams || []).filter(isRealWorldCupTeamName).sort();
+  golferOptions = (availableGolfersResult.data || []).map(g => g.golfer).filter(Boolean).sort();
 
   setTimeout(attachAdminHandlers, 0);
 
@@ -1017,8 +1286,10 @@ export async function renderAdmin() {
       </div>
     </div>
 
-    ${renderCollapsibleSection('Add Game/Golfer/Team', 'Games, golfers, teams', `
-      ${renderNestedCollapsibleSection('Add Game/Golfer', 'Follow one item', addGameHtml)}
+    ${renderCollapsibleSection('Add Golfer/Team', 'Teams and golfers', `
+      ${renderNestedCollapsibleSection('Add Team', 'Follow one team', addGameHtml)}
+
+      ${renderNestedCollapsibleSection('Add Golfer', 'Follow one golfer', renderAddGolferCard())}
 
       ${renderNestedCollapsibleSection('Add Favorite Team', 'Auto-display team', `
         <div class="card form-card">
@@ -1051,36 +1322,32 @@ export async function renderAdmin() {
           </button>
         </div>
       `)}
-
-      ${renderNestedCollapsibleSection('Add World Cup Team', 'Follow/favorite country', renderWorldCupAddCard())}
     `)}
 
-    ${renderCollapsibleSection('Current Followed/Favorite Teams/Games', followedGames.length + ' games • ' + followedGolfers.length + ' golfers • ' + favorites.length + ' favorites • ' + ((worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length) + ' World Cup teams', `
-      ${renderNestedCollapsibleSection('Current Followed Games', `${followedGames.length} games`, `
-        <div class="card">
-          <div class="admin-list">
-            ${renderFollowedGameRows(followedGames)}
-          </div>
-        </div>
+    ${renderCollapsibleSection('Current Selected Teams/Golfers', getFollowedTeamRows(followedGames, worldCupData).length + ' followed • ' + getFavoriteTeamRows(favorites, worldCupData).length + ' favorites • ' + followedGolfers.length + ' golfers', `
+      ${renderNestedCollapsibleSection('Followed Teams', `${getFollowedTeamRows(followedGames, worldCupData).length} teams`, `
+        ${renderSportGroupedPanels(
+          groupRowsBySport(getFollowedTeamRows(followedGames, worldCupData), row => row.sportKey),
+          renderFollowedTeamRow,
+          'No followed teams yet.'
+        )}
       `)}
 
-      ${renderNestedCollapsibleSection('Current Followed Golfers', `${followedGolfers.length} golfers`, `
+      ${renderNestedCollapsibleSection('Favorite Teams', `${getFavoriteTeamRows(favorites, worldCupData).length} teams`, `
+        ${renderSportGroupedPanels(
+          groupRowsBySport(getFavoriteTeamRows(favorites, worldCupData), row => row.sportKey),
+          renderFavoriteTeamRow,
+          'No favorite teams yet.'
+        )}
+      `)}
+
+      ${renderNestedCollapsibleSection('Followed Golfers', `${followedGolfers.length} golfers`, `
         <div class="card">
           <div class="admin-list">
             ${renderFollowedGolferRows(followedGolfers)}
           </div>
         </div>
       `)}
-
-      ${renderNestedCollapsibleSection('Current Favorite Teams', `${favorites.length} teams`, `
-        <div class="card">
-          <div class="admin-list">
-            ${renderFavoriteTeamRows(favorites)}
-          </div>
-        </div>
-      `)}
-
-      ${renderNestedCollapsibleSection('Current World Cup Teams', `${(worldCupData.favorites || []).length + (worldCupData.followedTeams || []).length} teams`, renderWorldCupCurrentCard(worldCupData))}
     `)}
 
     ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' refresh on', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
