@@ -206,6 +206,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v0.8.4</strong> Added Privacy Policy and Terms of Use pages for Roku channel publishing.</li>
             <li><strong>v0.8.3</strong> Added Help / Change Log and per-page display density.</li>
             <li><strong>v0.8.2</strong> Renamed Admin language around following teams and golfers.</li>
             <li><strong>v0.8.1</strong> Added final-game winner highlighting and softer green buttons.</li>

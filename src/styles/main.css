@@ -706,6 +706,19 @@ body {
   gap: 10px;
 }
 
+.legal-link {
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 800;
+  text-decoration: none;
+  padding: 6px 2px;
+}
+
+.legal-link:hover {
+  color: white;
+  text-decoration: underline;
+}
+
 .help-btn {
   border: 1px solid #334155;
   background: #0f172a;
