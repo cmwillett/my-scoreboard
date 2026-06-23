@@ -698,3 +698,133 @@ body {
     margin-left: 0;
   }
 }
+
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.help-btn {
+  border: 1px solid #334155;
+  background: #0f172a;
+  color: #bfdbfe;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.help-btn:hover {
+  border-color: #60a5fa;
+  color: white;
+}
+
+.page-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.density-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #0b1224;
+  color: #93c5fd;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.density-toggle span {
+  padding: 0 6px;
+  color: #94a3b8;
+}
+
+.density-toggle-btn {
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: #cbd5e1;
+  padding: 6px 9px;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.density-toggle-btn.active {
+  background: #2563eb;
+  color: white;
+}
+
+.modal-card .modal-scroll {
+  max-height: min(68vh, 620px);
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.help-modal-content section + section {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 1px solid #334155;
+}
+
+.help-modal-content h4 {
+  margin: 0 0 8px;
+  color: #93c5fd;
+}
+
+.help-modal-content p,
+.help-modal-content li {
+  color: #cbd5e1;
+  line-height: 1.45;
+}
+
+.help-modal-content ul {
+  margin: 8px 0 0;
+  padding-left: 18px;
+}
+
+.content.density-condensed .page-header {
+  margin-bottom: 10px;
+}
+
+.content.density-condensed .page-header h2 {
+  font-size: 22px;
+}
+
+.content.density-condensed .page-header p,
+.content.density-condensed .last-updated {
+  font-size: 12px;
+}
+
+.content.density-condensed .collapsible-section summary {
+  min-height: 42px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.content.density-condensed .collapsible-body {
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+@media (max-width: 700px) {
+  .title-stack,
+  .page-title-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .top-actions,
+  .page-actions {
+    justify-content: flex-start;
+  }
+}

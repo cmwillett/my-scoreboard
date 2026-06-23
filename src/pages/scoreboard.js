@@ -12,6 +12,7 @@ import {
   showToast
 } from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
+import { renderDensityToggle } from '../components/pageTools.js';
 
 function getGameSection(followedGame) {
   const game = followedGame.live || followedGame;
@@ -171,15 +172,18 @@ export async function renderScoreboard() {
         <div class="page-title-row">
           <h2>Scoreboard</h2>
 
-          ${
-            games.length
-              ? `
-                <button id="remove-all-games-btn" class="small-btn danger">
-                  Remove All
-                </button>
-              `
-              : ''
-          }
+          <div class="page-actions">
+            ${renderDensityToggle('scoreboard')}
+            ${
+              games.length
+                ? `
+                  <button id="remove-all-games-btn" class="small-btn danger">
+                    Remove All
+                  </button>
+                `
+                : ''
+            }
+          </div>
         </div>
 
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>

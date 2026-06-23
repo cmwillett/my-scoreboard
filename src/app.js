@@ -6,6 +6,8 @@ import { getPageVisibility } from './api.js';
 import { CONFIG } from './config.js';
 import { startAutoRefresh, stopAutoRefresh } from './services/refresh.js';
 import { initPwaInstallPrompt } from './components/pwaInstall.js';
+import { openHtmlModal } from './components/modal.js';
+import { applyPageDensity, setPageDensity } from './components/pageTools.js';
 
 const content = document.getElementById('app-content');
 const navButtons = document.querySelectorAll('.bottom-nav button');
@@ -43,7 +45,21 @@ function getFirstVisiblePage() {
 function applyNavVisibility(activePageKey) {
   let visibleCount = 0;
 
-  navButtons.forEach(btn => {
+  
+document.addEventListener('click', event => {
+  const densityBtn = event.target.closest('.density-toggle-btn');
+  if (densityBtn) {
+    setPageDensity(densityBtn.dataset.pageDensity, densityBtn.dataset.density);
+    return;
+  }
+});
+
+const helpBtn = document.getElementById('help-btn');
+if (helpBtn) {
+  helpBtn.addEventListener('click', openHelpAndChangeLog);
+}
+
+navButtons.forEach(btn => {
     const pageKey = btn.dataset.page;
     const visible = isPageVisible(pageKey);
 
@@ -129,6 +145,7 @@ async function renderPage(pageKey, options = {}) {
   if (thisRender !== renderToken) return;
 
   content.innerHTML = html;
+  applyPageDensity(targetPage);
   restoreUiSnapshot(uiSnapshot);
   currentPage = targetPage;
 
@@ -160,6 +177,62 @@ async function refreshCurrentPage(options = {}) {
 
 window.refreshCurrentPage = refreshCurrentPage;
 window.navigateToPage = renderPage;
+
+function openHelpAndChangeLog() {
+  openHtmlModal({
+    title: 'Help / Change Log',
+    html: `
+      <div class="help-modal-content">
+        <section>
+          <h4>How My Scoreboard works</h4>
+          <p><strong>Follow Team</strong> tells the app you care about a team. The scoreboard automatically shows that team's live game, recent final, or next upcoming game.</p>
+          <p><strong>Favorite Team</strong> keeps a team on the scoreboard automatically, even when you have not specifically followed that team for the day.</p>
+          <p><strong>Follow Golfer</strong> adds that golfer to the Golfers page and the Roku leaderboard.</p>
+          <p><strong>World Cup</strong> is managed through the same Follow Team flow. Choose World Cup as the sport, then choose the country.</p>
+        </section>
+
+        <section>
+          <h4>Display density</h4>
+          <p>Each display page has its own Expanded / Condensed toggle. Condensed mode fits more games on one screen during busy football and basketball nights.</p>
+        </section>
+
+        <section>
+          <h4>Admin</h4>
+          <p><strong>Follow Golfer/Team</strong> manages who appears on the PWA and Roku scoreboard.</p>
+          <p><strong>Followed Golfers/Teams</strong> shows what is currently selected.</p>
+          <p><strong>Site Data</strong> controls page visibility, automatic refresh by sport, and manual refresh buttons.</p>
+        </section>
+
+        <section>
+          <h4>Recent changes</h4>
+          <ul>
+            <li><strong>v0.8.3</strong> Added Help / Change Log and per-page display density.</li>
+            <li><strong>v0.8.2</strong> Renamed Admin language around following teams and golfers.</li>
+            <li><strong>v0.8.1</strong> Added final-game winner highlighting and softer green buttons.</li>
+            <li><strong>v0.8.0</strong> Improved Admin visual hierarchy.</li>
+            <li><strong>v0.7.x</strong> Added World Cup Recent Finals, unified refresh controls, and Roku improvements.</li>
+          </ul>
+        </section>
+      </div>
+    `,
+    buttonText: 'Close'
+  });
+}
+
+
+
+document.addEventListener('click', event => {
+  const densityBtn = event.target.closest('.density-toggle-btn');
+  if (densityBtn) {
+    setPageDensity(densityBtn.dataset.pageDensity, densityBtn.dataset.density);
+    return;
+  }
+});
+
+const helpBtn = document.getElementById('help-btn');
+if (helpBtn) {
+  helpBtn.addEventListener('click', openHelpAndChangeLog);
+}
 
 navButtons.forEach(btn => {
   btn.addEventListener('click', async () => {

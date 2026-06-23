@@ -74,3 +74,22 @@
 .golfer-row.dragging {
   opacity: 0.45;
 }
+
+.content.density-condensed .golfers-table {
+  font-size: 12px;
+}
+
+.content.density-condensed .golfers-table th,
+.content.density-condensed .golfers-table td {
+  padding: 6px 6px;
+}
+
+.content.density-condensed .sort-toggle {
+  margin-bottom: 8px;
+}
+
+.content.density-condensed .sort-toggle-btn {
+  padding: 7px;
+  border-radius: 10px;
+  font-size: 12px;
+}

@@ -12,6 +12,7 @@ import {
   showToast
 } from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
+import { renderDensityToggle } from '../components/pageTools.js';
 
 const SORT_MODE_KEY = 'golfersSortMode';
 
@@ -230,15 +231,18 @@ export async function renderGolfers() {
         <div class="page-title-row">
           <h2>Golfers</h2>
 
-          ${
-            golfers.length
-              ? `
-                <button id="remove-all-golfers-btn" class="small-btn danger">
-                  Remove All
-                </button>
-              `
-              : ''
-          }
+          <div class="page-actions">
+            ${renderDensityToggle('golfers')}
+            ${
+              golfers.length
+                ? `
+                  <button id="remove-all-golfers-btn" class="small-btn danger">
+                    Remove All
+                  </button>
+                `
+                : ''
+            }
+          </div>
         </div>
 
         <p>${currentRound} • Cut line: ${cutLine}</p>
@@ -296,7 +300,7 @@ export async function renderGolfers() {
           : `
             <div class="card empty-state">
               <h3>No followed golfers yet</h3>
-              <p>Go to Add Game/Golfer to follow a golfer.</p>
+              <p>Go to Admin → Follow Golfer/Team to follow a golfer.</p>
             </div>
           `
       }

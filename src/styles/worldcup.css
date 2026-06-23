@@ -141,3 +141,27 @@
   color: #94a3b8;
   font-weight: 700;
 }
+
+
+.content.density-condensed .worldcup-section {
+  margin-top: 12px;
+}
+
+.content.density-condensed .worldcup-table {
+  font-size: 12px;
+}
+
+.content.density-condensed .worldcup-table th,
+.content.density-condensed .worldcup-table td {
+  padding: 7px 8px;
+}
+
+.content.density-condensed .worldcup-table-wrap {
+  border-radius: 12px;
+}
+
+.content.density-condensed .worldcup-filter {
+  margin: 4px 0 8px;
+  padding: 8px;
+  font-size: 14px;
+}

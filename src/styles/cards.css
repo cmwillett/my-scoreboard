@@ -151,3 +151,41 @@
   font-size: 0.85rem;
   font-weight: 800;
 }
+
+
+.content.density-condensed .card,
+.content.density-condensed .score-card {
+  border-radius: 12px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+.content.density-condensed .team-row {
+  padding: 5px 0;
+  font-size: 16px;
+}
+
+.content.density-condensed .team-row strong,
+.content.density-condensed .team-row.final-winner strong,
+.content.density-condensed .team-row.leading strong {
+  font-size: 18px;
+}
+
+.content.density-condensed .game-meta-line,
+.content.density-condensed .favorite-game-label,
+.content.density-condensed .game-detail-text {
+  font-size: 12px;
+}
+
+.content.density-condensed .game-card-buttons {
+  margin-top: 8px;
+}
+
+.content.density-condensed .game-card-buttons button {
+  min-height: 34px;
+}
+
+.content.density-condensed .game-details {
+  margin-top: 8px;
+  padding-top: 8px;
+}

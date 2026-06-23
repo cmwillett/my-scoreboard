@@ -3,6 +3,7 @@ import {
   refreshWorldCupScores,
   updateWorldCupTeamNote
 } from '../api.js';
+import { renderDensityToggle } from '../components/pageTools.js';
 import {
   openMessageModal,
   openTextModal,
@@ -292,9 +293,12 @@ export async function renderWorldCup() {
             <p class="last-updated">World Cup Last Updated: ${escapeHtml(data.lastWorldCupUpdated || 'Not updated yet')}</p>
           </div>
 
-          <button id="refresh-worldcup-btn" class="small-btn">
-            Refresh World Cup Scores
-          </button>
+          <div class="page-actions">
+            ${renderDensityToggle('worldcup')}
+            <button id="refresh-worldcup-btn" class="small-btn">
+              Refresh World Cup Scores
+            </button>
+          </div>
         </div>
       </div>
 

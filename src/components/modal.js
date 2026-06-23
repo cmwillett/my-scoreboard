@@ -33,6 +33,23 @@ function createModal(contentHtml) {
   return modal;
 }
 
+
+export function openHtmlModal({ title = 'Help', html = '', buttonText = 'Close' }) {
+  const modal = createModal(`
+    <div class="modal-scroll">
+      <h3>${title}</h3>
+      ${html}
+    </div>
+    <div class="modal-actions">
+      <button type="button" class="primary-btn modal-close-btn">${buttonText}</button>
+    </div>
+  `);
+
+  modal.querySelector('.modal-close-btn').addEventListener('click', () => {
+    closeModal(modal);
+  });
+}
+
 export function openMessageModal({ title = 'Message', message = '', buttonText = 'OK' }) {
   const modal = createModal(`
     <h3>${title}</h3>
