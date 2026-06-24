@@ -262,6 +262,10 @@ export function attachAddHandlers() {
       return;
     }
 
+    if (sport !== 'Golf' && sport !== 'WorldCup' && !selectedGame) {
+      selectedGame = gamesToShowNow[0] || currentGames.find(game => game.awayTeam === item || game.homeTeam === item) || null;
+    }
+
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 

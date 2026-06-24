@@ -323,9 +323,9 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
       </div>
     `)}
 
-    ${renderNestedCollapsibleSection('Auto Refresh', `${refreshRows.filter(s => s.enabled).length}/${refreshRows.length} on`, `
+    ${renderNestedCollapsibleSection('In Season / Auto Refresh', `${refreshRows.filter(s => s.enabled).length}/${refreshRows.length} on`, `
       <div class="card form-card sports-data-card">
-        <p class="admin-help">Turn sports off when they are out of season. Smart refresh skips disabled sports.</p>
+        <p class="admin-help">Turn sports off when they are out of season. Disabled sports are hidden from the scoreboard and skipped by smart refresh.</p>
 
         <div class="admin-list refresh-control-list">
           ${refreshRows.length ? refreshRows.map(sport => `
@@ -346,7 +346,7 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
         </div>
 
         <button id="save-sports-refresh-btn" class="primary-btn">
-          Save Auto Refresh Settings
+          Save In Season Settings
         </button>
       </div>
     `)}
@@ -1017,16 +1017,16 @@ function attachAdminHandlers() {
       try {
         await saveSportsRefreshSettings(sports);
         await saveWorldCupRefreshSettings(worldCupEnabled);
-        showToast('Auto refresh settings saved.');
+        showToast('In season settings saved.');
         await window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);
         openMessageModal({
           title: 'Could Not Save Auto Refresh',
-          message: 'The auto refresh settings were not saved.'
+          message: 'The in season settings were not saved.'
         });
         saveSportsRefreshBtn.disabled = false;
-        saveSportsRefreshBtn.textContent = 'Save Auto Refresh Settings';
+        saveSportsRefreshBtn.textContent = 'Save In Season Settings';
       }
     });
   }
@@ -1290,14 +1290,54 @@ export async function renderAdmin() {
       ${renderNestedCollapsibleSection('Follow Team', 'Follow one team', addGameHtml)}
 
       ${renderNestedCollapsibleSection('Follow Golfer', 'Follow one golfer', renderAddGolferCard())}
+
+      ${renderNestedCollapsibleSection('Add Favorite Team', 'Auto-display team', `
+        <div class="card form-card">
+          <p class="admin-help">
+            Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
+          </p>
+
+          <label>Sport</label>
+          <select id="favorite-sport-select">
+            <option value="">Choose sport...</option>
+            ${renderSportOptions(sports)}
+          </select>
+
+          <label>Team</label>
+          <div class="search-combo">
+            <input
+              id="favorite-team-input"
+              type="text"
+              placeholder="Choose sport first..."
+              autocomplete="off"
+            />
+            <div id="favorite-team-dropdown" class="search-dropdown"></div>
+          </div>
+
+          <label>Notes</label>
+          <textarea id="favorite-team-notes" rows="3" placeholder="Optional note..."></textarea>
+
+          <button id="add-favorite-team-btn" class="primary-btn">
+            Add Favorite Team
+          </button>
+        </div>
+      `)}
     `)}
 
-    ${renderCollapsibleSection('Followed Golfers/Teams', getFollowedTeamRows(followedGames, worldCupData).length + ' teams • ' + followedGolfers.length + ' golfers', `
+    ${renderCollapsibleSection('Followed Golfers/Teams', getFollowedTeamRows(followedGames, worldCupData).length + ' followed • ' + getFavoriteTeamRows(favorites, worldCupData).length + ' favorites • ' + followedGolfers.length + ' golfers', `
       ${renderNestedCollapsibleSection('Followed Teams', `${getFollowedTeamRows(followedGames, worldCupData).length} teams`, `
         ${renderSportGroupedPanels(
           groupRowsBySport(getFollowedTeamRows(followedGames, worldCupData), row => row.sportKey),
           renderFollowedTeamRow,
           'No followed teams yet.'
+        )}
+      `)}
+
+      ${renderNestedCollapsibleSection('Favorite Teams', `${getFavoriteTeamRows(favorites, worldCupData).length} teams`, `
+        ${renderSportGroupedPanels(
+          groupRowsBySport(getFavoriteTeamRows(favorites, worldCupData), row => row.sportKey),
+          renderFavoriteTeamRow,
+          'No favorite teams yet.'
         )}
       `)}
 

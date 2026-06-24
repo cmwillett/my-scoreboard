@@ -43,6 +43,51 @@ function getGameSection(followedGame) {
   return 'upcoming';
 }
 
+
+function getGameKey(followedGame) {
+  const game = followedGame.live || followedGame;
+  const sportKey = game.sportKey || followedGame.sportKey || game.sport || followedGame.sport || '';
+  const eventId = game.eventId || followedGame.eventId || '';
+  if (sportKey && eventId) return `${sportKey}_${eventId}`;
+  return `${sportKey}_${followedGame.team || game.awayTeam || ''}_${game.homeTeam || ''}_${game.startTime || ''}`;
+}
+
+function mergeGameNotes(existing, incoming) {
+  const parts = [];
+  [existing, incoming].forEach(item => {
+    if (!item) return;
+    const team = item.team || item.selectedTeam || '';
+    const note = item.notes || '';
+    if (!note) return;
+    parts.push(team ? `${team}: ${note}` : note);
+  });
+  return [...new Set(parts)].join('\n');
+}
+
+function dedupeFollowedGames(games) {
+  const map = new Map();
+
+  games.forEach(game => {
+    const key = getGameKey(game);
+    if (!map.has(key)) {
+      map.set(key, { ...game });
+      return;
+    }
+
+    const existing = map.get(key);
+    map.set(key, {
+      ...existing,
+      notes: mergeGameNotes(existing, game) || existing.notes || game.notes || '',
+      duplicateFollowIds: [
+        ...(existing.duplicateFollowIds || [existing.id].filter(Boolean)),
+        game.id
+      ].filter(Boolean)
+    });
+  });
+
+  return Array.from(map.values());
+}
+
 function groupBySport(games) {
   return games.reduce((groups, followedGame) => {
     const game = followedGame.live || followedGame;
@@ -158,7 +203,7 @@ function renderSection(title, games) {
 export async function renderScoreboard() {
   try {
     const followedResult = await getFollowedGames();
-    const games = followedResult.data || [];
+    const games = dedupeFollowedGames(followedResult.data || []);
     const lastUpdated = formatLastUpdated();
 
     const liveGames = games.filter(game => getGameSection(game) === 'live');
@@ -187,12 +232,12 @@ export async function renderScoreboard() {
         </div>
 
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
-        <p>${games.length} followed games showing.</p>
+        <p>${games.length} games showing. Duplicate matchups are combined automatically.</p>
       </div>
 
       ${renderSection('Live', liveGames)}
       ${renderSection('Upcoming', upcomingGames)}
-      ${renderSection('Final', finalGames)}
+      ${renderSection('Recent Finals', finalGames)}
 
       ${
         !games.length
