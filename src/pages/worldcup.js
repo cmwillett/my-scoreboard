@@ -4,6 +4,7 @@ import {
   updateWorldCupTeamNote
 } from '../api.js';
 import { renderDensityToggle } from '../components/pageTools.js';
+import { formatUpcomingGameTime } from '../utils/date.js';
 import {
   openMessageModal,
   openTextModal,
@@ -22,6 +23,32 @@ function escapeHtml(value) {
     .replaceAll("'", '&#039;');
 }
 
+
+
+function normalizeTeamName(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getWorldCupFollowedTeams(game) {
+  const teams = [];
+
+  if (Array.isArray(game.followedTeams)) teams.push(...game.followedTeams);
+  if (Array.isArray(game.selectedTeams)) teams.push(...game.selectedTeams);
+  if (game.selectedTeam) teams.push(game.selectedTeam);
+  if (game.team) teams.push(game.team);
+
+  if (worldCupState?.followedTeams) {
+    worldCupState.followedTeams.forEach(row => {
+      if (row?.team) teams.push(row.team);
+    });
+  }
+
+  return [...new Set(teams.map(normalizeTeamName).filter(Boolean))];
+}
+
+function renderWorldCupTeamName(name, score, isWinner, isFollowed) {
+  return `${isWinner ? '🏆 ' : ''}${isFollowed ? '<span class="followed-team-icon" title="Followed team">📌</span> ' : ''}${escapeHtml(name)} ${escapeHtml(score || '0')}`;
+}
 
 function isRealWorldCupTeamName(team) {
   const name = String(team || '').trim();
@@ -157,16 +184,19 @@ function renderGameRows(games, { selectedOnly = false } = {}) {
     const homeWinner = hasScores && isFinal && homeScoreNum > awayScoreNum;
     const awayClass = awayWinner ? 'worldcup-winner' : homeWinner ? 'worldcup-loser' : '';
     const homeClass = homeWinner ? 'worldcup-winner' : awayWinner ? 'worldcup-loser' : '';
+    const followedTeamNames = getWorldCupFollowedTeams(game);
+    const awayIsFollowed = followedTeamNames.includes(normalizeTeamName(game.awayTeam));
+    const homeIsFollowed = followedTeamNames.includes(normalizeTeamName(game.homeTeam));
 
     return `
       <tr>
-        <td data-label="Date">${escapeHtml(game.date || '-')}</td>
+        <td data-label="Date">${escapeHtml(formatUpcomingGameTime(game.date || '-'))}</td>
         <td data-label="Match">
           <strong>
             ${typeIcon}
-            <span class="${awayClass}">${awayWinner ? '🏆 ' : ''}${escapeHtml(game.awayTeam)} ${escapeHtml(game.awayScore || '0')}</span>
+            <span class="${awayClass}">${renderWorldCupTeamName(game.awayTeam, game.awayScore, awayWinner, awayIsFollowed)}</span>
             <span class="worldcup-vs"> at </span>
-            <span class="${homeClass}">${homeWinner ? '🏆 ' : ''}${escapeHtml(game.homeTeam)} ${escapeHtml(game.homeScore || '0')}</span>
+            <span class="${homeClass}">${renderWorldCupTeamName(game.homeTeam, game.homeScore, homeWinner, homeIsFollowed)}</span>
           </strong>
         </td>
         <td data-label="Status">${escapeHtml(game.status || '-')}</td>

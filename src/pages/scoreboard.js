@@ -14,6 +14,21 @@ import {
 import { formatLastUpdated } from '../utils/date.js';
 import { renderDensityToggle } from '../components/pageTools.js';
 
+
+function getFollowedTeamNames(item) {
+  const teams = [];
+  if (Array.isArray(item.followedTeams)) teams.push(...item.followedTeams);
+  if (Array.isArray(item.selectedTeams)) teams.push(...item.selectedTeams);
+  if (Array.isArray(item.teams)) teams.push(...item.teams);
+  if (item.team) teams.push(item.team);
+  if (item.selectedTeam) teams.push(item.selectedTeam);
+  return [...new Set(teams.map(team => String(team || '').trim()).filter(Boolean))];
+}
+
+function mergeFollowedTeamNames(existing, incoming) {
+  return [...new Set([...getFollowedTeamNames(existing), ...getFollowedTeamNames(incoming)])];
+}
+
 function getGameSection(followedGame) {
   const game = followedGame.live || followedGame;
   const rawStatus = game.rawStatus || '';
@@ -70,7 +85,7 @@ function dedupeFollowedGames(games) {
   games.forEach(game => {
     const key = getGameKey(game);
     if (!map.has(key)) {
-      map.set(key, { ...game });
+      map.set(key, { ...game, followedTeams: getFollowedTeamNames(game) });
       return;
     }
 
@@ -78,6 +93,7 @@ function dedupeFollowedGames(games) {
     map.set(key, {
       ...existing,
       notes: mergeGameNotes(existing, game) || existing.notes || game.notes || '',
+      followedTeams: mergeFollowedTeamNames(existing, game),
       duplicateFollowIds: [
         ...(existing.duplicateFollowIds || [existing.id].filter(Boolean)),
         game.id
