@@ -160,8 +160,8 @@ function renderGameRows(games, { selectedOnly = false } = {}) {
 
     return `
       <tr>
-        <td>${escapeHtml(game.date || '-')}</td>
-        <td>
+        <td data-label="Date">${escapeHtml(game.date || '-')}</td>
+        <td data-label="Match">
           <strong>
             ${typeIcon}
             <span class="${awayClass}">${awayWinner ? '🏆 ' : ''}${escapeHtml(game.awayTeam)} ${escapeHtml(game.awayScore || '0')}</span>
@@ -169,10 +169,10 @@ function renderGameRows(games, { selectedOnly = false } = {}) {
             <span class="${homeClass}">${homeWinner ? '🏆 ' : ''}${escapeHtml(game.homeTeam)} ${escapeHtml(game.homeScore || '0')}</span>
           </strong>
         </td>
-        <td>${escapeHtml(game.status || '-')}</td>
-        <td>${escapeHtml(game.channel || '-')}</td>
-        <td>${game.notes ? `📝 ${escapeHtml(game.notes)}` : '-'}</td>
-        <td>
+        <td data-label="Status">${escapeHtml(game.status || '-')}</td>
+        <td data-label="TV">${escapeHtml(game.channel || '-')}</td>
+        <td data-label="Note">${game.notes ? `📝 ${escapeHtml(game.notes)}` : '-'}</td>
+        <td data-label="Actions">
           ${selectedOnly
             ? `
               <button

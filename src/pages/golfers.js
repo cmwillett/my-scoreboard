@@ -62,14 +62,14 @@ function renderGolferRow(golfer, sortMode) {
       data-golfer="${golfer.golfer}"
       draggable="${draggable}"
     >
-      ${draggable ? '<td class="drag-handle">☰</td>' : ''}
-      <td>${golfer.golfer || '-'}</td>
-      <td>${golfer.position || '-'}</td>
-      <td>${golfer.overall || '-'}</td>
-      <td>${golfer.today || '-'}</td>
-      <td>${golfer.thru || golfer.teeTime || '-'}</td>
-      <td>${note || '-'}</td>
-      <td>
+      ${draggable ? '<td class="drag-handle" data-label="Move">☰</td>' : ''}
+      <td data-label="Golfer">${golfer.golfer || '-'}</td>
+      <td data-label="Pos">${golfer.position || '-'}</td>
+      <td data-label="Total">${golfer.overall || '-'}</td>
+      <td data-label="Today">${golfer.today || '-'}</td>
+      <td data-label="Thru / Tee">${golfer.thru || golfer.teeTime || '-'}</td>
+      <td data-label="Note">${note || '-'}</td>
+      <td data-label="Edit">
         <button
           class="small-btn edit-golfer-note-btn"
           data-golfer="${golfer.golfer}"
@@ -79,7 +79,7 @@ function renderGolferRow(golfer, sortMode) {
           Edit
         </button>
       </td>
-      <td>
+      <td data-label="Remove">
         <button class="small-btn danger remove-golfer-btn" data-golfer="${golfer.golfer}">
           Remove
         </button>

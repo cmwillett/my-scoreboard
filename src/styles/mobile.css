@@ -22,3 +22,316 @@
     flex: 1;
   }
 }
+
+
+/* v0.8.5 mobile overflow cleanup */
+html,
+body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+.app,
+.content,
+.card,
+.score-card,
+.form-card,
+.collapsible-section,
+.collapsible-body,
+.page-header,
+.page-title-row,
+.page-actions,
+.table-wrap,
+.worldcup-table-wrap {
+  min-width: 0;
+  max-width: 100%;
+}
+
+img,
+svg,
+canvas,
+video {
+  max-width: 100%;
+}
+
+pre,
+code,
+.game-detail-text,
+.admin-list-row,
+.worldcup-team-row,
+.team-row span,
+.game-meta-line,
+.page-header p {
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+
+.top-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.legal-link,
+.help-btn,
+.density-toggle-btn,
+.small-btn,
+.primary-btn {
+  white-space: normal;
+}
+
+.density-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.density-toggle span {
+  color: #94a3b8;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.density-toggle-btn {
+  border: 1px solid #334155;
+  border-radius: 999px;
+  background: #0f172a;
+  color: #cbd5e1;
+  padding: 7px 10px;
+  font-size: 12px;
+  font-weight: 900;
+}
+
+.density-toggle-btn.active {
+  background: #2563eb;
+  border-color: #60a5fa;
+  color: white;
+}
+
+@media (max-width: 700px) {
+  .app {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .top-bar {
+    padding: 12px 14px;
+  }
+
+  .title-stack,
+  .page-title-row {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  .top-actions,
+  .page-actions {
+    justify-content: flex-start;
+  }
+
+  .content {
+    padding: 12px;
+  }
+
+  .page-header h2 {
+    font-size: 24px;
+  }
+
+  .bottom-nav {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .bottom-nav button {
+    min-width: 0;
+    padding: 11px 2px;
+    font-size: 12px;
+  }
+
+  .collapsible-section summary {
+    padding: 13px 12px;
+    font-size: 17px;
+  }
+
+  .collapsible-body {
+    padding: 0 10px 10px;
+  }
+
+  .game-card-buttons {
+    flex-direction: column;
+  }
+
+  .team-row,
+  .content.density-condensed .team-row {
+    gap: 10px;
+  }
+
+  .team-row strong,
+  .team-row.final-winner strong,
+  .team-row.leading strong {
+    flex: 0 0 auto;
+  }
+
+  .game-meta-line {
+    gap: 6px;
+  }
+
+  .game-meta-line span + span::before {
+    margin-right: 6px;
+  }
+
+  .sort-toggle {
+    flex-direction: column;
+  }
+
+  .admin-list-row,
+  .refresh-control-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
+/* Turn wide data tables into stacked cards on phones. */
+@media (max-width: 640px) {
+  .worldcup-table-wrap,
+  .table-wrap {
+    overflow-x: visible;
+    border: 0;
+    background: transparent;
+  }
+
+  .worldcup-table,
+  .golfers-table {
+    min-width: 0;
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0 10px;
+    font-size: 14px;
+  }
+
+  .worldcup-table thead,
+  .golfers-table thead {
+    display: none;
+  }
+
+  .worldcup-table tbody,
+  .worldcup-table tr,
+  .worldcup-table td,
+  .golfers-table tbody,
+  .golfers-table tr,
+  .golfers-table td {
+    display: block;
+    width: 100%;
+  }
+
+  .worldcup-table tr,
+  .golfers-table tr {
+    padding: 12px;
+    border: 1px solid #334155;
+    border-radius: 14px;
+    background: #0f172a;
+  }
+
+  .worldcup-table td,
+  .golfers-table td {
+    display: grid;
+    grid-template-columns: minmax(78px, 34%) minmax(0, 1fr);
+    gap: 10px;
+    align-items: start;
+    padding: 7px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, .06);
+    white-space: normal;
+  }
+
+  .worldcup-table td:last-child,
+  .golfers-table td:last-child {
+    border-bottom: 0;
+  }
+
+  .worldcup-table td::before,
+  .golfers-table td::before {
+    content: attr(data-label);
+    color: #93c5fd;
+    font-size: 11px;
+    font-weight: 900;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+  }
+
+  .worldcup-table td[data-label="Match"],
+  .golfers-table td[data-label="Golfer"] {
+    grid-template-columns: 1fr;
+    gap: 3px;
+    font-size: 16px;
+    font-weight: 900;
+  }
+
+  .worldcup-table td[data-label="Match"]::before,
+  .golfers-table td[data-label="Golfer"]::before {
+    display: none;
+  }
+
+  .worldcup-table td[data-label="Actions"],
+  .golfers-table td[data-label="Edit"],
+  .golfers-table td[data-label="Remove"] {
+    grid-template-columns: 1fr;
+  }
+
+  .worldcup-table td[data-label="Actions"]::before,
+  .golfers-table td[data-label="Edit"]::before,
+  .golfers-table td[data-label="Remove"]::before {
+    display: none;
+  }
+
+  .worldcup-table .small-btn,
+  .golfers-table .small-btn {
+    width: 100%;
+    min-height: 38px;
+  }
+
+  .content.density-condensed .worldcup-table,
+  .content.density-condensed .golfers-table {
+    border-spacing: 0 7px;
+    font-size: 12px;
+  }
+
+  .content.density-condensed .worldcup-table tr,
+  .content.density-condensed .golfers-table tr {
+    padding: 9px;
+  }
+
+  .content.density-condensed .worldcup-table td,
+  .content.density-condensed .golfers-table td {
+    padding: 5px 0;
+  }
+}
+
+@media (max-width: 420px) {
+  .top-actions {
+    gap: 6px;
+  }
+
+  .help-btn,
+  .legal-link,
+  .app-version {
+    font-size: 11px;
+  }
+
+  .page-header h2 {
+    font-size: 22px;
+  }
+
+  .worldcup-table td,
+  .golfers-table td {
+    grid-template-columns: minmax(68px, 32%) minmax(0, 1fr);
+    gap: 8px;
+  }
+}
