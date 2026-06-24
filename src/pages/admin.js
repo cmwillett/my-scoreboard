@@ -1250,7 +1250,7 @@ export async function renderAdmin() {
 
   const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult, availableGolfersResult] = await Promise.all([
     getAvailableSports(),
-    getFollowedGames(),
+    getAllFollowedGames(),
     getFollowedGolfers(),
     getFavoriteTeams(),
     getPageVisibility(),
@@ -1262,7 +1262,7 @@ export async function renderAdmin() {
   const sports = sportsResult.data || [];
   const followedGames = (followedGamesResult.data || []).filter(game => game.selectedType !== 'favorite' && game.type !== 'favorite' && game.followType !== 'favorite');
   const followedGolfers = followedGolfersResult.data || [];
-  const favorites = favoritesResult.data || [];
+  const favorites = []; // Favorite Teams UI removed; legacy data is ignored in Admin.
   const visibility = visibilityResult.data || {};
   const settingsData = settingsResult.data || {};
   const refreshSports = settingsData.sports || [];
@@ -1291,54 +1291,14 @@ export async function renderAdmin() {
       ${renderNestedCollapsibleSection('Follow Team', 'Follow one team', addGameHtml)}
 
       ${renderNestedCollapsibleSection('Follow Golfer', 'Follow one golfer', renderAddGolferCard())}
-
-      ${renderNestedCollapsibleSection('Add Favorite Team', 'Auto-display team', `
-        <div class="card form-card">
-          <p class="admin-help">
-            Favorite teams auto-display on the scoreboard. Live games show first; otherwise the next upcoming game shows.
-          </p>
-
-          <label>Sport</label>
-          <select id="favorite-sport-select">
-            <option value="">Choose sport...</option>
-            ${renderSportOptions(sports)}
-          </select>
-
-          <label>Team</label>
-          <div class="search-combo">
-            <input
-              id="favorite-team-input"
-              type="text"
-              placeholder="Choose sport first..."
-              autocomplete="off"
-            />
-            <div id="favorite-team-dropdown" class="search-dropdown"></div>
-          </div>
-
-          <label>Notes</label>
-          <textarea id="favorite-team-notes" rows="3" placeholder="Optional note..."></textarea>
-
-          <button id="add-favorite-team-btn" class="primary-btn">
-            Add Favorite Team
-          </button>
-        </div>
-      `)}
     `)}
 
-    ${renderCollapsibleSection('Followed Golfers/Teams', getFollowedTeamRows(followedGames, worldCupData).length + ' followed • ' + getFavoriteTeamRows(favorites, worldCupData).length + ' favorites • ' + followedGolfers.length + ' golfers', `
+    ${renderCollapsibleSection('Followed Golfers/Teams', getFollowedTeamRows(followedGames, worldCupData).length + ' followed • ' + followedGolfers.length + ' golfers', `
       ${renderNestedCollapsibleSection('Followed Teams', `${getFollowedTeamRows(followedGames, worldCupData).length} teams`, `
         ${renderSportGroupedPanels(
           groupRowsBySport(getFollowedTeamRows(followedGames, worldCupData), row => row.sportKey),
           renderFollowedTeamRow,
           'No followed teams yet.'
-        )}
-      `)}
-
-      ${renderNestedCollapsibleSection('Favorite Teams', `${getFavoriteTeamRows(favorites, worldCupData).length} teams`, `
-        ${renderSportGroupedPanels(
-          groupRowsBySport(getFavoriteTeamRows(favorites, worldCupData), row => row.sportKey),
-          renderFavoriteTeamRow,
-          'No favorite teams yet.'
         )}
       `)}
 
