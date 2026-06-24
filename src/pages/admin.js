@@ -443,7 +443,7 @@ function renderSportGroupedPanels(groups, rowRenderer, emptyMessage) {
 }
 
 function getFollowedTeamRows(games = [], worldCupData = {}) {
-  const manualGames = games.filter(game => game.isFavorite !== true);
+  const manualGames = games.filter(game => game.selectedType !== 'favorite' && game.type !== 'favorite' && game.followType !== 'favorite');
   const rows = manualGames.map(game => ({
     ...game,
     sportKey: game.sportKey || game.sport || game.live?.sportKey || game.live?.sport || 'Other',
@@ -572,7 +572,7 @@ function getFollowedGameLabel(followedGame) {
 }
 
 function renderFollowedGameRows(games = []) {
-  const manualGames = games.filter(game => game.isFavorite !== true);
+  const manualGames = games.filter(game => game.selectedType !== 'favorite' && game.type !== 'favorite' && game.followType !== 'favorite');
 
   if (!manualGames.length) {
     return `
@@ -1182,7 +1182,7 @@ function attachAdminHandlers() {
         notes: btn.dataset.notes || '',
         onSave: async ({ id, spread, notes }) => {
           await updateFollowedGame(id, spread, notes);
-          showToast('Game saved.');
+          showToast('Team saved.');
           await window.refreshCurrentPage?.();
         }
       });
@@ -1192,13 +1192,13 @@ function attachAdminHandlers() {
   document.querySelectorAll('.remove-current-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       openConfirmModal({
-        title: 'Remove Followed Game?',
-        message: 'This will remove this game from your followed games.',
+        title: 'Remove Followed Team?',
+        message: 'This will remove this team from your followed teams.',
         confirmText: 'Remove',
         onConfirm: async () => {
           await removeFollowedGame(btn.dataset.id);
-          showToast('Game removed.');
-          await window.refreshCurrentPage?.();
+          window.refreshCurrentPage?.();
+          window.setTimeout(() => showToast('Team removed.'), 100);
         }
       });
     });
@@ -1259,7 +1259,7 @@ export async function renderAdmin() {
   ]);
 
   const sports = sportsResult.data || [];
-  const followedGames = (followedGamesResult.data || []).filter(game => game.isFavorite !== true);
+  const followedGames = (followedGamesResult.data || []).filter(game => game.selectedType !== 'favorite' && game.type !== 'favorite' && game.followType !== 'favorite');
   const followedGolfers = followedGolfersResult.data || [];
   const favorites = favoritesResult.data || [];
   const visibility = visibilityResult.data || {};

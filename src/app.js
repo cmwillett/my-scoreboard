@@ -206,10 +206,10 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
-            <li><strong>v0.8.6</strong> Added stricter mobile-only overflow guards for game cards and schedule metadata.</li>
+            <li><strong>v0.8.7</strong> Added stricter mobile-only overflow guards for game cards and schedule metadata.</li>
             <li><strong>v0.8.5</strong> Improved mobile layouts to reduce horizontal scrolling and convert tables into phone-friendly cards.</li>
             <li><strong>v0.8.4</strong> Added Privacy Policy and Terms of Use pages for Roku channel publishing.</li>
-            <li><strong>v0.8.3</strong> Added Help / Change Log and per-page display density.</li>
+            <li><strong>v0.8.7</strong> Added Help / Change Log and per-page display density.</li>
             <li><strong>v0.8.2</strong> Renamed Admin language around following teams and golfers.</li>
             <li><strong>v0.8.1</strong> Added final-game winner highlighting and softer green buttons.</li>
             <li><strong>v0.8.0</strong> Improved Admin visual hierarchy.</li>

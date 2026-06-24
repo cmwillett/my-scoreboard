@@ -77,16 +77,12 @@ function renderGameChoices(team) {
   selectedGame = gamesToShowNow[0] || null;
 
   if (!gamesToShowNow.length) {
-    gamesWrap.style.display = 'block';
-    gamesList.innerHTML = `
-      <div class="empty-state small">
-        No live or upcoming games found for ${team}.
-      </div>
-    `;
+    gamesWrap.style.display = 'none';
+    gamesList.innerHTML = '';
     return;
   }
 
-  gamesWrap.style.display = 'block';
+  gamesWrap.style.display = 'none';
   gamesList.innerHTML = gamesToShowNow.map(renderGameChoice).join('');
 
   gamesList.querySelectorAll('.game-choice-btn').forEach(btn => {
@@ -151,8 +147,9 @@ export function attachAddHandlers() {
         itemInput.value = btn.dataset.value;
         itemDropdown.style.display = 'none';
 
-        if (sportSelect.value !== 'Golf') {
+        if (sportSelect.value !== 'Golf' && sportSelect.value !== 'WorldCup') {
           renderGameChoices(btn.dataset.value);
+          gamePickerWrap.style.display = 'none';
         }
       });
     });
@@ -265,43 +262,15 @@ export function attachAddHandlers() {
       return;
     }
 
-    if (sport !== 'Golf' && !selectedGame) {
-      selectedGame = gamesToShowNow[0] || null;
-    }
-
-    if (sport !== 'Golf' && !selectedGame) {
-      openMessageModal({
-        title: 'Choose a Game',
-        message: 'Choose a game to follow.'
-      });
-      return;
+    if (sport !== 'Golf' && sport !== 'WorldCup' && !selectedGame) {
+      selectedGame = gamesToShowNow[0] || currentGames.find(game => game.awayTeam === item || game.homeTeam === item) || null;
     }
 
     saveBtn.disabled = true;
     saveBtn.textContent = 'Saving...';
 
     try {
-      if (sport === 'WorldCup') {
-      itemLabel.textContent = 'Team';
-      spreadWrap.style.display = 'none';
-      gamePickerWrap.style.display = 'none';
-
-      const result = await getWorldCupPageData();
-      const teams = (result.data?.teams || [])
-        .filter(team => {
-          const name = String(team || '').trim();
-          const lower = name.toLowerCase();
-          return name && lower !== 'tbd' && !lower.includes('group') && !name.includes('/') && !/^\d/.test(name);
-        })
-        .sort();
-
-      currentItems = teams.map(name => ({ value: name, label: name }));
-      itemInput.placeholder = 'Search World Cup team...';
-      showFilteredItems();
-      return;
-    }
-
-    if (sport === 'Golf') {
+      if (sport === 'Golf') {
         await addFollowedGolfer(item, notes, false);
         showToast(`${item} added.`);
       } else if (sport === 'WorldCup') {
@@ -310,13 +279,13 @@ export function attachAddHandlers() {
       } else {
         await addFollowedGame({
           sportKey: sport,
-          eventId: selectedGame.eventId || selectedGame.eventID || selectedGame.id,
+          eventId: selectedGame ? (selectedGame.eventId || selectedGame.eventID || selectedGame.id || '') : '',
           team: item,
           spread,
           notes
         });
 
-        showToast(`${selectedGame.awayTeam} at ${selectedGame.homeTeam} added.`);
+        showToast(`${item} followed.`);
       }
 
       resetForm();
@@ -377,7 +346,6 @@ export async function renderAddGame(options = {}) {
       </div>
 
       <div id="game-picker-wrap" style="display:none;">
-        <label>Game</label>
         <div id="game-picker-list" class="game-picker-list"></div>
       </div>
 
