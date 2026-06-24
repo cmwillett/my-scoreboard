@@ -46,6 +46,10 @@ export async function getFollowedGames() {
   return apiRequest('getFollowedGames');
 }
 
+export async function getAllFollowedGames() {
+  return apiRequest('getAllFollowedGames');
+}
+
 export async function addFollowedGame(game) {
   return apiRequest('addFollowedGame', {
     sportKey: game.sportKey,

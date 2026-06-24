@@ -1,6 +1,7 @@
 import {
   getAvailableSports,
   getFollowedGames,
+  getAllFollowedGames,
   updateFollowedGame,
   removeFollowedGame,
   getFollowedGolfers,
@@ -323,9 +324,9 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
       </div>
     `)}
 
-    ${renderNestedCollapsibleSection('In Season / Auto Refresh', `${refreshRows.filter(s => s.enabled).length}/${refreshRows.length} on`, `
+    ${renderNestedCollapsibleSection('In Season Sports', `${refreshRows.filter(s => s.enabled).length}/${refreshRows.length} in season`, `
       <div class="card form-card sports-data-card">
-        <p class="admin-help">Turn sports off when they are out of season. Disabled sports are hidden from the scoreboard and skipped by smart refresh.</p>
+        <p class="admin-help">Select the sports that are currently in season. Out-of-season sports stay listed in Admin, but are hidden from the Scores/Golf/World Cup pages and skipped by smart refresh.</p>
 
         <div class="admin-list refresh-control-list">
           ${refreshRows.length ? refreshRows.map(sport => `
@@ -346,7 +347,7 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
         </div>
 
         <button id="save-sports-refresh-btn" class="primary-btn">
-          Save In Season Settings
+          Save In Season Sports
         </button>
       </div>
     `)}
@@ -1026,7 +1027,7 @@ function attachAdminHandlers() {
           message: 'The in season settings were not saved.'
         });
         saveSportsRefreshBtn.disabled = false;
-        saveSportsRefreshBtn.textContent = 'Save In Season Settings';
+        saveSportsRefreshBtn.textContent = 'Save In Season Sports';
       }
     });
   }
@@ -1350,6 +1351,6 @@ export async function renderAdmin() {
       `)}
     `)}
 
-    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' refresh on', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
+    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
   `;
 }
