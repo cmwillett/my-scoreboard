@@ -206,6 +206,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v0.8.6</strong> Added stricter mobile-only overflow guards for game cards and schedule metadata.</li>
             <li><strong>v0.8.5</strong> Improved mobile layouts to reduce horizontal scrolling and convert tables into phone-friendly cards.</li>
             <li><strong>v0.8.4</strong> Added Privacy Policy and Terms of Use pages for Roku channel publishing.</li>
             <li><strong>v0.8.3</strong> Added Help / Change Log and per-page display density.</li>

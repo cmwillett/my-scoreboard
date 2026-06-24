@@ -24,7 +24,7 @@
 }
 
 
-/* v0.8.5 mobile overflow cleanup */
+/* v0.8.6 mobile overflow cleanup */
 html,
 body {
   max-width: 100%;
@@ -333,5 +333,112 @@ code,
   .golfers-table td {
     grid-template-columns: minmax(68px, 32%) minmax(0, 1fr);
     gap: 8px;
+  }
+}
+
+
+/* v0.8.6 mobile-only hard overflow guard */
+@media (max-width: 700px) {
+  html,
+  body,
+  .app {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden !important;
+  }
+
+  .content,
+  .page,
+  .page-header,
+  .section,
+  .card,
+  .score-card,
+  .game-card,
+  .form-card,
+  .worldcup-table-wrap,
+  .table-wrap,
+  .worldcup-table,
+  .golfers-table,
+  .worldcup-table tbody,
+  .golfers-table tbody,
+  .worldcup-table tr,
+  .golfers-table tr,
+  .worldcup-table td,
+  .golfers-table td {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    box-sizing: border-box !important;
+  }
+
+  .worldcup-table-wrap,
+  .table-wrap,
+  .golf-table-wrap,
+  .golfers-table-wrap {
+    width: 100% !important;
+    overflow-x: hidden !important;
+  }
+
+  .worldcup-table tr,
+  .golfers-table tr {
+    width: 100% !important;
+    margin-left: 0 !important;
+    margin-right: 0 !important;
+  }
+
+  .worldcup-table td,
+  .golfers-table td {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 4px !important;
+    overflow: hidden !important;
+  }
+
+  .worldcup-table td::before,
+  .golfers-table td::before {
+    display: block;
+    min-width: 0;
+  }
+
+  .worldcup-table td > *,
+  .golfers-table td > *,
+  .game-meta-line,
+  .card-meta,
+  .worldcup-meta,
+  .team-row,
+  .team-row strong,
+  .team-row span {
+    max-width: 100% !important;
+    min-width: 0 !important;
+    overflow-wrap: anywhere !important;
+    word-break: break-word !important;
+    white-space: normal !important;
+  }
+
+  .game-meta-line {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .game-meta-line span {
+    max-width: 100%;
+  }
+
+  .status-pill,
+  .game-status,
+  .pill {
+    max-width: 100%;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 420px) {
+  .content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .worldcup-table tr,
+  .golfers-table tr {
+    padding: 10px !important;
   }
 }
