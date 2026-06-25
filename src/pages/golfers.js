@@ -52,6 +52,15 @@ function sortGolfers(golfers, mode) {
   });
 }
 
+function getGolferProgressText(golfer) {
+  const thru = String(golfer.thru || '').trim();
+  const teeTime = String(golfer.teeTime || '').trim();
+
+  if (thru && thru !== '0' && thru !== '-') return `Thru ${thru}`;
+  if (teeTime) return `Tee ${teeTime}`;
+  return '-';
+}
+
 function renderGolferRow(golfer, sortMode) {
   const draggable = sortMode === 'manual';
   const note = golfer.note || golfer.notes || '';
@@ -67,7 +76,7 @@ function renderGolferRow(golfer, sortMode) {
       <td data-label="Pos">${golfer.position || '-'}</td>
       <td data-label="Total">${golfer.overall || '-'}</td>
       <td data-label="Today">${golfer.today || '-'}</td>
-      <td data-label="Thru / Tee">${golfer.thru || golfer.teeTime || '-'}</td>
+      <td data-label="Thru / Tee">${getGolferProgressText(golfer)}</td>
       <td data-label="Note">${note || '-'}</td>
       <td data-label="Edit">
         <button
