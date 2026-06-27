@@ -26,7 +26,9 @@ import {
   updateWorldCupTeamNote,
   refreshWorldCupScores,
   manualRefreshSport,
-  manualRefreshAllSports
+  manualRefreshAllSports,
+  getAmbientMusicSettings,
+  saveAmbientMusicSettings
 } from '../api.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
@@ -276,7 +278,66 @@ function showWorldCupTeamOptions() {
   });
 }
 
-function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = {}) {
+
+function renderAmbientMusicCard(tracks = []) {
+  const rows = tracks.length ? tracks : [
+    { id: 'sports_lounge_1', label: 'Sports Lounge 1', rawUrl: '', url: '', enabled: false },
+    { id: 'sports_lounge_2', label: 'Sports Lounge 2', rawUrl: '', url: '', enabled: false },
+    { id: 'sports_lounge_3', label: 'Sports Lounge 3', rawUrl: '', url: '', enabled: false },
+    { id: 'lofi_1', label: 'Lo-Fi 1', rawUrl: '', url: '', enabled: false },
+    { id: 'crowd_ambience', label: 'Crowd Ambience', rawUrl: '', url: '', enabled: false },
+    { id: 'golf_course', label: 'Golf Course', rawUrl: '', url: '', enabled: false }
+  ];
+
+  return `
+    <div class="card form-card sports-data-card ambient-music-card">
+      <p class="admin-help">Optional Roku background audio. Paste public Google Drive MP3 links. Select multiple tracks to play them in order and loop.</p>
+
+      <div class="ambient-track-list">
+        ${rows.map((track, index) => `
+          <div class="ambient-track-row" data-track-index="${index}">
+            <label class="checkbox-row admin-checkbox-row ambient-enabled-row">
+              <input
+                class="ambient-track-enabled"
+                type="checkbox"
+                ${track.enabled === true ? 'checked' : ''}
+              />
+              <span>Play</span>
+            </label>
+
+            <label>
+              Track Name
+              <input
+                class="ambient-track-label"
+                type="text"
+                value="${escapeHtml(track.label || '')}"
+                placeholder="Sports Lounge ${index + 1}"
+              />
+            </label>
+
+            <label>
+              MP3 URL / Google Drive Link
+              <input
+                class="ambient-track-url"
+                type="url"
+                value="${escapeHtml(track.rawUrl || track.url || '')}"
+                placeholder="https://drive.google.com/file/d/.../view"
+              />
+            </label>
+
+            <input class="ambient-track-id" type="hidden" value="${escapeHtml(track.id || `track_${index + 1}`)}" />
+          </div>
+        `).join('')}
+      </div>
+
+      <button id="save-ambient-music-btn" class="primary-btn" type="button">
+        Save Ambient Music
+      </button>
+    </div>
+  `;
+}
+
+function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = {}, ambientMusic = []) {
   const settings = {
     scoreboard: visibility.scoreboard !== false,
     golfers: visibility.golfers !== false,
@@ -351,6 +412,8 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
         </button>
       </div>
     `)}
+
+    ${renderNestedCollapsibleSection('Roku Ambient Music', `${(ambientMusic || []).filter(t => t.enabled).length}/${(ambientMusic || []).length || 6} selected`, renderAmbientMusicCard(ambientMusic))}
 
     ${renderNestedCollapsibleSection('Manual Refresh', 'Run now', `
       <div class="card form-card sports-data-card">
@@ -1033,6 +1096,38 @@ function attachAdminHandlers() {
   }
 
 
+
+  const saveAmbientMusicBtn = document.getElementById('save-ambient-music-btn');
+
+  if (saveAmbientMusicBtn) {
+    saveAmbientMusicBtn.addEventListener('click', async () => {
+      const rows = Array.from(document.querySelectorAll('.ambient-track-row'));
+      const tracks = rows.map((row, index) => ({
+        id: row.querySelector('.ambient-track-id')?.value || `track_${index + 1}`,
+        label: row.querySelector('.ambient-track-label')?.value || `Track ${index + 1}`,
+        rawUrl: row.querySelector('.ambient-track-url')?.value || '',
+        enabled: row.querySelector('.ambient-track-enabled')?.checked === true
+      }));
+
+      saveAmbientMusicBtn.disabled = true;
+      saveAmbientMusicBtn.textContent = 'Saving...';
+
+      try {
+        await saveAmbientMusicSettings(tracks);
+        showToast('Ambient music settings saved.');
+        await window.refreshCurrentPage?.();
+      } catch (err) {
+        console.error(err);
+        openMessageModal({
+          title: 'Could Not Save Ambient Music',
+          message: 'The ambient music settings were not saved.'
+        });
+        saveAmbientMusicBtn.disabled = false;
+        saveAmbientMusicBtn.textContent = 'Save Ambient Music';
+      }
+    });
+  }
+
   const wcTeamInput = document.getElementById('admin-worldcup-team-input');
   const wcDropdown = document.getElementById('admin-worldcup-team-dropdown');
   const wcFollowBtn = document.getElementById('admin-add-worldcup-followed-btn');
@@ -1248,7 +1343,7 @@ export async function renderAdmin() {
 
   const addGameHtml = await renderAddGame({ embedded: true, teamOnly: true });
 
-  const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult, availableGolfersResult] = await Promise.all([
+  const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult, availableGolfersResult, ambientMusicResult] = await Promise.all([
     getAvailableSports(),
     getAllFollowedGames(),
     getFollowedGolfers(),
@@ -1256,7 +1351,8 @@ export async function renderAdmin() {
     getPageVisibility(),
     getSettingsData(),
     getWorldCupPageData(),
-    getAvailableGolfers()
+    getAvailableGolfers(),
+    getAmbientMusicSettings()
   ]);
 
   const sports = sportsResult.data || [];
@@ -1268,6 +1364,7 @@ export async function renderAdmin() {
   const refreshSports = settingsData.sports || [];
   const worldCupRefresh = settingsData.worldCupRefresh || {};
   const worldCupData = worldCupResult.data || {};
+  const ambientMusic = ambientMusicResult.data || settingsData.ambientMusic || [];
   worldCupTeamOptions = (worldCupData.teams || []).filter(isRealWorldCupTeamName).sort();
   golferOptions = (availableGolfersResult.data || []).map(g => g.golfer).filter(Boolean).sort();
 
@@ -1311,6 +1408,6 @@ export async function renderAdmin() {
       `)}
     `)}
 
-    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh))}
+    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh, ambientMusic))}
   `;
 }

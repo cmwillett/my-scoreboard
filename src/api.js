@@ -198,3 +198,14 @@ export async function saveWorldCupRefreshSettings(enabled) {
     enabled: enabled ? 'true' : 'false'
   });
 }
+
+
+export async function getAmbientMusicSettings() {
+  return apiRequest('getAmbientMusicSettings');
+}
+
+export async function saveAmbientMusicSettings(tracks) {
+  return apiRequest('saveAmbientMusicSettings', {
+    tracks: JSON.stringify(tracks)
+  });
+}
