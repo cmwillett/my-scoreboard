@@ -868,3 +868,15 @@ body {
     grid-template-columns: 1fr;
   }
 }
+
+
+.ambient-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  margin-top: 12px;
+}
+
+.ambient-remove-track-btn {
+  min-height: 42px;
+}

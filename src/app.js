@@ -206,6 +206,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v0.9.7</strong> Added sheet-driven Roku ambient music tracks with editable MP3 URLs and multi-select playback.</li>
             <li><strong>v0.9.2</strong> De-duplicated followed teams that are in the same game and uses Auto Refresh/In Season settings to hide out-of-season followed teams.</li>
             <li><strong>v0.8.8</strong> Cleaned up team-following so a specific game is no longer required.</li>
             <li><strong>v0.8.7</strong> Added stricter mobile-only overflow guards for game cards and schedule metadata.</li>

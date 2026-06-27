@@ -281,17 +281,17 @@ function showWorldCupTeamOptions() {
 
 function renderAmbientMusicCard(tracks = []) {
   const rows = tracks.length ? tracks : [
-    { id: 'sports_lounge_1', label: 'Sports Lounge 1', rawUrl: '', url: '', enabled: false },
-    { id: 'sports_lounge_2', label: 'Sports Lounge 2', rawUrl: '', url: '', enabled: false },
-    { id: 'sports_lounge_3', label: 'Sports Lounge 3', rawUrl: '', url: '', enabled: false },
-    { id: 'lofi_1', label: 'Lo-Fi 1', rawUrl: '', url: '', enabled: false },
-    { id: 'crowd_ambience', label: 'Crowd Ambience', rawUrl: '', url: '', enabled: false },
-    { id: 'golf_course', label: 'Golf Course', rawUrl: '', url: '', enabled: false }
+    { id: 'sports_lounge_1', label: 'Sports Lounge 1', rawUrl: 'https://cmwillett.github.io/my-scoreboard/ambient/sports-lounge-01.mp3', url: '', enabled: false },
+    { id: 'sports_lounge_2', label: 'Sports Lounge 2', rawUrl: 'https://cmwillett.github.io/my-scoreboard/ambient/sports-lounge-02.mp3', url: '', enabled: false },
+    { id: 'sports_lounge_3', label: 'Sports Lounge 3', rawUrl: 'https://cmwillett.github.io/my-scoreboard/ambient/sports-lounge-03.mp3', url: '', enabled: false },
+    { id: 'lofi_1', label: 'Lo-Fi 1', rawUrl: 'https://cmwillett.github.io/my-scoreboard/ambient/lofi-01.mp3', url: '', enabled: false },
+    { id: 'crowd_ambience', label: 'Crowd Ambience', rawUrl: 'https://cmwillett.github.io/my-scoreboard/ambient/crowd-ambience.mp3', url: '', enabled: false },
+    { id: 'golf_course', label: 'Golf Course', rawUrl: 'https://cmwillett.github.io/my-scoreboard/ambient/golf-course.mp3', url: '', enabled: false }
   ];
 
   return `
     <div class="card form-card sports-data-card ambient-music-card">
-      <p class="admin-help">Optional Roku background audio. Paste public Google Drive MP3 links. Select multiple tracks to play them in order and loop.</p>
+      <p class="admin-help">Optional Roku background audio. Upload MP3s to <code>/ambient/</code> in GitHub Pages, paste the public MP3 URLs here, and select multiple tracks to loop them in order.</p>
 
       <div class="ambient-track-list">
         ${rows.map((track, index) => `
@@ -321,18 +321,25 @@ function renderAmbientMusicCard(tracks = []) {
                 class="ambient-track-url"
                 type="url"
                 value="${escapeHtml(track.rawUrl || track.url || '')}"
-                placeholder="https://drive.google.com/file/d/.../view"
+                placeholder="https://cmwillett.github.io/my-scoreboard/ambient/sports-lounge-01.mp3"
               />
             </label>
+
+            <button class="secondary-btn ambient-remove-track-btn" type="button">Remove</button>
 
             <input class="ambient-track-id" type="hidden" value="${escapeHtml(track.id || `track_${index + 1}`)}" />
           </div>
         `).join('')}
       </div>
 
-      <button id="save-ambient-music-btn" class="primary-btn" type="button">
-        Save Ambient Music
-      </button>
+      <div class="ambient-actions">
+        <button id="add-ambient-track-btn" class="secondary-btn" type="button">
+          Add Track
+        </button>
+        <button id="save-ambient-music-btn" class="primary-btn" type="button">
+          Save Ambient Music
+        </button>
+      </div>
     </div>
   `;
 }
@@ -1096,6 +1103,50 @@ function attachAdminHandlers() {
   }
 
 
+
+
+  const addAmbientTrackBtn = document.getElementById('add-ambient-track-btn');
+  const ambientTrackList = document.querySelector('.ambient-track-list');
+
+  function bindAmbientRemoveButtons() {
+    document.querySelectorAll('.ambient-remove-track-btn').forEach(btn => {
+      if (btn.dataset.bound === 'true') return;
+      btn.dataset.bound = 'true';
+      btn.addEventListener('click', () => {
+        const row = btn.closest('.ambient-track-row');
+        if (row) row.remove();
+      });
+    });
+  }
+
+  bindAmbientRemoveButtons();
+
+  if (addAmbientTrackBtn && ambientTrackList) {
+    addAmbientTrackBtn.addEventListener('click', () => {
+      const index = document.querySelectorAll('.ambient-track-row').length;
+      const row = document.createElement('div');
+      row.className = 'ambient-track-row';
+      row.dataset.trackIndex = String(index);
+      row.innerHTML = `
+        <label class="checkbox-row admin-checkbox-row ambient-enabled-row">
+          <input class="ambient-track-enabled" type="checkbox" />
+          <span>Play</span>
+        </label>
+        <label>
+          Track Name
+          <input class="ambient-track-label" type="text" value="" placeholder="Sports Lounge ${index + 1}" />
+        </label>
+        <label>
+          MP3 URL / Google Drive Link
+          <input class="ambient-track-url" type="url" value="" placeholder="https://cmwillett.github.io/my-scoreboard/ambient/track-${index + 1}.mp3" />
+        </label>
+        <button class="secondary-btn ambient-remove-track-btn" type="button">Remove</button>
+        <input class="ambient-track-id" type="hidden" value="track_${Date.now()}_${index + 1}" />
+      `;
+      ambientTrackList.appendChild(row);
+      bindAmbientRemoveButtons();
+    });
+  }
 
   const saveAmbientMusicBtn = document.getElementById('save-ambient-music-btn');
 
