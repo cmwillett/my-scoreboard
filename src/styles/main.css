@@ -880,3 +880,25 @@ body {
 .ambient-remove-track-btn {
   min-height: 42px;
 }
+
+
+/* v0.9.9 sage bottom navigation accent */
+.bottom-nav {
+  background: #6fae8a;
+  border-top: 1px solid #8fc9a8;
+  box-shadow: 0 -8px 22px rgba(0, 0, 0, 0.24);
+}
+
+.bottom-nav button {
+  color: #06231d;
+}
+
+.bottom-nav button.active {
+  color: #031713;
+  font-weight: 800;
+}
+
+.bottom-nav button:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: #031713;
+}
