@@ -1,4 +1,22 @@
 import { CONFIG } from './config.js';
+import {
+  addUserFollowedTeam,
+  addUserFollowedGolfer,
+  addUserWorldCupTeam,
+  buildFollowedGamesFromTeams,
+  getUserFollowedTeams,
+  getUserFollowedGolfers,
+  getUserWorldCupTeams,
+  mergeFollowedGolfersWithLive,
+  removeAllUserFollowedTeams,
+  removeAllUserFollowedGolfers,
+  removeUserFollowedTeam,
+  removeUserFollowedGolfer,
+  removeUserWorldCupTeam,
+  updateUserFollowedTeam,
+  updateUserFollowedGolferOrder,
+  updateUserWorldCupTeamNote
+} from './userData.js';
 
 async function apiRequest(action, params = {}) {
   const url = new URL(CONFIG.API_URL);
@@ -43,21 +61,30 @@ export async function getAvailableGames(sportKey = 'ALL') {
 }
 
 export async function getFollowedGames() {
-  return apiRequest('getFollowedGames');
+  const [followedTeams, availableResult] = await Promise.all([
+    getUserFollowedTeams(),
+    getAvailableGames('ALL')
+  ]);
+
+  return {
+    success: true,
+    data: buildFollowedGamesFromTeams(followedTeams, availableResult.data || [])
+  };
 }
 
 export async function getAllFollowedGames() {
-  return apiRequest('getAllFollowedGames');
+  return getFollowedGames();
 }
 
 export async function addFollowedGame(game) {
-  return apiRequest('addFollowedGame', {
+  const teams = await addUserFollowedTeam({
     sportKey: game.sportKey,
     eventId: game.eventId,
     team: game.team,
     spread: game.spread || '',
     notes: game.notes || ''
   });
+  return { success: true, data: teams };
 }
 
 export async function saveFavoriteGamePick(game) {
@@ -71,19 +98,18 @@ export async function saveFavoriteGamePick(game) {
 }
 
 export async function updateFollowedGame(id, spread = '', notes = '') {
-  return apiRequest('updateFollowedGame', {
-    id,
-    spread,
-    notes
-  });
+  const teams = await updateUserFollowedTeam(id, spread, notes);
+  return { success: true, data: teams };
 }
 
 export async function removeFollowedGame(id) {
-  return apiRequest('removeFollowedGame', { id });
+  const teams = await removeUserFollowedTeam(id);
+  return { success: true, data: teams };
 }
 
 export async function removeAllFollowedGames() {
-  return apiRequest('removeAllFollowedGames');
+  const teams = await removeAllUserFollowedTeams();
+  return { success: true, data: teams };
 }
 
 export async function getFavoriteTeams() {
@@ -110,29 +136,35 @@ export async function getAvailableGolfers() {
 }
 
 export async function getFollowedGolfers() {
-  return apiRequest('getFollowedGolfers');
+  const [followedGolfers, availableResult] = await Promise.all([
+    getUserFollowedGolfers(),
+    getAvailableGolfers()
+  ]);
+
+  return {
+    success: true,
+    data: mergeFollowedGolfersWithLive(followedGolfers, availableResult.data || [])
+  };
 }
 
 export async function addFollowedGolfer(golfer, note = '', favorite = false) {
-  return apiRequest('addFollowedGolfer', {
-    golfer,
-    note,
-    favorite
-  });
+  const golfers = await addUserFollowedGolfer(golfer, note, favorite);
+  return { success: true, data: golfers };
 }
 
 export async function removeFollowedGolfer(golfer) {
-  return apiRequest('removeFollowedGolfer', { golfer });
+  const golfers = await removeUserFollowedGolfer(golfer);
+  return { success: true, data: golfers };
 }
 
 export async function updateFollowedGolferOrder(golfers) {
-  return apiRequest('updateFollowedGolferOrder', {
-    golfers: JSON.stringify(golfers)
-  });
+  const updated = await updateUserFollowedGolferOrder(golfers);
+  return { success: true, data: updated };
 }
 
 export async function removeAllFollowedGolfers() {
-  return apiRequest('removeAllFollowedGolfers');
+  const golfers = await removeAllUserFollowedGolfers();
+  return { success: true, data: golfers };
 }
 
 export async function getPageVisibility() {
@@ -147,7 +179,34 @@ export async function savePageVisibility(visibility) {
 
 
 export async function getWorldCupPageData() {
-  return apiRequest('getWorldCupPageData');
+  const [backendResult, userTeams] = await Promise.all([
+    apiRequest('getWorldCupPageData'),
+    getUserWorldCupTeams()
+  ]);
+
+  const data = backendResult.data || {};
+  const followedTeams = userTeams.filter(team => !team.favorite);
+  const favorites = userTeams.filter(team => team.favorite);
+  const selected = userTeams;
+  const candidateGames = data.upcomingGames || [];
+
+  const selectedGames = [];
+  selected.forEach(teamObj => {
+    const game = candidateGames.find(g => g.awayTeam === teamObj.team || g.homeTeam === teamObj.team);
+    if (game && !selectedGames.some(existing => existing.eventId === game.eventId)) {
+      selectedGames.push({ ...game, selectedTeam: teamObj.team, selectedType: teamObj.favorite ? 'favorite' : 'followed', notes: teamObj.notes || '' });
+    }
+  });
+
+  return {
+    success: true,
+    data: {
+      ...data,
+      favorites,
+      followedTeams,
+      selectedGames
+    }
+  };
 }
 
 export async function refreshWorldCupScores() {
@@ -163,23 +222,28 @@ export async function manualRefreshAllSports() {
 }
 
 export async function addWorldCupFollowedTeam({ team, notes = '' }) {
-  return apiRequest('addWorldCupFollowedTeam', { team, notes });
+  const teams = await addUserWorldCupTeam({ team, notes, favorite: false });
+  return { success: true, data: teams };
 }
 
 export async function addWorldCupFavoriteTeam({ team, notes = '' }) {
-  return apiRequest('addWorldCupFavoriteTeam', { team, notes });
+  const teams = await addUserWorldCupTeam({ team, notes, favorite: true });
+  return { success: true, data: teams };
 }
 
 export async function removeWorldCupFollowedTeam(team) {
-  return apiRequest('removeWorldCupFollowedTeam', { team });
+  const teams = await removeUserWorldCupTeam(team);
+  return { success: true, data: teams };
 }
 
 export async function removeWorldCupFavoriteTeam(team) {
-  return apiRequest('removeWorldCupFavoriteTeam', { team });
+  const teams = await removeUserWorldCupTeam(team);
+  return { success: true, data: teams };
 }
 
 export async function updateWorldCupTeamNote(type, team, notes = '') {
-  return apiRequest('updateWorldCupTeamNote', { type, team, notes });
+  const teams = await updateUserWorldCupTeamNote(team, notes);
+  return { success: true, data: teams };
 }
 
 

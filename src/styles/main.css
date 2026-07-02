@@ -903,7 +903,7 @@ body {
   color: #031713;
 }
 
-/* v1.0.0 Firebase authentication foundation */
+/* v1.1.0 Firebase authentication foundation */
 .auth-locked {
   filter: blur(1px);
   pointer-events: none;
