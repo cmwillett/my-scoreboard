@@ -60,9 +60,40 @@ export async function getAvailableGames(sportKey = 'ALL') {
   return apiRequest('getAvailableGames', { sportKey });
 }
 
+async function seedFollowedTeamsFromLegacyIfNeeded_() {
+  const existing = await getUserFollowedTeams();
+  if (existing.length) return existing;
+
+  const legacyResult = await apiRequest('getAllFollowedGames');
+  const legacyRows = legacyResult.data || [];
+  const manualRows = legacyRows.filter(row =>
+    row &&
+    row.team &&
+    row.sportKey &&
+    row.selectedType !== 'favorite' &&
+    row.type !== 'favorite' &&
+    row.followType !== 'favorite'
+  );
+
+  if (!manualRows.length) return existing;
+
+  for (const row of manualRows) {
+    await addUserFollowedTeam({
+      sportKey: row.sportKey,
+      eventId: row.eventId || (row.live && row.live.eventId) || '',
+      team: row.team || row.selectedTeam || '',
+      opponent: row.opponent || '',
+      spread: row.spread || '',
+      notes: row.notes || ''
+    });
+  }
+
+  return getUserFollowedTeams();
+}
+
 export async function getFollowedGames() {
   const [followedTeams, availableResult] = await Promise.all([
-    getUserFollowedTeams(),
+    seedFollowedTeamsFromLegacyIfNeeded_(),
     getAvailableGames('ALL')
   ]);
 
@@ -135,9 +166,30 @@ export async function getAvailableGolfers() {
   return apiRequest('getAvailableGolfers');
 }
 
+async function seedFollowedGolfersFromLegacyIfNeeded_() {
+  const existing = await getUserFollowedGolfers();
+  if (existing.length) return existing;
+
+  const legacyResult = await apiRequest('getFollowedGolfers');
+  const legacyRows = legacyResult.data || [];
+  const manualRows = legacyRows.filter(row => row && row.golfer);
+
+  if (!manualRows.length) return existing;
+
+  for (const row of manualRows) {
+    await addUserFollowedGolfer(
+      row.golfer,
+      row.note || row.notes || '',
+      row.favorite === true
+    );
+  }
+
+  return getUserFollowedGolfers();
+}
+
 export async function getFollowedGolfers() {
   const [followedGolfers, availableResult] = await Promise.all([
-    getUserFollowedGolfers(),
+    seedFollowedGolfersFromLegacyIfNeeded_(),
     getAvailableGolfers()
   ]);
 
@@ -178,13 +230,33 @@ export async function savePageVisibility(visibility) {
 }
 
 
-export async function getWorldCupPageData() {
-  const [backendResult, userTeams] = await Promise.all([
-    apiRequest('getWorldCupPageData'),
-    getUserWorldCupTeams()
-  ]);
+async function seedWorldCupTeamsFromLegacyIfNeeded_(backendData) {
+  const existing = await getUserWorldCupTeams();
+  if (existing.length) return existing;
 
+  const legacyTeams = [
+    ...(backendData.followedTeams || []).map(row => ({ ...row, favorite: false })),
+    ...(backendData.favorites || []).map(row => ({ ...row, favorite: true }))
+  ].filter(row => row && row.team);
+
+  if (!legacyTeams.length) return existing;
+
+  for (const row of legacyTeams) {
+    await addUserWorldCupTeam({
+      team: row.team,
+      notes: row.notes || '',
+      favorite: row.favorite === true
+    });
+  }
+
+  return getUserWorldCupTeams();
+}
+
+export async function getWorldCupPageData() {
+  const backendResult = await apiRequest('getWorldCupPageData');
   const data = backendResult.data || {};
+  const userTeams = await seedWorldCupTeamsFromLegacyIfNeeded_(data);
+
   const followedTeams = userTeams.filter(team => !team.favorite);
   const favorites = userTeams.filter(team => team.favorite);
   const selected = userTeams;
