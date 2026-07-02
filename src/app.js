@@ -207,7 +207,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
-            <li><strong>v1.1.0</strong> Moved followed teams, followed golfers, and World Cup team selections to signed-in user data in Firestore.</li>
+            <li><strong>v1.1.2</strong> Moved followed teams, followed golfers, and World Cup team selections to signed-in user data in Firestore.</li>
             <li><strong>v1.0.0</strong> Added Firebase Google Sign-In foundation and automatic user profile creation.</li>
             <li><strong>v0.9.9</strong> Added sage green bottom navigation styling so the PWA toolbar stands out from the scoreboard content.</li>
             <li><strong>v0.9.8</strong> Fixed followed team scoreboard lookup so stale EventIDs do not show blank upcoming games.</li>

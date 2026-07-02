@@ -49,6 +49,21 @@ function userDoc_(collectionName, id) {
   return doc(db_(), 'users', user.uid, collectionName, id);
 }
 
+function userRootDoc_() {
+  const user = requireUser_();
+  return doc(db_(), 'users', user.uid);
+}
+
+async function updateUserSyncStatus_(patch) {
+  const safePatch = patch || {};
+  await setDoc(userRootDoc_(), {
+    sync: {
+      ...safePatch,
+      updatedAt: serverTimestamp()
+    }
+  }, { merge: true });
+}
+
 async function getCollectionItems_(name) {
   const snapshot = await getDocs(userCollection_(name));
   return snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
@@ -80,6 +95,12 @@ export async function addUserFollowedTeam({ sportKey, eventId = '', team, oppone
     createdAt: existing.find(row => row.id === id)?.createdAt || serverTimestamp()
   }, { merge: true });
 
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'followedTeams',
+    lastFollowedTeam: `${sportKey}: ${team}`,
+    followedTeamsCount: existing.filter(row => row.id !== id).length + 1
+  });
+
   return getUserFollowedTeams();
 }
 
@@ -94,7 +115,12 @@ export async function updateUserFollowedTeam(id, spread = '', notes = '') {
 
 export async function removeUserFollowedTeam(id) {
   await deleteDoc(userDoc_('followedTeams', id));
-  return getUserFollowedTeams();
+  const rows = await getUserFollowedTeams();
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'removeFollowedTeam',
+    followedTeamsCount: rows.length
+  });
+  return rows;
 }
 
 export async function removeAllUserFollowedTeams() {
@@ -189,12 +215,23 @@ export async function addUserFollowedGolfer(golfer, note = '', favorite = false)
     createdAt: existing.find(row => row.id === id)?.createdAt || serverTimestamp()
   }, { merge: true });
 
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'followedGolfers',
+    lastFollowedGolfer: golfer,
+    followedGolfersCount: existing.filter(row => row.id !== id).length + 1
+  });
+
   return getUserFollowedGolfers();
 }
 
 export async function removeUserFollowedGolfer(golfer) {
   await deleteDoc(userDoc_('followedGolfers', golferDocId_(golfer)));
-  return getUserFollowedGolfers();
+  const rows = await getUserFollowedGolfers();
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'removeFollowedGolfer',
+    followedGolfersCount: rows.length
+  });
+  return rows;
 }
 
 export async function updateUserFollowedGolferOrder(golfers) {
@@ -258,6 +295,12 @@ export async function addUserWorldCupTeam({ team, notes = '', favorite = false }
     updatedAt: serverTimestamp(),
     createdAt: existing.find(row => row.id === id)?.createdAt || serverTimestamp()
   }, { merge: true });
+
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'worldCupTeams',
+    lastWorldCupTeam: team,
+    worldCupTeamsCount: existing.filter(row => row.id !== id).length + 1
+  });
 
   return getUserWorldCupTeams();
 }
