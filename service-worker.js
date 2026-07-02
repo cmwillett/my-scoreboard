@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-scoreboard-v0.9.9';
+const CACHE_NAME = 'my-scoreboard-v1.0.0';
 
 const APP_SHELL = [
   './',
@@ -9,6 +9,7 @@ const APP_SHELL = [
   './src/app.js',
   './src/api.js',
   './src/config.js',
+  './src/firebase.js',
   './src/components/gameCard.js',
   './src/components/golferCard.js',
   './src/components/modal.js',

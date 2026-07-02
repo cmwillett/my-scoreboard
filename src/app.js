@@ -8,6 +8,7 @@ import { startAutoRefresh, stopAutoRefresh } from './services/refresh.js';
 import { initPwaInstallPrompt } from './components/pwaInstall.js';
 import { openHtmlModal } from './components/modal.js';
 import { applyPageDensity, setPageDensity } from './components/pageTools.js';
+import { initAuthGate } from './firebase.js';
 
 const content = document.getElementById('app-content');
 const navButtons = document.querySelectorAll('.bottom-nav button');
@@ -206,6 +207,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v1.0.0</strong> Added Firebase Google Sign-In foundation and automatic user profile creation.</li>
             <li><strong>v0.9.9</strong> Added sage green bottom navigation styling so the PWA toolbar stands out from the scoreboard content.</li>
             <li><strong>v0.9.8</strong> Fixed followed team scoreboard lookup so stale EventIDs do not show blank upcoming games.</li>
             <li><strong>v0.9.7</strong> Added sheet-driven Roku ambient music tracks with editable MP3 URLs and multi-select playback.</li>
@@ -264,11 +266,13 @@ async function initApp() {
   await renderPage(startingPage);
 }
 
-initApp();
-initPwaInstallPrompt();
+initAuthGate(async () => {
+  await initApp();
+  initPwaInstallPrompt();
 
-if ('serviceWorker' in navigator) {
-  navigator.serviceWorker
-    .register('./service-worker.js')
-    .catch(err => console.error('SW registration failed:', err));
-}
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker
+      .register('./service-worker.js')
+      .catch(err => console.error('SW registration failed:', err));
+  }
+});
