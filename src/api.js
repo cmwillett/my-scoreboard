@@ -65,15 +65,30 @@ async function getFollowedTeamsFromFirestore_() {
 }
 
 
+function getEnabledSportKeySet_(settingsResult) {
+  const sports = settingsResult?.data?.sports || [];
+  return new Set(
+    sports
+      .filter(sport => sport && sport.enabled === true)
+      .map(sport => String(sport.sportKey || '').toUpperCase())
+      .filter(Boolean)
+  );
+}
+
 export async function getFollowedGames() {
-  const [followedTeams, availableResult] = await Promise.all([
+  const [followedTeams, availableResult, settingsResult] = await Promise.all([
     getFollowedTeamsFromFirestore_(),
-    getAvailableGames('ALL')
+    getAvailableGames('ALL'),
+    getSettingsData()
   ]);
+
+  const enabledSportKeys = getEnabledSportKeySet_(settingsResult);
+  const inSeasonFollowedTeams = (followedTeams || [])
+    .filter(team => enabledSportKeys.has(String(team.sportKey || '').toUpperCase()));
 
   return {
     success: true,
-    data: buildFollowedGamesFromTeams(followedTeams, availableResult.data || [])
+    data: buildFollowedGamesFromTeams(inSeasonFollowedTeams, availableResult.data || [])
   };
 }
 
