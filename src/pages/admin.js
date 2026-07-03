@@ -31,6 +31,7 @@ import {
   saveAmbientMusicSettings
 } from '../api.js';
 import { pairRokuCode, getRokuSyncState, syncPairedRokuDevice, removePairedRokuDevice, renamePairedRokuDevice } from '../userData.js';
+import { getCurrentUser } from '../firebase.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
   openConfirmModal,
@@ -41,6 +42,7 @@ import {
 } from '../components/modal.js';
 
 const ADMIN_AUTH_KEY = 'scoreboardAdminUnlocked';
+const GLOBAL_ADMIN_EMAILS = ['craig.willett@gmail.com'];
 let favoriteTeamOptions = [];
 let worldCupTeamOptions = [];
 let golferOptions = [];
@@ -55,6 +57,12 @@ function setAdminUnlocked() {
 
 function clearAdminUnlocked() {
   localStorage.removeItem(ADMIN_AUTH_KEY);
+}
+
+function isGlobalAdminUser() {
+  const user = getCurrentUser();
+  const email = String(user?.email || '').trim().toLowerCase();
+  return GLOBAL_ADMIN_EMAILS.includes(email);
 }
 
 
@@ -1503,10 +1511,11 @@ function attachAdminHandlers() {
 }
 
 export async function renderAdmin() {
-  if (!isAdminUnlocked()) {
-    return renderAdminLocked();
-  }
+  const isGlobalAdmin = isGlobalAdminUser();
 
+  // Normal signed-in users should be able to manage their own followed teams,
+  // golfers, and Roku devices without knowing Craig's global Admin PIN.
+  // Global controls that affect everyone are shown only to Craig's Firebase account.
   const addGameHtml = await renderAddGame({ embedded: true, teamOnly: true });
 
   const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult, availableGolfersResult, ambientMusicResult, rokuState] = await Promise.all([
@@ -1541,13 +1550,9 @@ export async function renderAdmin() {
     <div class="page-header">
       <div class="page-title-row">
         <div>
-          <h2>Admin</h2>
-          <p>Control what appears on the PWA and Roku scoreboard.</p>
+          <h2>My Scoreboard</h2>
+          <p>Manage your followed teams, golfers, and paired Roku devices.</p>
         </div>
-
-        <button id="admin-logout-btn" class="small-btn">
-          Lock Admin
-        </button>
       </div>
     </div>
 
@@ -1577,6 +1582,6 @@ export async function renderAdmin() {
 
     ${renderCollapsibleSection('Roku Account Sync', formatRokuStateText(rokuState), renderRokuSyncCard(rokuState))}
 
-    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh, ambientMusic, rokuState))}
+    ${isGlobalAdmin ? renderCollapsibleSection('Global Admin Tools', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh, ambientMusic, rokuState)) : ''}
   `;
 }

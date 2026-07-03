@@ -206,6 +206,9 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v1.3.5</strong> Split personal setup from Craig-only global admin tools.</li>
+            <li><strong>v1.3.4</strong> Polished Roku device management.</li>
+            <li><strong>v1.3.3</strong> Improved Roku sync display and in-season filtering.</li>
             <li><strong>v1.3.2</strong> Moved Roku Sync into its own Admin section outside of Site Data.</li>
             <li><strong>v1.3.0</strong> Added Roku account pairing/sync foundation so a paired Roku can use the signed-in user's followed teams and golfers.</li>
             <li><strong>v1.2.2</strong> Cleaned Firestore followed golfer and World Cup schemas by removing legacy favorite/note fields and standardizing on notes.</li>
