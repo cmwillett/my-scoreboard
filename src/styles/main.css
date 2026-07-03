@@ -1077,3 +1077,19 @@ body {
     max-width: 210px;
   }
 }
+
+.roku-device-row {
+  align-items: flex-start;
+}
+
+.roku-device-row .row-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.roku-device-row .small-btn.danger {
+  color: #fecaca;
+  border-color: rgba(248, 113, 113, 0.35);
+}

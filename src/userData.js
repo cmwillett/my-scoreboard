@@ -521,9 +521,12 @@ export async function getRokuSyncState() {
     return {
       id: item.id,
       deviceId: device.deviceId || item.id,
-      deviceName: device.deviceName || 'My Roku',
+      deviceName: device.deviceName || 'Unnamed Roku',
       pairedAt: device.pairedAt || null,
       lastSyncedAt: device.lastSyncedAt || null,
+      lastSeenAt: device.lastSeenAt || null,
+      updatedAt: device.updatedAt || null,
+      appVersion: device.appVersion || device.rokuVersion || '',
       followedTeamsCount: Number(device.followedTeamsCount || 0),
       followedGolfersCount: Number(device.followedGolfersCount || 0),
       worldCupTeamsCount: Number(device.worldCupTeamsCount || 0)
@@ -535,7 +538,7 @@ export async function getRokuSyncState() {
   if (!devices.length && legacyRoku.deviceId) {
     const backfilled = {
       deviceId: legacyRoku.deviceId,
-      deviceName: legacyRoku.deviceName || 'My Roku',
+      deviceName: legacyRoku.deviceName || 'Unnamed Roku',
       pairedAt: legacyRoku.pairedAt || serverTimestamp(),
       lastSyncedAt: legacyRoku.lastSyncedAt || null,
       followedTeamsCount: Number(legacyRoku.followedTeamsCount || 0),
@@ -550,7 +553,7 @@ export async function getRokuSyncState() {
   return {
     paired: devices.length > 0,
     deviceId: primary.deviceId || '',
-    deviceName: primary.deviceName || 'My Roku',
+    deviceName: primary.deviceName || 'Unnamed Roku',
     pairedAt: primary.pairedAt || null,
     lastSyncedAt: primary.lastSyncedAt || null,
     devices,
@@ -568,7 +571,7 @@ function cleanForRoku_(rows, allowedKeys) {
   });
 }
 
-export async function syncRokuDevice(deviceId, deviceName = 'My Roku') {
+export async function syncRokuDevice(deviceId, deviceName = '') {
   const user = requireUser_();
   const id = String(deviceId || '').trim();
   if (!id) throw new Error('Roku device ID is required.');
@@ -582,7 +585,7 @@ export async function syncRokuDevice(deviceId, deviceName = 'My Roku') {
   const snapshot = {
     schemaVersion: 1,
     deviceId: id,
-    deviceName: deviceName || 'My Roku',
+    deviceName: deviceName || 'Unnamed Roku',
     pairedUserId: user.uid,
     pairedUserName: user.displayName || user.email || 'Signed in user',
     updatedAt: serverTimestamp(),
@@ -595,7 +598,7 @@ export async function syncRokuDevice(deviceId, deviceName = 'My Roku') {
 
   const userDevicePatch = {
     deviceId: id,
-    deviceName: deviceName || 'My Roku',
+    deviceName: deviceName || 'Unnamed Roku',
     pairedAt: serverTimestamp(),
     lastSyncedAt: serverTimestamp(),
     followedTeamsCount: followedTeams.length,
@@ -610,7 +613,7 @@ export async function syncRokuDevice(deviceId, deviceName = 'My Roku') {
 
   return {
     deviceId: id,
-    deviceName: deviceName || 'My Roku',
+    deviceName: deviceName || 'Unnamed Roku',
     followedTeamsCount: followedTeams.length,
     followedGolfersCount: followedGolfers.length,
     worldCupTeamsCount: worldCupTeams.length
@@ -624,7 +627,7 @@ export async function syncPairedRokuDevice() {
 
   const results = [];
   for (const device of devices) {
-    results.push(await syncRokuDevice(device.deviceId, device.deviceName || 'My Roku'));
+    results.push(await syncRokuDevice(device.deviceId, device.deviceName || 'Unnamed Roku'));
   }
 
   return {
@@ -648,7 +651,26 @@ export async function removePairedRokuDevice(deviceId) {
   return true;
 }
 
-export async function pairRokuCode(code, deviceName = 'My Roku') {
+
+export async function renamePairedRokuDevice(deviceId, deviceName) {
+  const id = String(deviceId || '').trim();
+  const name = String(deviceName || '').trim() || 'Unnamed Roku';
+  if (!id) throw new Error('Roku device ID is required.');
+
+  await setDoc(userDoc_('rokuDevices', id), {
+    deviceName: name,
+    updatedAt: serverTimestamp()
+  }, { merge: true });
+
+  await setDoc(doc(db_(), 'rokuDevices', id), {
+    deviceName: name,
+    updatedAt: serverTimestamp()
+  }, { merge: true }).catch(() => {});
+
+  return true;
+}
+
+export async function pairRokuCode(code, deviceName = '') {
   const cleaned = String(code || '').replace(/\D/g, '').slice(0, 6);
   if (cleaned.length !== 6) throw new Error('Enter the 6-digit code shown on your Roku.');
 
@@ -662,7 +684,7 @@ export async function pairRokuCode(code, deviceName = 'My Roku') {
   const deviceId = String(pairing.deviceId || '').trim();
   if (!deviceId) throw new Error('Pairing code is missing a Roku device ID.');
 
-  const result = await syncRokuDevice(deviceId, deviceName || 'My Roku');
+  const result = await syncRokuDevice(deviceId, deviceName || 'Unnamed Roku');
   await deleteDoc(pairingRef);
   return { ...result, code: cleaned };
 }

@@ -206,7 +206,6 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
-            <li><strong>v1.3.3</strong> Improved Roku Sync device list and paired status display.</li>
             <li><strong>v1.3.2</strong> Moved Roku Sync into its own Admin section outside of Site Data.</li>
             <li><strong>v1.3.0</strong> Added Roku account pairing/sync foundation so a paired Roku can use the signed-in user's followed teams and golfers.</li>
             <li><strong>v1.2.2</strong> Cleaned Firestore followed golfer and World Cup schemas by removing legacy favorite/note fields and standardizing on notes.</li>

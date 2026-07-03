@@ -30,7 +30,7 @@ import {
   getAmbientMusicSettings,
   saveAmbientMusicSettings
 } from '../api.js';
-import { pairRokuCode, getRokuSyncState, syncPairedRokuDevice } from '../userData.js';
+import { pairRokuCode, getRokuSyncState, syncPairedRokuDevice, removePairedRokuDevice, renamePairedRokuDevice } from '../userData.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
   openConfirmModal,
@@ -345,52 +345,76 @@ function formatRokuStateText(state = {}) {
   return `${count} Rokus paired`;
 }
 
+function formatDeviceDate_(value) {
+  if (!value) return '';
+  try {
+    const date = typeof value.toDate === 'function' ? value.toDate() : new Date(value);
+    if (Number.isNaN(date.getTime())) return '';
+    return date.toLocaleString([], { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' });
+  } catch (err) {
+    return '';
+  }
+}
+
 function renderRokuDeviceRows(devices = []) {
   if (!devices.length) {
     return '<p class="empty-note">No Roku devices paired yet.</p>';
   }
 
-  return devices.map(device => `
-    <div class="admin-list-row">
-      <div>
-        <strong>${escapeHtml(device.deviceName || 'My Roku')}</strong>
-        <span>Device ID: <code>${escapeHtml(device.deviceId || device.id || '')}</code></span>
-        <p>${Number(device.followedTeamsCount || 0)} teams • ${Number(device.followedGolfersCount || 0)} golfers • ${Number(device.worldCupTeamsCount || 0)} World Cup teams</p>
+  return devices.map(device => {
+    const pairedAt = formatDeviceDate_(device.pairedAt);
+    const lastSeen = formatDeviceDate_(device.lastSeenAt || device.lastSyncedAt || device.updatedAt);
+    const version = device.appVersion || device.rokuVersion || '';
+    const meta = [
+      pairedAt ? `Paired ${escapeHtml(pairedAt)}` : '',
+      lastSeen ? `Last seen ${escapeHtml(lastSeen)}` : '',
+      version ? `Version ${escapeHtml(version)}` : ''
+    ].filter(Boolean).join(' • ');
+
+    return `
+      <div class="admin-list-row roku-device-row">
+        <div>
+          <strong>${escapeHtml(device.deviceName || 'Unnamed Roku')}</strong>
+          ${meta ? `<span>${meta}</span>` : '<span>Paired device</span>'}
+        </div>
+        <div class="row-actions">
+          <button class="small-btn rename-roku-btn" type="button" data-device-id="${escapeHtml(device.deviceId || device.id || '')}" data-device-name="${escapeHtml(device.deviceName || '')}">Rename</button>
+          <button class="small-btn danger unpair-roku-btn" type="button" data-device-id="${escapeHtml(device.deviceId || device.id || '')}">Unpair</button>
+        </div>
       </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 }
 
 function renderRokuSyncCard(rokuState = {}) {
   const devices = rokuState.devices || [];
-  const isPaired = devices.length > 0 || rokuState.paired === true;
-  return `
-    <div class="card form-card sports-data-card roku-sync-card">
-      <p class="admin-help">Pair one or more Roku devices so each one uses this signed-in account's followed teams, golfers, and World Cup teams.</p>
+  const pairedSection = renderNestedCollapsibleSection(
+    'Paired Roku Devices',
+    formatRokuStateText(rokuState),
+    `<div class="admin-list">${renderRokuDeviceRows(devices)}</div>`
+  );
 
-      <div class="admin-list-row">
-        <div>
-          <strong>Roku Status</strong>
-          <span>${isPaired ? formatRokuStateText({ ...rokuState, deviceCount: devices.length || rokuState.deviceCount || 1 }) : 'Not paired'}</span>
-        </div>
-      </div>
-
-      <h3>Paired Rokus</h3>
-      <div class="admin-list">
-        ${renderRokuDeviceRows(devices)}
-      </div>
-
-      <h3>Pair New Roku</h3>
+  const pairSection = renderNestedCollapsibleSection(
+    'Pair New Roku',
+    '',
+    `
       <label>Pairing Code</label>
       <input id="roku-pair-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code shown on Roku" />
 
       <label>Device Name</label>
-      <input id="roku-device-name-input" type="text" value="Scoreboard Roku" />
+      <input id="roku-device-name-input" type="text" value="" placeholder="Living Room Roku" />
 
       <div class="ambient-actions">
-        <button id="pair-roku-btn" class="primary-btn" type="button">Pair New Roku</button>
-        <button id="sync-roku-btn" class="secondary-btn" type="button" ${isPaired ? '' : 'disabled'}>Sync Paired Rokus Now</button>
+        <button id="pair-roku-btn" class="primary-btn" type="button">Pair Roku</button>
       </div>
+    `
+  );
+
+  return `
+    <div class="card form-card sports-data-card roku-sync-card">
+      <p class="admin-help">Pair one or more Roku devices so each one uses this signed-in account's followed teams, golfers, and World Cup teams.</p>
+      ${pairedSection}
+      ${pairSection}
     </div>
   `;
 }
@@ -969,7 +993,7 @@ function attachAdminHandlers() {
   if (pairRokuBtn) {
     pairRokuBtn.addEventListener('click', async () => {
       const code = document.getElementById('roku-pair-code-input')?.value || '';
-      const name = document.getElementById('roku-device-name-input')?.value || 'My Roku';
+      const name = document.getElementById('roku-device-name-input')?.value || '';
       try {
         pairRokuBtn.disabled = true;
         pairRokuBtn.textContent = 'Pairing...';
@@ -985,29 +1009,44 @@ function attachAdminHandlers() {
     });
   }
 
-  const syncRokuBtn = document.getElementById('sync-roku-btn');
-  if (syncRokuBtn) {
-    syncRokuBtn.addEventListener('click', async () => {
+  document.querySelectorAll('.rename-roku-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const deviceId = btn.dataset.deviceId || '';
+      const currentName = btn.dataset.deviceName || '';
+      const nextName = window.prompt('Rename Roku device:', currentName || '');
+      if (nextName === null) return;
+
       try {
-        syncRokuBtn.disabled = true;
-        syncRokuBtn.textContent = 'Syncing...';
-        const result = await syncPairedRokuDevice();
-        if (!result) {
-          showToast('No Roku is paired yet.');
-        } else {
-          showToast(`Roku synced. ${result.deviceCount || 1} device(s), ${result.followedTeamsCount} teams, ${result.followedGolfersCount} golfers.`);
-        }
+        btn.disabled = true;
+        await renamePairedRokuDevice(deviceId, nextName);
+        showToast('Roku renamed.');
         await window.refreshCurrentPage?.();
       } catch (err) {
-        openMessageModal({ title: 'Roku Sync Failed', message: err.message || String(err) });
+        openMessageModal({ title: 'Rename Failed', message: err.message || String(err) });
       } finally {
-        syncRokuBtn.disabled = false;
-        syncRokuBtn.textContent = 'Sync Paired Rokus Now';
+        btn.disabled = false;
       }
     });
-  }
+  });
 
+  document.querySelectorAll('.unpair-roku-btn').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const deviceId = btn.dataset.deviceId || '';
+      const confirmed = window.confirm('Unpair this Roku from your account?');
+      if (!confirmed) return;
 
+      try {
+        btn.disabled = true;
+        await removePairedRokuDevice(deviceId);
+        showToast('Roku unpaired.');
+        await window.refreshCurrentPage?.();
+      } catch (err) {
+        openMessageModal({ title: 'Unpair Failed', message: err.message || String(err) });
+      } finally {
+        btn.disabled = false;
+      }
+    });
+  });
 
   const sportSelect = document.getElementById('favorite-sport-select');
   const teamInput = document.getElementById('favorite-team-input');
