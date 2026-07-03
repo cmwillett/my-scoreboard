@@ -206,6 +206,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v1.2.1</strong> Added structured Firestore follow documents and automatic migration/backfill for followed teams, followed golfers, and World Cup teams.</li>
             <li><strong>v1.2.0</strong> Made Firestore the source of truth for followed teams, followed golfers, and World Cup team selections. Apps Script remains score-data only for the PWA.</li>
             <li><strong>v1.1.2</strong> Moved followed teams, followed golfers, and World Cup team selections to signed-in user data in Firestore.</li>
             <li><strong>v1.0.0</strong> Added Firebase Google Sign-In foundation and automatic user profile creation.</li>

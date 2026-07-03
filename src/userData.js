@@ -35,6 +35,29 @@ function golferDocId_(golfer) {
   return keyPart_(golfer);
 }
 
+function titleFromKey_(value) {
+  return String(value || '')
+    .replace(/_/g, ' ')
+    .replace(/\b\w/g, letter => letter.toUpperCase())
+    .trim();
+}
+
+function parseTeamDocId_(id, defaultSportKey = '') {
+  const parts = String(id || '').split('_');
+  const first = parts.shift() || '';
+  return {
+    sportKey: defaultSportKey || first.toUpperCase(),
+    team: titleFromKey_(parts.join('_'))
+  };
+}
+
+function normalizeSportKey_(value) {
+  const text = String(value || '').trim();
+  if (!text) return '';
+  if (text.toLowerCase() === 'worldcup' || text.toLowerCase() === 'world_cup') return 'WorldCup';
+  return text.toUpperCase();
+}
+
 function normalizeTeam_(value) {
   return String(value || '').trim().toLowerCase();
 }
@@ -70,7 +93,52 @@ async function getCollectionItems_(name) {
 }
 
 export async function getUserFollowedTeams() {
-  const rows = await getCollectionItems_('followedTeams');
+  const snapshot = await getDocs(userCollection_('followedTeams'));
+  const batch = writeBatch(db_());
+  let needsMigration = false;
+
+  const rows = snapshot.docs.map((item, index) => {
+    const data = item.data() || {};
+    const parsed = parseTeamDocId_(item.id);
+    const sportKey = normalizeSportKey_(data.sportKey || parsed.sportKey);
+    const team = String(data.team || parsed.team || '').trim();
+    const normalized = {
+      id: item.id,
+      type: 'followedTeam',
+      schemaVersion: 2,
+      docKey: item.id,
+      sportKey,
+      team,
+      teamKey: data.teamKey || keyPart_(team),
+      eventId: String(data.eventId || ''),
+      opponent: data.opponent || '',
+      spread: data.spread || '',
+      notes: data.notes || '',
+      active: data.active !== false,
+      sortOrder: Number(data.sortOrder || index + 1),
+      createdAt: data.createdAt || null,
+      updatedAt: data.updatedAt || null
+    };
+
+    const patch = {};
+    ['type', 'schemaVersion', 'docKey', 'sportKey', 'team', 'teamKey', 'active', 'sortOrder'].forEach(key => {
+      if (data[key] === undefined || data[key] === null || data[key] === '') patch[key] = normalized[key];
+    });
+    if (!data.createdAt) patch.createdAt = serverTimestamp();
+    if (!data.schemaVersion || Number(data.schemaVersion) < 2) {
+      patch.schemaVersion = 2;
+      patch.migratedAt = serverTimestamp();
+    }
+    if (Object.keys(patch).length) {
+      needsMigration = true;
+      batch.set(item.ref, patch, { merge: true });
+    }
+
+    return normalized;
+  });
+
+  if (needsMigration) await batch.commit();
+
   return rows
     .filter(row => row.sportKey && row.team)
     .sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
@@ -83,9 +151,13 @@ export async function addUserFollowedTeam({ sportKey, eventId = '', team, oppone
   const sortOrder = existing.find(row => row.id === id)?.sortOrder || existing.length + 1;
 
   await setDoc(userDoc_('followedTeams', id), {
-    sportKey,
+    type: 'followedTeam',
+    schemaVersion: 2,
+    docKey: id,
+    sportKey: normalizeSportKey_(sportKey),
     eventId: String(eventId || ''),
     team,
+    teamKey: keyPart_(team),
     opponent,
     spread,
     notes,
@@ -106,6 +178,9 @@ export async function addUserFollowedTeam({ sportKey, eventId = '', team, oppone
 
 export async function updateUserFollowedTeam(id, spread = '', notes = '') {
   await setDoc(userDoc_('followedTeams', id), {
+    type: 'followedTeam',
+    schemaVersion: 2,
+    docKey: id,
     spread,
     notes,
     updatedAt: serverTimestamp()
@@ -193,7 +268,49 @@ export function buildFollowedGamesFromTeams(followedTeams, availableGames) {
 }
 
 export async function getUserFollowedGolfers() {
-  const rows = await getCollectionItems_('followedGolfers');
+  const snapshot = await getDocs(userCollection_('followedGolfers'));
+  const batch = writeBatch(db_());
+  let needsMigration = false;
+
+  const rows = snapshot.docs.map((item, index) => {
+    const data = item.data() || {};
+    const golfer = String(data.golfer || titleFromKey_(item.id) || '').trim();
+    const note = data.note || data.notes || '';
+    const normalized = {
+      id: item.id,
+      type: 'followedGolfer',
+      schemaVersion: 2,
+      docKey: item.id,
+      golfer,
+      golferKey: data.golferKey || keyPart_(golfer),
+      note,
+      notes: data.notes || note,
+      favorite: false,
+      sortOrder: Number(data.sortOrder || index + 1),
+      createdAt: data.createdAt || null,
+      updatedAt: data.updatedAt || null
+    };
+
+    const patch = {};
+    ['type', 'schemaVersion', 'docKey', 'golfer', 'golferKey', 'note', 'notes', 'sortOrder'].forEach(key => {
+      if (data[key] === undefined || data[key] === null || data[key] === '') patch[key] = normalized[key];
+    });
+    if (data.favorite !== false) patch.favorite = false;
+    if (!data.createdAt) patch.createdAt = serverTimestamp();
+    if (!data.schemaVersion || Number(data.schemaVersion) < 2) {
+      patch.schemaVersion = 2;
+      patch.migratedAt = serverTimestamp();
+    }
+    if (Object.keys(patch).length) {
+      needsMigration = true;
+      batch.set(item.ref, patch, { merge: true });
+    }
+
+    return normalized;
+  });
+
+  if (needsMigration) await batch.commit();
+
   return rows
     .filter(row => row.golfer)
     .sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
@@ -206,10 +323,14 @@ export async function addUserFollowedGolfer(golfer, note = '', favorite = false)
   const sortOrder = existing.find(row => row.id === id)?.sortOrder || existing.length + 1;
 
   await setDoc(userDoc_('followedGolfers', id), {
+    type: 'followedGolfer',
+    schemaVersion: 2,
+    docKey: id,
     golfer,
+    golferKey: keyPart_(golfer),
     note,
     notes: note,
-    favorite: favorite === true || favorite === 'true',
+    favorite: false,
     sortOrder,
     updatedAt: serverTimestamp(),
     createdAt: existing.find(row => row.id === id)?.createdAt || serverTimestamp()
@@ -237,8 +358,13 @@ export async function removeUserFollowedGolfer(golfer) {
 export async function updateUserFollowedGolferOrder(golfers) {
   const batch = writeBatch(db_());
   (golfers || []).forEach((golfer, index) => {
-    batch.set(userDoc_('followedGolfers', golferDocId_(golfer)), {
+    const id = golferDocId_(golfer);
+    batch.set(userDoc_('followedGolfers', id), {
+      type: 'followedGolfer',
+      schemaVersion: 2,
+      docKey: id,
       golfer,
+      golferKey: keyPart_(golfer),
       sortOrder: index + 1,
       updatedAt: serverTimestamp()
     }, { merge: true });
@@ -274,7 +400,50 @@ export function mergeFollowedGolfersWithLive(followedGolfers, availableGolfers) 
 }
 
 export async function getUserWorldCupTeams() {
-  const rows = await getCollectionItems_('worldCupTeams');
+  const snapshot = await getDocs(userCollection_('worldCupTeams'));
+  const batch = writeBatch(db_());
+  let needsMigration = false;
+
+  const rows = snapshot.docs.map((item, index) => {
+    const data = item.data() || {};
+    const parsed = parseTeamDocId_(item.id, 'WorldCup');
+    const team = String(data.team || parsed.team || '').trim();
+    const normalized = {
+      id: item.id,
+      type: 'worldCupTeam',
+      schemaVersion: 2,
+      docKey: item.id,
+      sportKey: 'WorldCup',
+      team,
+      teamKey: data.teamKey || keyPart_(team),
+      notes: data.notes || '',
+      enabled: data.enabled !== false,
+      favorite: false,
+      sortOrder: Number(data.sortOrder || index + 1),
+      createdAt: data.createdAt || null,
+      updatedAt: data.updatedAt || null
+    };
+
+    const patch = {};
+    ['type', 'schemaVersion', 'docKey', 'sportKey', 'team', 'teamKey', 'enabled', 'sortOrder'].forEach(key => {
+      if (data[key] === undefined || data[key] === null || data[key] === '') patch[key] = normalized[key];
+    });
+    if (data.favorite !== false) patch.favorite = false;
+    if (!data.createdAt) patch.createdAt = serverTimestamp();
+    if (!data.schemaVersion || Number(data.schemaVersion) < 2) {
+      patch.schemaVersion = 2;
+      patch.migratedAt = serverTimestamp();
+    }
+    if (Object.keys(patch).length) {
+      needsMigration = true;
+      batch.set(item.ref, patch, { merge: true });
+    }
+
+    return normalized;
+  });
+
+  if (needsMigration) await batch.commit();
+
   return rows
     .filter(row => row.team)
     .sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
@@ -287,7 +456,12 @@ export async function addUserWorldCupTeam({ team, notes = '', favorite = false }
   const sortOrder = existing.find(row => row.id === id)?.sortOrder || existing.length + 1;
 
   await setDoc(userDoc_('worldCupTeams', id), {
+    type: 'worldCupTeam',
+    schemaVersion: 2,
+    docKey: id,
+    sportKey: 'WorldCup',
     team,
+    teamKey: keyPart_(team),
     notes,
     favorite: false,
     enabled: true,
@@ -311,9 +485,16 @@ export async function removeUserWorldCupTeam(team) {
 }
 
 export async function updateUserWorldCupTeamNote(team, notes = '') {
-  await setDoc(userDoc_('worldCupTeams', teamDocId_('WorldCup', team)), {
+  const id = teamDocId_('WorldCup', team);
+  await setDoc(userDoc_('worldCupTeams', id), {
+    type: 'worldCupTeam',
+    schemaVersion: 2,
+    docKey: id,
+    sportKey: 'WorldCup',
     team,
+    teamKey: keyPart_(team),
     notes,
+    favorite: false,
     updatedAt: serverTimestamp()
   }, { merge: true });
   return getUserWorldCupTeams();
