@@ -11,7 +11,8 @@ import {
   doc,
   getDoc,
   setDoc,
-  serverTimestamp
+  serverTimestamp,
+  deleteField
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 
 const firebaseConfig = {
@@ -109,13 +110,12 @@ async function upsertUserProfile_(user) {
         density: 'expanded',
         theme: 'default'
       },
-      favorites: {},
       roku: {}
     });
     return;
   }
 
-  await setDoc(userRef, baseProfile, { merge: true });
+  await setDoc(userRef, { ...baseProfile, favorites: deleteField() }, { merge: true });
 }
 
 function renderAuthShell_() {
