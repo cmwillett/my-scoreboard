@@ -229,14 +229,40 @@ function isGameUpcoming_(game) {
   return !isGameLive_(game) && !isGameFinal_(game);
 }
 
+function teamMatches_(a, b) {
+  const left = normalizeTeam_(a);
+  const right = normalizeTeam_(b);
+  if (!left || !right) return false;
+  return left === right || left.includes(right) || right.includes(left);
+}
+
+function getOpponentFromGame_(game, followedTeam) {
+  if (!game) return '';
+
+  if (teamMatches_(game.awayTeam, followedTeam)) return game.homeTeam || '';
+  if (teamMatches_(game.homeTeam, followedTeam)) return game.awayTeam || '';
+
+  return game.homeTeam || game.awayTeam || '';
+}
+
 function findBestGame_(games, follow) {
   const team = normalizeTeam_(follow.team);
   const sportKey = String(follow.sportKey || '');
-  const matches = games.filter(game => {
+  const eventId = String(follow.eventId || '');
+
+  // Prefer an exact event match when Firestore has the current ESPN event id.
+  // This prevents fallback cards with blank opponents when short team names differ.
+  if (eventId) {
+    const eventMatch = (games || []).find(game =>
+      String(game.sportKey || '') === sportKey &&
+      String(game.eventId || '') === eventId
+    );
+    if (eventMatch) return eventMatch;
+  }
+
+  const matches = (games || []).filter(game => {
     if (String(game.sportKey || '') !== sportKey) return false;
-    const away = normalizeTeam_(game.awayTeam);
-    const home = normalizeTeam_(game.homeTeam);
-    return away === team || home === team || away.includes(team) || home.includes(team) || team.includes(away) || team.includes(home);
+    return teamMatches_(game.awayTeam, team) || teamMatches_(game.homeTeam, team);
   });
 
   if (!matches.length) return null;
@@ -246,6 +272,7 @@ function findBestGame_(games, follow) {
 export function buildFollowedGamesFromTeams(followedTeams, availableGames) {
   return (followedTeams || []).map(follow => {
     const live = findBestGame_(availableGames || [], follow);
+    const opponent = live ? getOpponentFromGame_(live, follow.team) : (follow.opponent || '');
     const fallbackLive = {
       sport: follow.sportKey,
       sportKey: follow.sportKey,
@@ -253,7 +280,7 @@ export function buildFollowedGamesFromTeams(followedTeams, availableGames) {
       selectedTeam: follow.team,
       awayTeam: follow.team,
       awayScore: '',
-      homeTeam: follow.opponent || '',
+      homeTeam: opponent,
       homeScore: '',
       status: 'Scheduled',
       clock: '',
@@ -267,6 +294,7 @@ export function buildFollowedGamesFromTeams(followedTeams, availableGames) {
       selectedTeam: follow.team,
       sport: live?.sport || follow.sportKey,
       eventId: live?.eventId || follow.eventId || '',
+      opponent,
       live: live ? { ...live, selectedTeam: follow.team } : fallbackLive
     };
   }).sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
