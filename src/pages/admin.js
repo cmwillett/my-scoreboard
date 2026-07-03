@@ -339,32 +339,54 @@ function renderAmbientMusicCard(tracks = []) {
 
 
 function formatRokuStateText(state = {}) {
-  if (!state || !state.paired) return 'Not paired';
-  return `Paired${state.deviceName ? ` to ${escapeHtml(state.deviceName)}` : ''}`;
+  const count = Number(state.deviceCount || (state.devices || []).length || 0);
+  if (!count) return 'Not paired';
+  if (count === 1) return `1 Roku paired`;
+  return `${count} Rokus paired`;
+}
+
+function renderRokuDeviceRows(devices = []) {
+  if (!devices.length) {
+    return '<p class="empty-note">No Roku devices paired yet.</p>';
+  }
+
+  return devices.map(device => `
+    <div class="admin-list-row">
+      <div>
+        <strong>${escapeHtml(device.deviceName || 'My Roku')}</strong>
+        <span>Device ID: <code>${escapeHtml(device.deviceId || device.id || '')}</code></span>
+        <p>${Number(device.followedTeamsCount || 0)} teams • ${Number(device.followedGolfersCount || 0)} golfers • ${Number(device.worldCupTeamsCount || 0)} World Cup teams</p>
+      </div>
+    </div>
+  `).join('');
 }
 
 function renderRokuSyncCard(rokuState = {}) {
+  const devices = rokuState.devices || [];
   return `
     <div class="card form-card sports-data-card roku-sync-card">
-      <p class="admin-help">Pair a Roku device so it uses this signed-in account's followed teams, golfers, and World Cup teams.</p>
+      <p class="admin-help">Pair one or more Roku devices so each one uses this signed-in account's followed teams, golfers, and World Cup teams.</p>
 
       <div class="admin-list-row">
         <div>
           <strong>Roku Status</strong>
           <span>${formatRokuStateText(rokuState)}</span>
-          ${rokuState.deviceId ? `<p>Device ID: <code>${escapeHtml(rokuState.deviceId)}</code></p>` : ''}
         </div>
       </div>
 
+      <div class="admin-list">
+        ${renderRokuDeviceRows(devices)}
+      </div>
+
       <label>Pairing Code</label>
-      <input id="roku-pair-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code from Roku Info page" />
+      <input id="roku-pair-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code shown on Roku" />
 
       <label>Device Name</label>
-      <input id="roku-device-name-input" type="text" value="${escapeHtml(rokuState.deviceName || 'Living Room Roku')}" />
+      <input id="roku-device-name-input" type="text" value="Scoreboard Roku" />
 
       <div class="ambient-actions">
         <button id="pair-roku-btn" class="primary-btn" type="button">Pair Roku</button>
-        <button id="sync-roku-btn" class="secondary-btn" type="button" ${rokuState.paired ? '' : 'disabled'}>Sync Paired Roku Now</button>
+        <button id="sync-roku-btn" class="secondary-btn" type="button" ${rokuState.paired ? '' : 'disabled'}>Sync Paired Rokus Now</button>
       </div>
     </div>
   `;
@@ -970,14 +992,14 @@ function attachAdminHandlers() {
         if (!result) {
           showToast('No Roku is paired yet.');
         } else {
-          showToast(`Roku synced. ${result.followedTeamsCount} teams, ${result.followedGolfersCount} golfers.`);
+          showToast(`Roku synced. ${result.deviceCount || 1} device(s), ${result.followedTeamsCount} teams, ${result.followedGolfersCount} golfers.`);
         }
         await window.refreshCurrentPage?.();
       } catch (err) {
         openMessageModal({ title: 'Roku Sync Failed', message: err.message || String(err) });
       } finally {
         syncRokuBtn.disabled = false;
-        syncRokuBtn.textContent = 'Sync Paired Roku Now';
+        syncRokuBtn.textContent = 'Sync Paired Rokus Now';
       }
     });
   }
@@ -1511,7 +1533,7 @@ export async function renderAdmin() {
       `)}
     `)}
 
-    ${renderCollapsibleSection('Roku Sync', rokuState?.paired ? 'Paired' : 'Not paired', renderRokuSyncCard(rokuState))}
+    ${renderCollapsibleSection('Roku Account Sync', formatRokuStateText(rokuState), renderRokuSyncCard(rokuState))}
 
     ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh, ambientMusic, rokuState))}
   `;

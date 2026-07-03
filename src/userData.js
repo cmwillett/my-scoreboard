@@ -7,7 +7,8 @@ import {
   setDoc,
   serverTimestamp,
   writeBatch,
-  deleteField
+  deleteField,
+  updateDoc
 } from 'https://www.gstatic.com/firebasejs/10.12.5/firebase-firestore.js';
 import { getCurrentUser, getFirebaseDb } from './firebase.js';
 
@@ -512,13 +513,48 @@ export async function getRokuSyncState() {
   const user = requireUser_();
   const root = await getDoc(userRootDoc_());
   const data = root.exists() ? (root.data() || {}) : {};
-  const roku = data.roku || {};
+  const legacyRoku = data.roku || {};
+
+  const devicesSnapshot = await getDocs(userCollection_('rokuDevices'));
+  const devices = devicesSnapshot.docs.map(item => {
+    const device = item.data() || {};
+    return {
+      id: item.id,
+      deviceId: device.deviceId || item.id,
+      deviceName: device.deviceName || 'My Roku',
+      pairedAt: device.pairedAt || null,
+      lastSyncedAt: device.lastSyncedAt || null,
+      followedTeamsCount: Number(device.followedTeamsCount || 0),
+      followedGolfersCount: Number(device.followedGolfersCount || 0),
+      worldCupTeamsCount: Number(device.worldCupTeamsCount || 0)
+    };
+  }).sort((a, b) => String(a.deviceName).localeCompare(String(b.deviceName)));
+
+  // Backfill the new per-user Roku device collection from the older single-device
+  // root field if needed. This keeps existing paired Rokus working.
+  if (!devices.length && legacyRoku.deviceId) {
+    const backfilled = {
+      deviceId: legacyRoku.deviceId,
+      deviceName: legacyRoku.deviceName || 'My Roku',
+      pairedAt: legacyRoku.pairedAt || serverTimestamp(),
+      lastSyncedAt: legacyRoku.lastSyncedAt || null,
+      followedTeamsCount: Number(legacyRoku.followedTeamsCount || 0),
+      followedGolfersCount: Number(legacyRoku.followedGolfersCount || 0),
+      worldCupTeamsCount: Number(legacyRoku.worldCupTeamsCount || 0)
+    };
+    await setDoc(userDoc_('rokuDevices', String(legacyRoku.deviceId)), backfilled, { merge: true });
+    devices.push({ id: String(legacyRoku.deviceId), ...backfilled });
+  }
+
+  const primary = devices[0] || {};
   return {
-    paired: !!roku.deviceId,
-    deviceId: roku.deviceId || '',
-    deviceName: roku.deviceName || 'My Roku',
-    pairedAt: roku.pairedAt || null,
-    lastSyncedAt: roku.lastSyncedAt || null
+    paired: devices.length > 0,
+    deviceId: primary.deviceId || '',
+    deviceName: primary.deviceName || 'My Roku',
+    pairedAt: primary.pairedAt || null,
+    lastSyncedAt: primary.lastSyncedAt || null,
+    devices,
+    deviceCount: devices.length
   };
 }
 
@@ -556,16 +592,20 @@ export async function syncRokuDevice(deviceId, deviceName = 'My Roku') {
   };
 
   await setDoc(doc(db_(), 'rokuDevices', id), snapshot, { merge: true });
+
+  const userDevicePatch = {
+    deviceId: id,
+    deviceName: deviceName || 'My Roku',
+    pairedAt: serverTimestamp(),
+    lastSyncedAt: serverTimestamp(),
+    followedTeamsCount: followedTeams.length,
+    followedGolfersCount: followedGolfers.length,
+    worldCupTeamsCount: worldCupTeams.length
+  };
+
+  await setDoc(userDoc_('rokuDevices', id), userDevicePatch, { merge: true });
   await setDoc(userRootDoc_(), {
-    roku: {
-      deviceId: id,
-      deviceName: deviceName || 'My Roku',
-      pairedAt: serverTimestamp(),
-      lastSyncedAt: serverTimestamp(),
-      followedTeamsCount: followedTeams.length,
-      followedGolfersCount: followedGolfers.length,
-      worldCupTeamsCount: worldCupTeams.length
-    }
+    roku: userDevicePatch
   }, { merge: true });
 
   return {
@@ -579,8 +619,33 @@ export async function syncRokuDevice(deviceId, deviceName = 'My Roku') {
 
 export async function syncPairedRokuDevice() {
   const state = await getRokuSyncState();
-  if (!state.deviceId) return null;
-  return syncRokuDevice(state.deviceId, state.deviceName || 'My Roku');
+  const devices = state.devices || [];
+  if (!devices.length) return null;
+
+  const results = [];
+  for (const device of devices) {
+    results.push(await syncRokuDevice(device.deviceId, device.deviceName || 'My Roku'));
+  }
+
+  return {
+    devices: results,
+    deviceCount: results.length,
+    followedTeamsCount: results[0]?.followedTeamsCount || 0,
+    followedGolfersCount: results[0]?.followedGolfersCount || 0,
+    worldCupTeamsCount: results[0]?.worldCupTeamsCount || 0
+  };
+}
+
+export async function removePairedRokuDevice(deviceId) {
+  const id = String(deviceId || '').trim();
+  if (!id) return false;
+  await deleteDoc(userDoc_('rokuDevices', id));
+  await deleteDoc(doc(db_(), 'rokuDevices', id)).catch(() => {});
+  const state = await getRokuSyncState();
+  if (!state.devices.length) {
+    await setDoc(userRootDoc_(), { roku: deleteField() }, { merge: true });
+  }
+  return true;
 }
 
 export async function pairRokuCode(code, deviceName = 'My Roku') {
