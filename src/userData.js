@@ -270,35 +270,30 @@ function findBestGame_(games, follow) {
 }
 
 export function buildFollowedGamesFromTeams(followedTeams, availableGames) {
-  return (followedTeams || []).map(follow => {
-    const live = findBestGame_(availableGames || [], follow);
-    const opponent = live ? getOpponentFromGame_(live, follow.team) : (follow.opponent || '');
-    const fallbackLive = {
-      sport: follow.sportKey,
-      sportKey: follow.sportKey,
-      eventId: follow.eventId || '',
-      selectedTeam: follow.team,
-      awayTeam: follow.team,
-      awayScore: '',
-      homeTeam: opponent,
-      homeScore: '',
-      status: 'Scheduled',
-      clock: '',
-      channel: '',
-      startTime: '',
-      rawStatus: 'STATUS_SCHEDULED'
-    };
+  return (followedTeams || [])
+    .map(follow => {
+      const live = findBestGame_(availableGames || [], follow);
 
-    return {
-      ...follow,
-      selectedTeam: follow.team,
-      sport: live?.sport || follow.sportKey,
-      eventId: live?.eventId || follow.eventId || '',
-      opponent,
-      live: live ? { ...live, selectedTeam: follow.team } : fallbackLive
-    };
-  }).sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
+      // Followed teams are persistent Firestore preferences. The Scores page
+      // should only display them when the current Apps Script/ESPN cache has a
+      // real live/upcoming/recent-final game. Do not build blank placeholders.
+      if (!live) return null;
+
+      const opponent = getOpponentFromGame_(live, follow.team);
+
+      return {
+        ...follow,
+        selectedTeam: follow.team,
+        sport: live.sport || follow.sportKey,
+        eventId: live.eventId || follow.eventId || '',
+        opponent,
+        live: { ...live, selectedTeam: follow.team }
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
 }
+
 
 export async function getUserFollowedGolfers() {
   const snapshot = await getDocs(userCollection_('followedGolfers'));
