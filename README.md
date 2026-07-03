@@ -1,1 +1,1 @@
-# my-scoreboard - PWA
+# my-scoreboard
