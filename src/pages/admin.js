@@ -446,8 +446,6 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
       </div>
     `)}
 
-    ${renderNestedCollapsibleSection('Roku Account Sync', rokuState?.paired ? 'Paired' : 'Not paired', renderRokuSyncCard(rokuState))}
-
     ${renderNestedCollapsibleSection('Roku Ambient Music', `${(ambientMusic || []).filter(t => t.enabled).length}/${(ambientMusic || []).length || 6} selected`, renderAmbientMusicCard(ambientMusic))}
 
     ${renderNestedCollapsibleSection('Manual Refresh', 'Run now', `
@@ -1512,6 +1510,8 @@ export async function renderAdmin() {
         </div>
       `)}
     `)}
+
+    ${renderCollapsibleSection('Roku Sync', rokuState?.paired ? 'Paired' : 'Not paired', renderRokuSyncCard(rokuState))}
 
     ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh, ambientMusic, rokuState))}
   `;
