@@ -363,6 +363,7 @@ function renderRokuDeviceRows(devices = []) {
 
 function renderRokuSyncCard(rokuState = {}) {
   const devices = rokuState.devices || [];
+  const isPaired = devices.length > 0 || rokuState.paired === true;
   return `
     <div class="card form-card sports-data-card roku-sync-card">
       <p class="admin-help">Pair one or more Roku devices so each one uses this signed-in account's followed teams, golfers, and World Cup teams.</p>
@@ -370,14 +371,16 @@ function renderRokuSyncCard(rokuState = {}) {
       <div class="admin-list-row">
         <div>
           <strong>Roku Status</strong>
-          <span>${formatRokuStateText(rokuState)}</span>
+          <span>${isPaired ? formatRokuStateText({ ...rokuState, deviceCount: devices.length || rokuState.deviceCount || 1 }) : 'Not paired'}</span>
         </div>
       </div>
 
+      <h3>Paired Rokus</h3>
       <div class="admin-list">
         ${renderRokuDeviceRows(devices)}
       </div>
 
+      <h3>Pair New Roku</h3>
       <label>Pairing Code</label>
       <input id="roku-pair-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code shown on Roku" />
 
@@ -385,8 +388,8 @@ function renderRokuSyncCard(rokuState = {}) {
       <input id="roku-device-name-input" type="text" value="Scoreboard Roku" />
 
       <div class="ambient-actions">
-        <button id="pair-roku-btn" class="primary-btn" type="button">Pair Roku</button>
-        <button id="sync-roku-btn" class="secondary-btn" type="button" ${rokuState.paired ? '' : 'disabled'}>Sync Paired Rokus Now</button>
+        <button id="pair-roku-btn" class="primary-btn" type="button">Pair New Roku</button>
+        <button id="sync-roku-btn" class="secondary-btn" type="button" ${isPaired ? '' : 'disabled'}>Sync Paired Rokus Now</button>
       </div>
     </div>
   `;
