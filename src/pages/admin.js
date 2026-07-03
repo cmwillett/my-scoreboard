@@ -30,6 +30,7 @@ import {
   getAmbientMusicSettings,
   saveAmbientMusicSettings
 } from '../api.js';
+import { pairRokuCode, getRokuSyncState, syncPairedRokuDevice } from '../userData.js';
 import { renderAddGame, attachAddHandlers } from './addgame.js';
 import {
   openConfirmModal,
@@ -336,7 +337,40 @@ function renderAmbientMusicCard(tracks = []) {
   `;
 }
 
-function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = {}, ambientMusic = []) {
+
+function formatRokuStateText(state = {}) {
+  if (!state || !state.paired) return 'Not paired';
+  return `Paired${state.deviceName ? ` to ${escapeHtml(state.deviceName)}` : ''}`;
+}
+
+function renderRokuSyncCard(rokuState = {}) {
+  return `
+    <div class="card form-card sports-data-card roku-sync-card">
+      <p class="admin-help">Pair a Roku device so it uses this signed-in account's followed teams, golfers, and World Cup teams.</p>
+
+      <div class="admin-list-row">
+        <div>
+          <strong>Roku Status</strong>
+          <span>${formatRokuStateText(rokuState)}</span>
+          ${rokuState.deviceId ? `<p>Device ID: <code>${escapeHtml(rokuState.deviceId)}</code></p>` : ''}
+        </div>
+      </div>
+
+      <label>Pairing Code</label>
+      <input id="roku-pair-code-input" type="text" inputmode="numeric" maxlength="6" placeholder="Enter 6-digit code from Roku Info page" />
+
+      <label>Device Name</label>
+      <input id="roku-device-name-input" type="text" value="${escapeHtml(rokuState.deviceName || 'Living Room Roku')}" />
+
+      <div class="ambient-actions">
+        <button id="pair-roku-btn" class="primary-btn" type="button">Pair Roku</button>
+        <button id="sync-roku-btn" class="secondary-btn" type="button" ${rokuState.paired ? '' : 'disabled'}>Sync Paired Roku Now</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = {}, ambientMusic = [], rokuState = {}) {
   const settings = {
     scoreboard: visibility.scoreboard !== false,
     golfers: visibility.golfers !== false,
@@ -411,6 +445,8 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
         </button>
       </div>
     `)}
+
+    ${renderNestedCollapsibleSection('Roku Account Sync', rokuState?.paired ? 'Paired' : 'Not paired', renderRokuSyncCard(rokuState))}
 
     ${renderNestedCollapsibleSection('Roku Ambient Music', `${(ambientMusic || []).filter(t => t.enabled).length}/${(ambientMusic || []).length || 6} selected`, renderAmbientMusicCard(ambientMusic))}
 
@@ -906,6 +942,50 @@ async function loadTeamsForFavoriteSport() {
 function attachAdminHandlers() {
   attachAddHandlers();
 
+  const pairRokuBtn = document.getElementById('pair-roku-btn');
+  if (pairRokuBtn) {
+    pairRokuBtn.addEventListener('click', async () => {
+      const code = document.getElementById('roku-pair-code-input')?.value || '';
+      const name = document.getElementById('roku-device-name-input')?.value || 'My Roku';
+      try {
+        pairRokuBtn.disabled = true;
+        pairRokuBtn.textContent = 'Pairing...';
+        const result = await pairRokuCode(code, name);
+        showToast(`Roku paired. Synced ${result.followedTeamsCount} teams and ${result.followedGolfersCount} golfers.`);
+        await window.refreshCurrentPage?.();
+      } catch (err) {
+        openMessageModal({ title: 'Roku Pairing Failed', message: err.message || String(err) });
+      } finally {
+        pairRokuBtn.disabled = false;
+        pairRokuBtn.textContent = 'Pair Roku';
+      }
+    });
+  }
+
+  const syncRokuBtn = document.getElementById('sync-roku-btn');
+  if (syncRokuBtn) {
+    syncRokuBtn.addEventListener('click', async () => {
+      try {
+        syncRokuBtn.disabled = true;
+        syncRokuBtn.textContent = 'Syncing...';
+        const result = await syncPairedRokuDevice();
+        if (!result) {
+          showToast('No Roku is paired yet.');
+        } else {
+          showToast(`Roku synced. ${result.followedTeamsCount} teams, ${result.followedGolfersCount} golfers.`);
+        }
+        await window.refreshCurrentPage?.();
+      } catch (err) {
+        openMessageModal({ title: 'Roku Sync Failed', message: err.message || String(err) });
+      } finally {
+        syncRokuBtn.disabled = false;
+        syncRokuBtn.textContent = 'Sync Paired Roku Now';
+      }
+    });
+  }
+
+
+
   const sportSelect = document.getElementById('favorite-sport-select');
   const teamInput = document.getElementById('favorite-team-input');
   const dropdown = document.getElementById('favorite-team-dropdown');
@@ -1367,7 +1447,7 @@ export async function renderAdmin() {
 
   const addGameHtml = await renderAddGame({ embedded: true, teamOnly: true });
 
-  const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult, availableGolfersResult, ambientMusicResult] = await Promise.all([
+  const [sportsResult, followedGamesResult, followedGolfersResult, favoritesResult, visibilityResult, settingsResult, worldCupResult, availableGolfersResult, ambientMusicResult, rokuState] = await Promise.all([
     getAvailableSports(),
     getAllFollowedGames(),
     getFollowedGolfers(),
@@ -1376,7 +1456,8 @@ export async function renderAdmin() {
     getSettingsData(),
     getWorldCupPageData(),
     getAvailableGolfers(),
-    getAmbientMusicSettings()
+    getAmbientMusicSettings(),
+    getRokuSyncState()
   ]);
 
   const sports = sportsResult.data || [];
@@ -1432,6 +1513,6 @@ export async function renderAdmin() {
       `)}
     `)}
 
-    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh, ambientMusic))}
+    ${renderCollapsibleSection('Site Data', (refreshSports.filter(s => s.enabled).length + (worldCupRefresh.autoRefresh === true ? 1 : 0)) + '/' + (refreshSports.length + 1) + ' in season', renderSportsDataCard(visibility, refreshSports, worldCupRefresh, ambientMusic, rokuState))}
   `;
 }

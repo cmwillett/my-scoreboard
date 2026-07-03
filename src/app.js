@@ -206,6 +206,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v1.3.0</strong> Added Roku account pairing/sync foundation so a paired Roku can use the signed-in user's followed teams and golfers.</li>
             <li><strong>v1.2.2</strong> Cleaned Firestore followed golfer and World Cup schemas by removing legacy favorite/note fields and standardizing on notes.</li>
             <li><strong>v1.2.1</strong> Added structured Firestore follow documents and automatic migration/backfill for followed teams, followed golfers, and World Cup teams.</li>
             <li><strong>v1.2.0</strong> Made Firestore the source of truth for followed teams, followed golfers, and World Cup team selections. Apps Script remains score-data only for the PWA.</li>

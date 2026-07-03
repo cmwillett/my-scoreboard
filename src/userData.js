@@ -2,6 +2,7 @@ import {
   collection,
   deleteDoc,
   doc,
+  getDoc,
   getDocs,
   setDoc,
   serverTimestamp,
@@ -173,6 +174,7 @@ export async function addUserFollowedTeam({ sportKey, eventId = '', team, oppone
     lastFollowedTeam: `${sportKey}: ${team}`,
     followedTeamsCount: existing.filter(row => row.id !== id).length + 1
   });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
 
   return getUserFollowedTeams();
 }
@@ -196,6 +198,7 @@ export async function removeUserFollowedTeam(id) {
     lastFollowWrite: 'removeFollowedTeam',
     followedTeamsCount: rows.length
   });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
   return rows;
 }
 
@@ -341,6 +344,7 @@ export async function addUserFollowedGolfer(golfer, notes = '', favorite = false
     lastFollowedGolfer: golfer,
     followedGolfersCount: existing.filter(row => row.id !== id).length + 1
   });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
 
   return getUserFollowedGolfers();
 }
@@ -352,6 +356,7 @@ export async function removeUserFollowedGolfer(golfer) {
     lastFollowWrite: 'removeFollowedGolfer',
     followedGolfersCount: rows.length
   });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
   return rows;
 }
 
@@ -476,12 +481,14 @@ export async function addUserWorldCupTeam({ team, notes = '', favorite = false }
     lastWorldCupTeam: team,
     worldCupTeamsCount: existing.filter(row => row.id !== id).length + 1
   });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
 
   return getUserWorldCupTeams();
 }
 
 export async function removeUserWorldCupTeam(team) {
   await deleteDoc(userDoc_('worldCupTeams', teamDocId_('WorldCup', team)));
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
   return getUserWorldCupTeams();
 }
 
@@ -500,3 +507,98 @@ export async function updateUserWorldCupTeamNote(team, notes = '') {
   }, { merge: true });
   return getUserWorldCupTeams();
 }
+
+export async function getRokuSyncState() {
+  const user = requireUser_();
+  const root = await getDoc(userRootDoc_());
+  const data = root.exists() ? (root.data() || {}) : {};
+  const roku = data.roku || {};
+  return {
+    paired: !!roku.deviceId,
+    deviceId: roku.deviceId || '',
+    deviceName: roku.deviceName || 'My Roku',
+    pairedAt: roku.pairedAt || null,
+    lastSyncedAt: roku.lastSyncedAt || null
+  };
+}
+
+function cleanForRoku_(rows, allowedKeys) {
+  return (rows || []).map(row => {
+    const out = {};
+    allowedKeys.forEach(key => {
+      if (row[key] !== undefined && row[key] !== null) out[key] = row[key];
+    });
+    return out;
+  });
+}
+
+export async function syncRokuDevice(deviceId, deviceName = 'My Roku') {
+  const user = requireUser_();
+  const id = String(deviceId || '').trim();
+  if (!id) throw new Error('Roku device ID is required.');
+
+  const [followedTeams, followedGolfers, worldCupTeams] = await Promise.all([
+    getUserFollowedTeams(),
+    getUserFollowedGolfers(),
+    getUserWorldCupTeams()
+  ]);
+
+  const snapshot = {
+    schemaVersion: 1,
+    deviceId: id,
+    deviceName: deviceName || 'My Roku',
+    pairedUserId: user.uid,
+    pairedUserName: user.displayName || user.email || 'Signed in user',
+    updatedAt: serverTimestamp(),
+    followedTeams: cleanForRoku_(followedTeams, ['id', 'sportKey', 'team', 'teamKey', 'eventId', 'opponent', 'spread', 'notes', 'active', 'sortOrder']),
+    followedGolfers: cleanForRoku_(followedGolfers, ['id', 'golfer', 'golferKey', 'notes', 'sortOrder']),
+    worldCupTeams: cleanForRoku_(worldCupTeams, ['id', 'sportKey', 'team', 'teamKey', 'notes', 'enabled', 'sortOrder'])
+  };
+
+  await setDoc(doc(db_(), 'rokuDevices', id), snapshot, { merge: true });
+  await setDoc(userRootDoc_(), {
+    roku: {
+      deviceId: id,
+      deviceName: deviceName || 'My Roku',
+      pairedAt: serverTimestamp(),
+      lastSyncedAt: serverTimestamp(),
+      followedTeamsCount: followedTeams.length,
+      followedGolfersCount: followedGolfers.length,
+      worldCupTeamsCount: worldCupTeams.length
+    }
+  }, { merge: true });
+
+  return {
+    deviceId: id,
+    deviceName: deviceName || 'My Roku',
+    followedTeamsCount: followedTeams.length,
+    followedGolfersCount: followedGolfers.length,
+    worldCupTeamsCount: worldCupTeams.length
+  };
+}
+
+export async function syncPairedRokuDevice() {
+  const state = await getRokuSyncState();
+  if (!state.deviceId) return null;
+  return syncRokuDevice(state.deviceId, state.deviceName || 'My Roku');
+}
+
+export async function pairRokuCode(code, deviceName = 'My Roku') {
+  const cleaned = String(code || '').replace(/\D/g, '').slice(0, 6);
+  if (cleaned.length !== 6) throw new Error('Enter the 6-digit code shown on your Roku.');
+
+  const pairingRef = doc(db_(), 'rokuPairCodes', cleaned);
+  const pairingSnap = await getDoc(pairingRef);
+  if (!pairingSnap.exists()) {
+    throw new Error('Pairing code not found. Open the Info page on Roku and try again.');
+  }
+
+  const pairing = pairingSnap.data() || {};
+  const deviceId = String(pairing.deviceId || '').trim();
+  if (!deviceId) throw new Error('Pairing code is missing a Roku device ID.');
+
+  const result = await syncRokuDevice(deviceId, deviceName || 'My Roku');
+  await deleteDoc(pairingRef);
+  return { ...result, code: cleaned };
+}
+
