@@ -81,17 +81,12 @@ function isRealWorldCupTeamName(team) {
 }
 
 function renderWorldCupTeamRows(data = {}) {
-  const favoriteRows = (data.favorites || []).map(team => ({
-    ...team,
-    type: 'favorite'
-  }));
-
   const followedRows = (data.followedTeams || []).map(team => ({
     ...team,
     type: 'followed'
   }));
 
-  const rows = [...favoriteRows, ...followedRows].sort((a, b) => {
+  const rows = followedRows.sort((a, b) => {
     const teamA = String(a.team || '').toLowerCase();
     const teamB = String(b.team || '').toLowerCase();
     return teamA.localeCompare(teamB);
@@ -104,8 +99,8 @@ function renderWorldCupTeamRows(data = {}) {
   return rows.map(row => `
     <div class="worldcup-team-row admin-list-row">
       <div>
-        <strong>${row.type === 'favorite' ? '⭐ ' : ''}${escapeHtml(row.team)}</strong>
-        <span>${row.type === 'favorite' ? 'Favorite' : 'Followed'}</span>
+        <strong>${escapeHtml(row.team)}</strong>
+        <span>Followed</span>
         ${row.notes ? `<p>${escapeHtml(row.notes)}</p>` : ''}
       </div>
 
@@ -138,7 +133,7 @@ function renderWorldCupAddCard() {
     <div class="card form-card">
       <h3>Add World Cup Team</h3>
       <p class="admin-help">
-        Add a followed or favorite World Cup team. It behaves like the other team controls; the World Cup tab and Roku app are display-only.
+        Follow a World Cup team. The World Cup tab and Roku app are display-only.
       </p>
 
       <label>Team</label>
@@ -159,16 +154,13 @@ function renderWorldCupAddCard() {
         <button id="admin-add-worldcup-followed-btn" class="primary-btn" type="button">
           Follow Team
         </button>
-        <button id="admin-add-worldcup-favorite-btn" class="primary-btn" type="button">
-          Favorite Team
-        </button>
       </div>
     </div>
   `;
 }
 
 function renderWorldCupCurrentCard(data = {}) {
-  const selectedCount = (data.favorites || []).length + (data.followedTeams || []).length;
+  const selectedCount = (data.followedTeams || []).length;
 
   return `
     <div class="card">
@@ -583,15 +575,6 @@ function renderFollowedTeamRow(row) {
 
 function getFavoriteTeamRows(favorites = [], worldCupData = {}) {
   const rows = favorites.map(favorite => ({ ...favorite, type: 'favorite' }));
-
-  (worldCupData.favorites || []).forEach(team => {
-    rows.push({
-      sportKey: 'WorldCup',
-      team: team.team,
-      notes: team.notes || '',
-      type: 'favorite-worldcup'
-    });
-  });
 
   return rows;
 }
@@ -1182,7 +1165,6 @@ function attachAdminHandlers() {
   const wcTeamInput = document.getElementById('admin-worldcup-team-input');
   const wcDropdown = document.getElementById('admin-worldcup-team-dropdown');
   const wcFollowBtn = document.getElementById('admin-add-worldcup-followed-btn');
-  const wcFavoriteBtn = document.getElementById('admin-add-worldcup-favorite-btn');
   const manualRefreshBtns = Array.from(document.querySelectorAll('.manual-refresh-sport-btn'));
   const refreshAllSportsBtn = document.getElementById('admin-refresh-all-sports-btn');
 
@@ -1210,11 +1192,7 @@ function attachAdminHandlers() {
     }
 
     try {
-      if (type === 'favorite') {
-        await addWorldCupFavoriteTeam({ team, notes });
-      } else {
-        await addWorldCupFollowedTeam({ team, notes });
-      }
+      await addWorldCupFollowedTeam({ team, notes });
 
       showToast(`${team} saved.`);
       await window.refreshCurrentPage?.();
@@ -1228,7 +1206,6 @@ function attachAdminHandlers() {
   }
 
   wcFollowBtn?.addEventListener('click', () => addWorldCupTeam('followed'));
-  wcFavoriteBtn?.addEventListener('click', () => addWorldCupTeam('favorite'));
 
   manualRefreshBtns.forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -1284,14 +1261,10 @@ function attachAdminHandlers() {
 
       openConfirmModal({
         title: 'Remove World Cup Team?',
-        message: `Remove ${team} from ${type === 'favorite' ? 'favorites' : 'followed teams'}?`,
+        message: `Remove ${team} from followed teams?`,
         confirmText: 'Remove',
         onConfirm: async () => {
-          if (type === 'favorite') {
-            await removeWorldCupFavoriteTeam(team);
-          } else {
-            await removeWorldCupFollowedTeam(team);
-          }
+          await removeWorldCupFollowedTeam(team);
 
           showToast(`${team} removed.`);
           await window.refreshCurrentPage?.();

@@ -60,40 +60,14 @@ export async function getAvailableGames(sportKey = 'ALL') {
   return apiRequest('getAvailableGames', { sportKey });
 }
 
-async function seedFollowedTeamsFromLegacyIfNeeded_() {
-  const existing = await getUserFollowedTeams();
-  if (existing.length) return existing;
-
-  const legacyResult = await apiRequest('getAllFollowedGames');
-  const legacyRows = legacyResult.data || [];
-  const manualRows = legacyRows.filter(row =>
-    row &&
-    row.team &&
-    row.sportKey &&
-    row.selectedType !== 'favorite' &&
-    row.type !== 'favorite' &&
-    row.followType !== 'favorite'
-  );
-
-  if (!manualRows.length) return existing;
-
-  for (const row of manualRows) {
-    await addUserFollowedTeam({
-      sportKey: row.sportKey,
-      eventId: row.eventId || (row.live && row.live.eventId) || '',
-      team: row.team || row.selectedTeam || '',
-      opponent: row.opponent || '',
-      spread: row.spread || '',
-      notes: row.notes || ''
-    });
-  }
-
+async function getFollowedTeamsFromFirestore_() {
   return getUserFollowedTeams();
 }
 
+
 export async function getFollowedGames() {
   const [followedTeams, availableResult] = await Promise.all([
-    seedFollowedTeamsFromLegacyIfNeeded_(),
+    getFollowedTeamsFromFirestore_(),
     getAvailableGames('ALL')
   ]);
 
@@ -119,13 +93,7 @@ export async function addFollowedGame(game) {
 }
 
 export async function saveFavoriteGamePick(game) {
-  return apiRequest('saveFavoriteGamePick', {
-    sportKey: game.sportKey,
-    eventId: game.eventId,
-    team: game.team,
-    spread: game.spread || '',
-    notes: game.notes || ''
-  });
+  return addFollowedGame(game);
 }
 
 export async function updateFollowedGame(id, spread = '', notes = '') {
@@ -144,52 +112,30 @@ export async function removeAllFollowedGames() {
 }
 
 export async function getFavoriteTeams() {
-  return apiRequest('getFavoriteTeams');
+  return { success: true, data: [] };
 }
 
 export async function addFavoriteTeam({ sportKey, team, notes = '' }) {
-  return apiRequest('addFavoriteTeam', {
-    sportKey,
-    team,
-    notes
-  });
+  return addFollowedGame({ sportKey, team, notes });
 }
 
 export async function removeFavoriteTeam(sportKey, team) {
-  return apiRequest('removeFavoriteTeam', {
-    sportKey,
-    team
-  });
+  return removeUserFollowedTeam(`${String(sportKey || '').toLowerCase()}_${String(team || '').toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '')}`)
+    .then(data => ({ success: true, data }));
 }
 
 export async function getAvailableGolfers() {
   return apiRequest('getAvailableGolfers');
 }
 
-async function seedFollowedGolfersFromLegacyIfNeeded_() {
-  const existing = await getUserFollowedGolfers();
-  if (existing.length) return existing;
-
-  const legacyResult = await apiRequest('getFollowedGolfers');
-  const legacyRows = legacyResult.data || [];
-  const manualRows = legacyRows.filter(row => row && row.golfer);
-
-  if (!manualRows.length) return existing;
-
-  for (const row of manualRows) {
-    await addUserFollowedGolfer(
-      row.golfer,
-      row.note || row.notes || '',
-      row.favorite === true
-    );
-  }
-
+async function getFollowedGolfersFromFirestore_() {
   return getUserFollowedGolfers();
 }
 
+
 export async function getFollowedGolfers() {
   const [followedGolfers, availableResult] = await Promise.all([
-    seedFollowedGolfersFromLegacyIfNeeded_(),
+    getFollowedGolfersFromFirestore_(),
     getAvailableGolfers()
   ]);
 
@@ -230,35 +176,18 @@ export async function savePageVisibility(visibility) {
 }
 
 
-async function seedWorldCupTeamsFromLegacyIfNeeded_(backendData) {
-  const existing = await getUserWorldCupTeams();
-  if (existing.length) return existing;
-
-  const legacyTeams = [
-    ...(backendData.followedTeams || []).map(row => ({ ...row, favorite: false })),
-    ...(backendData.favorites || []).map(row => ({ ...row, favorite: true }))
-  ].filter(row => row && row.team);
-
-  if (!legacyTeams.length) return existing;
-
-  for (const row of legacyTeams) {
-    await addUserWorldCupTeam({
-      team: row.team,
-      notes: row.notes || '',
-      favorite: row.favorite === true
-    });
-  }
-
+async function getWorldCupTeamsFromFirestore_() {
   return getUserWorldCupTeams();
 }
+
 
 export async function getWorldCupPageData() {
   const backendResult = await apiRequest('getWorldCupPageData');
   const data = backendResult.data || {};
-  const userTeams = await seedWorldCupTeamsFromLegacyIfNeeded_(data);
+  const userTeams = await getWorldCupTeamsFromFirestore_();
 
-  const followedTeams = userTeams.filter(team => !team.favorite);
-  const favorites = userTeams.filter(team => team.favorite);
+  const followedTeams = userTeams;
+  const favorites = [];
   const selected = userTeams;
   const candidateGames = data.upcomingGames || [];
 
@@ -266,7 +195,7 @@ export async function getWorldCupPageData() {
   selected.forEach(teamObj => {
     const game = candidateGames.find(g => g.awayTeam === teamObj.team || g.homeTeam === teamObj.team);
     if (game && !selectedGames.some(existing => existing.eventId === game.eventId)) {
-      selectedGames.push({ ...game, selectedTeam: teamObj.team, selectedType: teamObj.favorite ? 'favorite' : 'followed', notes: teamObj.notes || '' });
+      selectedGames.push({ ...game, selectedTeam: teamObj.team, selectedType: 'followed', notes: teamObj.notes || '' });
     }
   });
 
@@ -299,8 +228,7 @@ export async function addWorldCupFollowedTeam({ team, notes = '' }) {
 }
 
 export async function addWorldCupFavoriteTeam({ team, notes = '' }) {
-  const teams = await addUserWorldCupTeam({ team, notes, favorite: true });
-  return { success: true, data: teams };
+  return addWorldCupFollowedTeam({ team, notes });
 }
 
 export async function removeWorldCupFollowedTeam(team) {
@@ -309,8 +237,7 @@ export async function removeWorldCupFollowedTeam(team) {
 }
 
 export async function removeWorldCupFavoriteTeam(team) {
-  const teams = await removeUserWorldCupTeam(team);
-  return { success: true, data: teams };
+  return removeWorldCupFollowedTeam(team);
 }
 
 export async function updateWorldCupTeamNote(type, team, notes = '') {

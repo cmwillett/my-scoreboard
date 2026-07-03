@@ -289,7 +289,7 @@ export async function addUserWorldCupTeam({ team, notes = '', favorite = false }
   await setDoc(userDoc_('worldCupTeams', id), {
     team,
     notes,
-    favorite: favorite === true,
+    favorite: false,
     enabled: true,
     sortOrder,
     updatedAt: serverTimestamp(),

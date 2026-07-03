@@ -187,7 +187,6 @@ function openHelpAndChangeLog() {
         <section>
           <h4>How My Scoreboard works</h4>
           <p><strong>Follow Team</strong> tells the app you care about a team. The scoreboard automatically shows that team's live game, recent final, or next upcoming game.</p>
-          <p><strong>Favorite Team</strong> keeps a team on the scoreboard automatically, even when you have not specifically followed that team for the day.</p>
           <p><strong>Follow Golfer</strong> adds that golfer to the Golfers page and the Roku leaderboard.</p>
           <p><strong>World Cup</strong> is managed through the same Follow Team flow. Choose World Cup as the sport, then choose the country.</p>
         </section>
@@ -207,6 +206,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v1.2.0</strong> Made Firestore the source of truth for followed teams, followed golfers, and World Cup team selections. Apps Script remains score-data only for the PWA.</li>
             <li><strong>v1.1.2</strong> Moved followed teams, followed golfers, and World Cup team selections to signed-in user data in Firestore.</li>
             <li><strong>v1.0.0</strong> Added Firebase Google Sign-In foundation and automatic user profile creation.</li>
             <li><strong>v0.9.9</strong> Added sage green bottom navigation styling so the PWA toolbar stands out from the scoreboard content.</li>
