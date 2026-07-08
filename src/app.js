@@ -208,6 +208,8 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v1.3.9</strong> Restored World Cup auto-refresh while viewing the World Cup page.</li>
+            <li><strong>v1.3.8</strong> Hid followed teams when no real ESPN/App Script game exists.</li>
             <li><strong>v1.3.5</strong> Split personal setup from Craig-only global admin tools.</li>
             <li><strong>v1.3.4</strong> Polished Roku device management.</li>
             <li><strong>v1.3.3</strong> Improved Roku sync display and in-season filtering.</li>
