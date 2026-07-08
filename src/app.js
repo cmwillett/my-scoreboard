@@ -156,10 +156,12 @@ async function renderPage(pageKey, options = {}) {
     window.location.hash = targetPage;
   }
 
-  if (targetPage === 'scoreboard' || targetPage === 'golfers') {
+  if (targetPage === 'scoreboard' || targetPage === 'golfers' || targetPage === 'worldcup') {
     const refreshInterval = targetPage === 'golfers'
       ? (CONFIG.GOLF_REFRESH_INTERVAL || CONFIG.REFRESH_INTERVAL)
-      : CONFIG.REFRESH_INTERVAL;
+      : targetPage === 'worldcup'
+        ? (CONFIG.WORLD_CUP_REFRESH_INTERVAL || CONFIG.REFRESH_INTERVAL)
+        : CONFIG.REFRESH_INTERVAL;
 
     startAutoRefresh(() => {
       refreshCurrentPage({ showLoading: false });
