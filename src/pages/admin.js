@@ -4,10 +4,12 @@ import {
   getAllFollowedGames,
   updateFollowedGame,
   removeFollowedGame,
+  removeAllFollowedGames,
   getFollowedGolfers,
   getAvailableGolfers,
   addFollowedGolfer,
   removeFollowedGolfer,
+  removeAllFollowedGolfers,
   getTeamsForSport,
   getAvailableGames,
   getFavoriteTeams,
@@ -23,6 +25,7 @@ import {
   addWorldCupFavoriteTeam,
   removeWorldCupFollowedTeam,
   removeWorldCupFavoriteTeam,
+  removeAllWorldCupFollowedTeams,
   updateWorldCupTeamNote,
   refreshWorldCupScores,
   manualRefreshSport,
@@ -997,6 +1000,39 @@ async function loadTeamsForFavoriteSport() {
 function attachAdminHandlers() {
   attachAddHandlers();
 
+  const removeAllTeamsBtn = document.getElementById('remove-all-followed-teams-btn');
+  if (removeAllTeamsBtn) {
+    removeAllTeamsBtn.addEventListener('click', () => {
+      openConfirmModal({
+        title: 'Remove All Followed Teams?',
+        message: 'This will remove every followed team, including World Cup teams, from your account. This cannot be undone.',
+        confirmText: 'Remove All Teams',
+        onConfirm: async () => {
+          await removeAllFollowedGames();
+          await removeAllWorldCupFollowedTeams();
+          showToast('All followed teams removed.');
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  }
+
+  const removeAllGolfersBtn = document.getElementById('remove-all-followed-golfers-btn');
+  if (removeAllGolfersBtn) {
+    removeAllGolfersBtn.addEventListener('click', () => {
+      openConfirmModal({
+        title: 'Remove All Followed Golfers?',
+        message: 'This will remove every followed golfer from your account. This cannot be undone.',
+        confirmText: 'Remove All Golfers',
+        onConfirm: async () => {
+          await removeAllFollowedGolfers();
+          showToast('All followed golfers removed.');
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  }
+
   const pairRokuBtn = document.getElementById('pair-roku-btn');
   if (pairRokuBtn) {
     pairRokuBtn.addEventListener('click', async () => {
@@ -1569,6 +1605,13 @@ export async function renderAdmin() {
           renderFollowedTeamRow,
           'No followed teams yet.'
         )}
+        ${getFollowedTeamRows(followedGames, worldCupData).length ? `
+          <div class="admin-section-actions">
+            <button id="remove-all-followed-teams-btn" class="small-btn danger" type="button">
+              Remove All Followed Teams
+            </button>
+          </div>
+        ` : ''}
       `)}
 
       ${renderNestedCollapsibleSection('Followed Golfers', `${followedGolfers.length} golfers`, `
@@ -1576,6 +1619,13 @@ export async function renderAdmin() {
           <div class="admin-list">
             ${renderFollowedGolferRows(followedGolfers)}
           </div>
+          ${followedGolfers.length ? `
+            <div class="admin-section-actions">
+              <button id="remove-all-followed-golfers-btn" class="small-btn danger" type="button">
+                Remove All Followed Golfers
+              </button>
+            </div>
+          ` : ''}
         </div>
       `)}
     `)}

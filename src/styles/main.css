@@ -1093,3 +1093,15 @@ body {
   color: #fecaca;
   border-color: rgba(248, 113, 113, 0.35);
 }
+
+.admin-section-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.admin-section-actions .danger {
+  width: auto;
+}

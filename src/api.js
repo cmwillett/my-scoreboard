@@ -13,6 +13,7 @@ import {
   removeUserFollowedTeam,
   removeUserFollowedGolfer,
   removeUserWorldCupTeam,
+  removeAllUserWorldCupTeams,
   updateUserFollowedTeam,
   updateUserFollowedGolferOrder,
   updateUserWorldCupTeamNote
@@ -253,6 +254,11 @@ export async function removeWorldCupFollowedTeam(team) {
 
 export async function removeWorldCupFavoriteTeam(team) {
   return removeWorldCupFollowedTeam(team);
+}
+
+export async function removeAllWorldCupFollowedTeams() {
+  const teams = await removeAllUserWorldCupTeams();
+  return { success: true, data: teams };
 }
 
 export async function updateWorldCupTeamNote(type, team, notes = '') {

@@ -208,6 +208,11 @@ export async function removeAllUserFollowedTeams() {
   const batch = writeBatch(db_());
   rows.forEach(row => batch.delete(row.ref));
   await batch.commit();
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'removeAllFollowedTeams',
+    followedTeamsCount: 0
+  });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
   return [];
 }
 
@@ -409,6 +414,11 @@ export async function removeAllUserFollowedGolfers() {
   const batch = writeBatch(db_());
   rows.forEach(row => batch.delete(row.ref));
   await batch.commit();
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'removeAllFollowedGolfers',
+    followedGolfersCount: 0
+  });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
   return [];
 }
 
@@ -477,6 +487,19 @@ export async function getUserWorldCupTeams() {
   return rows
     .filter(row => row.team)
     .sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
+}
+
+export async function removeAllUserWorldCupTeams() {
+  const rows = await getDocs(userCollection_('worldCupTeams'));
+  const batch = writeBatch(db_());
+  rows.forEach(row => batch.delete(row.ref));
+  await batch.commit();
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'removeAllWorldCupTeams',
+    worldCupTeamsCount: 0
+  });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
+  return [];
 }
 
 export async function addUserWorldCupTeam({ team, notes = '', favorite = false }) {
