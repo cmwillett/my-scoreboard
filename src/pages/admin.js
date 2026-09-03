@@ -1255,9 +1255,25 @@ function attachAdminHandlers() {
       saveSportsRefreshBtn.textContent = 'Saving...';
 
       try {
+        const previouslyEnabled = new Set(
+          (refreshSports || [])
+            .filter(sport => sport?.enabled === true)
+            .map(sport => String(sport.sportKey || '').toUpperCase())
+        );
+        const newlyEnabledSports = sports
+          .filter(sport => sport.enabled === true && !previouslyEnabled.has(String(sport.sportKey || '').toUpperCase()))
+          .map(sport => sport.sportKey);
+
         await saveSportsRefreshSettings(sports);
         await saveWorldCupRefreshSettings(worldCupEnabled);
-        showToast('In season settings saved.');
+
+        if (newlyEnabledSports.length) {
+          await Promise.allSettled(newlyEnabledSports.map(sportKey => manualRefreshSport(sportKey)));
+        }
+
+        showToast(newlyEnabledSports.length
+          ? `In season settings saved. Refreshed ${newlyEnabledSports.join(', ')}.`
+          : 'In season settings saved.');
         await window.refreshCurrentPage?.();
       } catch (err) {
         console.error(err);

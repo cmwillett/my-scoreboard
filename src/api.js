@@ -94,7 +94,8 @@ export async function getFollowedGames() {
 }
 
 export async function getAllFollowedGames() {
-  return getFollowedGames();
+  const followedTeams = await getFollowedTeamsFromFirestore_();
+  return { success: true, data: followedTeams || [] };
 }
 
 export async function addFollowedGame(game) {
