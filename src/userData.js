@@ -238,7 +238,7 @@ function teamMatches_(a, b) {
   const left = normalizeTeam_(a);
   const right = normalizeTeam_(b);
   if (!left || !right) return false;
-  return left === right || left.includes(right) || right.includes(left);
+  return left === right;
 }
 
 function getOpponentFromGame_(game, followedTeam) {
@@ -255,12 +255,13 @@ function findBestGame_(games, follow) {
   const sportKey = String(follow.sportKey || '');
   const eventId = String(follow.eventId || '');
 
-  // Prefer an exact event match when Firestore has the current ESPN event id.
-  // This prevents fallback cards with blank opponents when short team names differ.
+  // A stored ESPN event id can become stale after a team's game rolls over.
+  // Only trust it when that event still contains the followed team.
   if (eventId) {
     const eventMatch = (games || []).find(game =>
       String(game.sportKey || '') === sportKey &&
-      String(game.eventId || '') === eventId
+      String(game.eventId || '') === eventId &&
+      (teamMatches_(game.awayTeam, team) || teamMatches_(game.homeTeam, team))
     );
     if (eventMatch) return eventMatch;
   }
@@ -271,7 +272,10 @@ function findBestGame_(games, follow) {
   });
 
   if (!matches.length) return null;
-  return matches.find(isGameLive_) || matches.filter(isGameFinal_).pop() || matches.find(isGameUpcoming_) || matches[0];
+
+  // For a persistent team follow, show the current game first, then the next
+  // scheduled game. Only fall back to a recent final when no upcoming game exists.
+  return matches.find(isGameLive_) || matches.find(isGameUpcoming_) || matches.filter(isGameFinal_).pop() || matches[0];
 }
 
 export function buildFollowedGamesFromTeams(followedTeams, availableGames) {
