@@ -23,7 +23,7 @@
    breakpoint needed - the grid does the math based on available width). */
 .score-card-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   gap: 12px;
 }
 
@@ -35,7 +35,7 @@
 /* Condensed density: smaller minimum tile width so more fit per row,
    matching the reduced padding/font-size condensed mode already applies. */
 .content.density-condensed .score-card-grid {
-  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 8px;
 }
 
