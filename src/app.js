@@ -13,6 +13,14 @@ import { initAuthGate } from './firebase.js';
 const content = document.getElementById('app-content');
 const navButtons = document.querySelectorAll('.bottom-nav button');
 
+// Keep the header version badge in sync with CONFIG.APP_VERSION so a single
+// bump in config.js is the only thing needed - previously index.html had its
+// own hardcoded copy that silently went stale.
+const appVersionEl = document.querySelector('.app-version');
+if (appVersionEl && CONFIG.APP_VERSION) {
+  appVersionEl.textContent = CONFIG.APP_VERSION;
+}
+
 const pages = {
   scoreboard: renderScoreboard,
   golfers: renderGolfers,
