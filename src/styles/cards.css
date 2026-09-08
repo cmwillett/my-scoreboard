@@ -18,6 +18,27 @@
   margin-bottom: 12px;
 }
 
+/* Tile layout: 2-3 score cards per row on desktop, collapsing to a single
+   column automatically as the viewport narrows (no separate mobile
+   breakpoint needed - the grid does the math based on available width). */
+.score-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.score-card-grid .score-card {
+  margin-bottom: 0;
+  height: 100%;
+}
+
+/* Condensed density: smaller minimum tile width so more fit per row,
+   matching the reduced padding/font-size condensed mode already applies. */
+.content.density-condensed .score-card-grid {
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 8px;
+}
+
 .score-card-top .game-live,
 .score-card-top span:last-child {
   display: flex;

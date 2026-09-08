@@ -190,7 +190,9 @@ function renderSportGroup(sport, games) {
   return `
     <div class="sport-group">
       <h3>${sport}</h3>
-      ${games.map(renderGameCard).join('')}
+      <div class="score-card-grid">
+        ${games.map(renderGameCard).join('')}
+      </div>
     </div>
   `;
 }
