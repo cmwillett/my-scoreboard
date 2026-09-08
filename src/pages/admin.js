@@ -49,6 +49,7 @@ const GLOBAL_ADMIN_EMAILS = ['craig.willett@gmail.com'];
 let favoriteTeamOptions = [];
 let worldCupTeamOptions = [];
 let golferOptions = [];
+let refreshSports = [];
 
 function isAdminUnlocked() {
   return localStorage.getItem(ADMIN_AUTH_KEY) === 'true';
@@ -1589,7 +1590,7 @@ export async function renderAdmin() {
   const favorites = []; // Favorite Teams UI removed; legacy data is ignored in Admin.
   const visibility = visibilityResult.data || {};
   const settingsData = settingsResult.data || {};
-  const refreshSports = settingsData.sports || [];
+  refreshSports = settingsData.sports || [];
   const worldCupRefresh = settingsData.worldCupRefresh || {};
   const worldCupData = worldCupResult.data || {};
   const ambientMusic = ambientMusicResult.data || settingsData.ambientMusic || [];
