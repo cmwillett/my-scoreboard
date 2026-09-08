@@ -104,6 +104,42 @@ function dedupeFollowedGames(games) {
   return Array.from(map.values());
 }
 
+// ESPN's pre-game status text looks like "9/9 - 8:20 PM EDT". Parse that into a
+// real sortable timestamp so games within a sport group show soonest-first
+// instead of in whatever order they were followed. Live/final status text
+// ("Q3 05:12", "Final") won't match, and that's fine - those fall back to
+// Number.MAX_SAFE_INTEGER below and simply keep their existing relative order.
+function parseGameStartTime_(text) {
+  const match = String(text || '').match(/(\d{1,2})\/(\d{1,2})\D+(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return null;
+
+  const [, monthStr, dayStr, hourStr, minuteStr, ampm] = match;
+  const month = Number(monthStr) - 1;
+  const day = Number(dayStr);
+  let hour = Number(hourStr) % 12;
+  if (/pm/i.test(ampm)) hour += 12;
+  const minute = Number(minuteStr);
+
+  const now = new Date();
+  const candidate = new Date(now.getFullYear(), month, day, hour, minute);
+
+  // A season can cross a calendar year boundary (checking in December for a
+  // January game). If the parsed date looks more than two weeks in the past,
+  // it actually belongs to next year.
+  const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+  if (candidate.getTime() < now.getTime() - twoWeeksMs) {
+    candidate.setFullYear(candidate.getFullYear() + 1);
+  }
+
+  return candidate.getTime();
+}
+
+function getGameSortTime_(followedGame) {
+  const game = followedGame.live || followedGame;
+  const parsed = parseGameStartTime_(game.status) ?? parseGameStartTime_(game.startTime);
+  return parsed === null ? Number.MAX_SAFE_INTEGER : parsed;
+}
+
 function groupBySport(games) {
   return games.reduce((groups, followedGame) => {
     const game = followedGame.live || followedGame;
@@ -187,11 +223,13 @@ function attachScoreboardHandlers() {
 }
 
 function renderSportGroup(sport, games) {
+  const sortedGames = [...games].sort((a, b) => getGameSortTime_(a) - getGameSortTime_(b));
+
   return `
     <div class="sport-group">
       <h3>${sport}</h3>
       <div class="score-card-grid">
-        ${games.map(renderGameCard).join('')}
+        ${sortedGames.map(renderGameCard).join('')}
       </div>
     </div>
   `;
