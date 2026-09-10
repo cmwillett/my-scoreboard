@@ -117,6 +117,7 @@ export async function getUserFollowedTeams() {
       opponent: data.opponent || '',
       spread: data.spread || '',
       notes: data.notes || '',
+      isPickEm: data.isPickEm === true,
       active: data.active !== false,
       sortOrder: Number(data.sortOrder || index + 1),
       createdAt: data.createdAt || null,
@@ -147,7 +148,7 @@ export async function getUserFollowedTeams() {
     .sort((a, b) => Number(a.sortOrder || 9999) - Number(b.sortOrder || 9999));
 }
 
-export async function addUserFollowedTeam({ sportKey, eventId = '', team, opponent = '', spread = '', notes = '' }) {
+export async function addUserFollowedTeam({ sportKey, eventId = '', team, opponent = '', spread = '', notes = '', isPickEm = false }) {
   if (!sportKey || !team) throw new Error('Sport and team are required.');
   const existing = await getUserFollowedTeams();
   const id = teamDocId_(sportKey, team);
@@ -164,6 +165,7 @@ export async function addUserFollowedTeam({ sportKey, eventId = '', team, oppone
     opponent,
     spread,
     notes,
+    isPickEm: isPickEm === true,
     active: true,
     sortOrder,
     updatedAt: serverTimestamp(),
@@ -180,13 +182,14 @@ export async function addUserFollowedTeam({ sportKey, eventId = '', team, oppone
   return getUserFollowedTeams();
 }
 
-export async function updateUserFollowedTeam(id, spread = '', notes = '') {
+export async function updateUserFollowedTeam(id, spread = '', notes = '', isPickEm = false) {
   await setDoc(userDoc_('followedTeams', id), {
     type: 'followedTeam',
     schemaVersion: 2,
     docKey: id,
     spread,
     notes,
+    isPickEm: isPickEm === true,
     updatedAt: serverTimestamp()
   }, { merge: true });
   return getUserFollowedTeams();

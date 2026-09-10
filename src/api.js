@@ -111,7 +111,8 @@ export async function addFollowedGame(game) {
     eventId: game.eventId,
     team: game.team,
     spread: game.spread || '',
-    notes: game.notes || ''
+    notes: game.notes || '',
+    isPickEm: game.isPickEm === true
   });
   return { success: true, data: teams };
 }
@@ -120,8 +121,8 @@ export async function saveFavoriteGamePick(game) {
   return addFollowedGame(game);
 }
 
-export async function updateFollowedGame(id, spread = '', notes = '') {
-  const teams = await updateUserFollowedTeam(id, spread, notes);
+export async function updateFollowedGame(id, spread = '', notes = '', isPickEm = false) {
+  const teams = await updateUserFollowedTeam(id, spread, notes, isPickEm);
   return { success: true, data: teams };
 }
 

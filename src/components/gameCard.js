@@ -107,6 +107,12 @@ export function renderGameCard(followedGame) {
           : ''
       }
 
+      ${
+        followedGame.isPickEm
+          ? `<div class="pickem-tag">🏈 Pick 'Em</div>`
+          : ''
+      }
+
       <div class="game-card-buttons">
         <button
           class="small-btn ${isAutoFavorite ? 'edit-favorite-game-btn' : 'edit-followed-game-btn'}"
@@ -116,6 +122,8 @@ export function renderGameCard(followedGame) {
           data-team="${selectedTeam}"
           data-spread="${followedGame.spread || ''}"
           data-notes="${followedGame.notes || ''}"
+          data-is-pick-em="${followedGame.isPickEm ? 'true' : 'false'}"
+          data-sport="${followedGame.sportKey || game.sportKey || ''}"
         >
           Edit
         </button>

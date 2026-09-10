@@ -103,6 +103,10 @@ function resetForm() {
   document.getElementById('item-select').value = '';
   document.getElementById('spread-input').value = '';
   document.getElementById('note-input').value = '';
+  const pickEmCheckbox = document.getElementById('pickem-checkbox');
+  if (pickEmCheckbox) pickEmCheckbox.checked = false;
+  const pickEmWrap = document.getElementById('pickem-wrap');
+  if (pickEmWrap) pickEmWrap.style.display = 'none';
   document.getElementById('game-picker-wrap').style.display = 'none';
   selectedGame = null;
   gamesToShowNow = [];
@@ -157,6 +161,7 @@ export function attachAddHandlers() {
 
   async function updateItems() {
     const sport = sportSelect.value;
+    const pickEmWrap = document.getElementById('pickem-wrap');
 
     itemInput.value = '';
     itemInput.placeholder = 'Loading...';
@@ -167,6 +172,10 @@ export function attachAddHandlers() {
     currentGames = [];
     selectedGame = null;
     gamesToShowNow = [];
+
+    if (pickEmWrap) {
+      pickEmWrap.style.display = (sport === 'NFL' || sport === 'CFB') ? 'block' : 'none';
+    }
 
     if (!sport) {
       itemLabel.textContent = 'Team/Golfer';
@@ -253,6 +262,8 @@ export function attachAddHandlers() {
     const item = itemInput.value.trim();
     const spread = document.getElementById('spread-input').value.trim();
     const notes = document.getElementById('note-input').value.trim();
+    const pickEmCheckbox = document.getElementById('pickem-checkbox');
+    const isPickEm = (sport === 'NFL' || sport === 'CFB') && pickEmCheckbox ? pickEmCheckbox.checked : false;
 
     if (!sport || !item) {
       openMessageModal({
@@ -282,7 +293,8 @@ export function attachAddHandlers() {
           eventId: selectedGame ? (selectedGame.eventId || selectedGame.eventID || selectedGame.id || '') : '',
           team: item,
           spread,
-          notes
+          notes,
+          isPickEm
         });
 
         showToast(`${item} followed.`);
@@ -356,6 +368,13 @@ export async function renderAddGame(options = {}) {
 
       <label>Note</label>
       <textarea id="note-input" rows="3" placeholder="Optional note..."></textarea>
+
+      <div id="pickem-wrap" style="display:none;">
+        <label class="checkbox-row admin-checkbox-row">
+          <input id="pickem-checkbox" type="checkbox" />
+          Count toward this week's Pick 'Ems totals
+        </label>
+      </div>
 
       <button id="save-followed-item" class="primary-btn">
         Follow Team

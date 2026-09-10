@@ -104,7 +104,7 @@ export function openConfirmModal({
   });
 }
 
-export function openGameEditModal({ id, spread = '', notes = '', onSave }) {
+export function openGameEditModal({ id, spread = '', notes = '', isPickEm = false, showPickEmToggle = false, onSave }) {
   const modal = createModal(`
     <h3>Edit Game</h3>
 
@@ -113,6 +113,17 @@ export function openGameEditModal({ id, spread = '', notes = '', onSave }) {
 
     <label>Notes</label>
     <textarea class="modal-game-notes" rows="5">${notes}</textarea>
+
+    ${
+      showPickEmToggle
+        ? `
+          <label class="checkbox-row admin-checkbox-row">
+            <input class="modal-game-pickem" type="checkbox" ${isPickEm ? 'checked' : ''} />
+            Count toward this week's Pick 'Ems totals
+          </label>
+        `
+        : ''
+    }
 
     <div class="modal-actions">
       <button type="button" class="small-btn modal-cancel-btn">Cancel</button>
@@ -128,12 +139,14 @@ export function openGameEditModal({ id, spread = '', notes = '', onSave }) {
     const button = event.currentTarget;
     const nextSpread = modal.querySelector('.modal-game-spread').value.trim();
     const nextNotes = modal.querySelector('.modal-game-notes').value.trim();
+    const pickEmCheckbox = modal.querySelector('.modal-game-pickem');
+    const nextIsPickEm = pickEmCheckbox ? pickEmCheckbox.checked : isPickEm === true;
 
     button.disabled = true;
     button.textContent = 'Saving...';
 
     try {
-      await onSave({ id, spread: nextSpread, notes: nextNotes });
+      await onSave({ id, spread: nextSpread, notes: nextNotes, isPickEm: nextIsPickEm });
       closeModal(modal);
     } catch (err) {
       console.error(err);

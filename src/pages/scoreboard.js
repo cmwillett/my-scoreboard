@@ -13,6 +13,7 @@ import {
 } from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
 import { renderDensityToggle } from '../components/pageTools.js';
+import { renderPickEmsSummary } from '../components/pickEmsSummary.js';
 
 
 function getFollowedTeamNames(item) {
@@ -172,12 +173,15 @@ function attachScoreboardHandlers() {
 
   document.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      const sportKey = String(btn.dataset.sport || '').toUpperCase();
       openGameEditModal({
         id: btn.dataset.id,
         spread: btn.dataset.spread || '',
         notes: btn.dataset.notes || '',
-        onSave: async ({ id, spread, notes }) => {
-          await updateFollowedGame(id, spread, notes);
+        isPickEm: btn.dataset.isPickEm === 'true',
+        showPickEmToggle: sportKey === 'NFL' || sportKey === 'CFB',
+        onSave: async ({ id, spread, notes, isPickEm }) => {
+          await updateFollowedGame(id, spread, notes, isPickEm);
           showToast('Game saved.');
           await window.refreshCurrentPage?.();
         }
@@ -259,8 +263,10 @@ function renderSection(title, games) {
 export async function renderScoreboard() {
   try {
     const followedResult = await getFollowedGames();
-    const games = dedupeFollowedGames(followedResult.data || []);
+    const followedRaw = followedResult.data || [];
+    const games = dedupeFollowedGames(followedRaw);
     const lastUpdated = formatLastUpdated();
+    const pickEmsHtml = renderPickEmsSummary(followedRaw);
 
     const liveGames = games.filter(game => getGameSection(game) === 'live');
     const upcomingGames = games.filter(game => getGameSection(game) === 'upcoming');
@@ -290,6 +296,8 @@ export async function renderScoreboard() {
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
         <p>${games.length} games showing. Duplicate matchups are combined automatically.</p>
       </div>
+
+      ${pickEmsHtml}
 
       ${renderSection('Live', liveGames)}
       ${renderSection('Upcoming', upcomingGames)}
