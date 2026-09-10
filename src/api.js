@@ -29,7 +29,14 @@ async function apiRequest(action, params = {}) {
     }
   });
 
-  const response = await fetch(url);
+  // Apps Script GET endpoints can get cached by the browser itself (same URL,
+  // same params every time), independent of anything the script does - which
+  // let a stale response (e.g. an old Page Visibility setting) get served
+  // indefinitely until a hard refresh. A unique per-request param plus
+  // cache: 'no-store' stops the browser from ever reusing a prior response.
+  url.searchParams.set('_', Date.now().toString());
+
+  const response = await fetch(url, { cache: 'no-store' });
 
   if (!response.ok) {
     throw new Error(`API Error: ${response.status}`);
