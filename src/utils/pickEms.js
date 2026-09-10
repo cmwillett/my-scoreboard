@@ -1,9 +1,11 @@
-// Grades "Pick 'Em" followed games against the spread once their game goes
-// Final, and rolls them up into a this-week totals summary per sport (NFL /
-// CFB). This is intentionally "this week only": a followed team's spread and
-// notes get overwritten the moment Craig enters next week's pick for that
-// same team, so there is no season-long history here - just whatever is
-// currently followed and tagged with isPickEm.
+// Grades "Pick 'Em" followed games once they go Final, and rolls them up
+// into a this-week totals summary per sport (NFL / CFB). The two contests
+// use different rules: NFL Pick 'Ems is straight-up (win the game outright,
+// get the weight - the spread field isn't used at all), while CFB Picks is
+// against the spread. This is intentionally "this week only": a followed
+// team's spread and notes get overwritten the moment Craig enters next
+// week's pick for that same team, so there is no season-long history here -
+// just whatever is currently followed and tagged with isPickEm.
 
 function normalizeTeam_(value) {
   return String(value || '').trim().toLowerCase();
@@ -21,28 +23,37 @@ function isGameFinal_(game) {
   );
 }
 
-// Grades a single followed-game pick. Spread is stored relative to the
-// picked team (e.g. "-23.5" means the picked team is favored by 23.5;
-// "+10.5" means they're getting 10.5 points as an underdog). Weight is the
-// plain point value Craig types into Notes for a Pick 'Em entry.
+// Sports graded straight-up (win the game outright - spread is ignored even
+// if one happens to be entered). Anything not listed here (currently just
+// CFB) is graded against the spread.
+const STRAIGHT_UP_SPORTS = ['NFL'];
+
+// Grades a single followed-game pick. For spread sports, spread is stored
+// relative to the picked team (e.g. "-23.5" means the picked team is
+// favored by 23.5; "+10.5" means they're getting 10.5 points as an
+// underdog). Weight is the plain point value Craig types into Notes for a
+// Pick 'Em entry.
 //
 // status is one of:
 //   pending  - game hasn't gone Final yet
-//   unscored - game is Final but we can't grade it (missing/blank spread,
-//              missing scores, or the picked team name doesn't match either
-//              side of the game - shouldn't normally happen, but fail safe
-//              rather than showing a wrong result)
-//   won / lost / push - graded outcome against the spread
+//   unscored - game is Final but we can't grade it (missing spread on a
+//              spread sport, missing scores, or the picked team name
+//              doesn't match either side of the game - shouldn't normally
+//              happen, but fail safe rather than showing a wrong result)
+//   won / lost / push - graded outcome (straight-up or against the spread,
+//              depending on the sport)
 export function gradePick(followedGame) {
   const game = followedGame.live || followedGame;
   const weight = Number(followedGame.notes);
+  const sportKey = String(followedGame.sportKey || game.sportKey || '').toUpperCase();
+  const isStraightUp = STRAIGHT_UP_SPORTS.includes(sportKey);
 
   const base = {
     id: followedGame.id,
-    sportKey: followedGame.sportKey || game.sportKey || '',
+    sportKey,
     team: followedGame.team || followedGame.selectedTeam || '',
     opponent: followedGame.opponent || '',
-    spread: followedGame.spread || '',
+    spread: isStraightUp ? '' : (followedGame.spread || ''),
     weight: Number.isFinite(weight) ? weight : null,
     status: 'pending',
     margin: null
@@ -70,7 +81,14 @@ export function gradePick(followedGame) {
     return { ...base, status: 'unscored' };
   }
 
-  const spread = parseFloat(base.spread);
+  if (isStraightUp) {
+    const margin = pickedScore - opponentScore;
+    if (margin > 0) return { ...base, status: 'won', margin };
+    if (margin < 0) return { ...base, status: 'lost', margin };
+    return { ...base, status: 'push', margin: 0 };
+  }
+
+  const spread = parseFloat(followedGame.spread);
   if (!Number.isFinite(spread)) return { ...base, status: 'unscored' };
 
   const margin = (pickedScore - opponentScore) + spread;

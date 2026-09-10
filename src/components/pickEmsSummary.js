@@ -1,32 +1,46 @@
 import { summarizeContest } from '../utils/pickEms.js';
 
+// straightUp: true = win outright, no spread column (NFL). false = graded
+// against the spread, spread column shown (CFB).
 const CONTESTS = [
-  { sportKey: 'NFL', label: "NFL Pick 'Ems" },
-  { sportKey: 'CFB', label: 'CFB Picks' }
+  { sportKey: 'NFL', label: "NFL Pick 'Ems", straightUp: true },
+  { sportKey: 'CFB', label: 'CFB Picks', straightUp: false }
 ];
 
-const STATUS_LABEL = {
-  won: "✅ Covered",
-  lost: "❌ No Cover",
-  push: "➖ Push",
-  pending: "⏳ Pending",
-  unscored: "—"
-};
+function statusLabel(status, straightUp) {
+  if (straightUp) {
+    return {
+      won: '✅ Win',
+      lost: '❌ Loss',
+      push: '➖ Tie',
+      pending: '⏳ Pending',
+      unscored: '—'
+    }[status] || '—';
+  }
 
-function renderPickRow(pick) {
+  return {
+    won: '✅ Covered',
+    lost: '❌ No Cover',
+    push: '➖ Push',
+    pending: '⏳ Pending',
+    unscored: '—'
+  }[status] || '—';
+}
+
+function renderPickRow(pick, straightUp) {
   const matchup = pick.opponent ? `${pick.team} vs ${pick.opponent}` : pick.team;
 
   return `
     <tr class="pickems-row pickems-row-${pick.status}">
       <td>${matchup}</td>
-      <td>${pick.spread || '-'}</td>
+      ${straightUp ? '' : `<td>${pick.spread || '-'}</td>`}
       <td>${pick.weight !== null ? pick.weight : '-'}</td>
-      <td>${STATUS_LABEL[pick.status] || '—'}</td>
+      <td>${statusLabel(pick.status, straightUp)}</td>
     </tr>
   `;
 }
 
-function renderContestCard(summary, label) {
+function renderContestCard(summary, label, straightUp) {
   if (!summary.picks.length) return '';
 
   const record = `${summary.won.length}-${summary.lost.length}${summary.push.length ? `-${summary.push.length}` : ''}`;
@@ -48,10 +62,15 @@ function renderContestCard(summary, label) {
       <div class="table-scroll">
         <table class="pickems-table">
           <thead>
-            <tr><th>Pick</th><th>Spread</th><th>Wt</th><th>Result</th></tr>
+            <tr>
+              <th>Pick</th>
+              ${straightUp ? '' : '<th>Spread</th>'}
+              <th>Wt</th>
+              <th>Result</th>
+            </tr>
           </thead>
           <tbody>
-            ${summary.picks.map(renderPickRow).join('')}
+            ${summary.picks.map(pick => renderPickRow(pick, straightUp)).join('')}
           </tbody>
         </table>
       </div>
@@ -64,7 +83,8 @@ function renderContestCard(summary, label) {
 // spread/notes/isPickEm and merged live game data.
 export function renderPickEmsSummary(followedGamesRaw) {
   const cards = CONTESTS
-    .map(({ sportKey, label }) => renderContestCard(summarizeContest(followedGamesRaw, sportKey), label))
+    .map(({ sportKey, label, straightUp }) =>
+      renderContestCard(summarizeContest(followedGamesRaw, sportKey), label, straightUp))
     .filter(Boolean);
 
   if (!cards.length) return '';
