@@ -6,6 +6,42 @@
 // team's spread and notes get overwritten the moment Craig enters next
 // week's pick for that same team, so there is no season-long history here -
 // just whatever is currently followed and tagged with isPickEm.
+//
+// The totals also reset on a fixed weekly clock per contest, independent of
+// whether Craig has gotten around to re-entering next week's pick yet: CFB
+// resets every Thursday (games are all Saturday), NFL resets every
+// Wednesday (games span Thu/Sun/Mon, so Wednesday is the one day clear of
+// games on either side). ESPN's own game-time field for a followed game
+// isn't reliably a full parseable date once the game goes Final (it loses
+// the month/day and becomes plain "Final"), so instead of the game's date,
+// this uses the pick's own Firestore `updatedAt` - the moment Craig last
+// saved that team's spread/notes/Pick 'Em tag. A pick not touched since the
+// most recent reset boundary simply drops off the card until it's updated
+// again for the new week - it isn't graded wrong, it's just not shown.
+
+const RESET_WEEKDAY = { NFL: 3, CFB: 4 }; // Wed, Thu (0 = Sunday)
+
+function mostRecentWeekdayBoundary_(now, targetDayOfWeek) {
+  const boundary = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0, 0);
+  const diff = (boundary.getDay() - targetDayOfWeek + 7) % 7;
+  boundary.setDate(boundary.getDate() - diff);
+  return boundary;
+}
+
+function currentWeekBoundary_(sportKey, now) {
+  const targetDay = RESET_WEEKDAY[sportKey];
+  if (targetDay === undefined) return null;
+  return mostRecentWeekdayBoundary_(now, targetDay);
+}
+
+function toMillis_(value) {
+  if (!value) return null;
+  if (typeof value.toMillis === 'function') return value.toMillis();
+  if (typeof value.toDate === 'function') return value.toDate().getTime();
+  if (typeof value.seconds === 'number') return value.seconds * 1000;
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed.getTime();
+}
 
 function normalizeTeam_(value) {
   return String(value || '').trim().toLowerCase();
@@ -99,10 +135,22 @@ export function gradePick(followedGame) {
 }
 
 // followedGames is the raw (pre-dedup) list from getFollowedGames() - one
-// entry per followed team, each carrying its own spread/notes/isPickEm.
-export function summarizeContest(followedGames, sportKey) {
+// entry per followed team, each carrying its own spread/notes/isPickEm and
+// Firestore updatedAt. `now` is overridable for testing; defaults to the
+// real current time.
+export function summarizeContest(followedGames, sportKey, now = new Date()) {
+  const boundary = currentWeekBoundary_(sportKey, now);
+
   const picks = (followedGames || [])
     .filter(g => g.isPickEm === true && String(g.sportKey || '').toUpperCase() === sportKey)
+    .filter(g => {
+      if (!boundary) return true;
+      const updatedMs = toMillis_(g.updatedAt);
+      // No reliable updatedAt - safer to exclude than risk showing a
+      // leftover pick from before the reset.
+      if (updatedMs === null) return false;
+      return updatedMs >= boundary.getTime();
+    })
     .map(gradePick);
 
   const won = picks.filter(p => p.status === 'won');
