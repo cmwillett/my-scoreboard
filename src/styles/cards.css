@@ -221,36 +221,23 @@
 }
 
 /* Weekly Pick 'Ems totals - a small summary card per contest (NFL/CFB),
-   graded from whatever's currently followed and tagged isPickEm. */
+   graded from whatever's currently followed and tagged isPickEm. Reuses the
+   app's existing .collapsible-section look (same as Live/Upcoming/Recent
+   Finals below), just defaulting to open via the `open` attribute in the
+   markup rather than collapsed. */
 .pickems-summary-wrap {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
   gap: 12px;
-  margin-bottom: 16px;
-}
-
-.pickems-card {
-  margin-bottom: 0;
-}
-
-.pickems-header {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  align-items: baseline;
-  gap: 8px;
   margin-bottom: 4px;
 }
 
-.pickems-header h3 {
+.pickems-summary-wrap .collapsible-section {
   margin: 0;
 }
 
-.pickems-record {
-  font-size: 0.95rem;
-  font-weight: 800;
+.pickems-collapsible .section-count {
   color: #6ee7b7;
-  white-space: nowrap;
 }
 
 .pickems-pending-note {
@@ -313,8 +300,4 @@
 
 .content.density-condensed .pickems-table {
   font-size: 12px;
-}
-
-.content.density-condensed .pickems-header h3 {
-  font-size: 15px;
 }

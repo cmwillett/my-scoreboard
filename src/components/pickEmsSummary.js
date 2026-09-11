@@ -40,6 +40,10 @@ function renderPickRow(pick, straightUp) {
   `;
 }
 
+// Reuses the app's existing collapsible-section pattern (same one Live /
+// Upcoming / Recent Finals use on this page) so it looks and behaves the
+// same way - just defaulting to open via the `open` attribute, rather than
+// collapsed like those sections start.
 function renderContestCard(summary, label, straightUp) {
   if (!summary.picks.length) return '';
 
@@ -47,34 +51,35 @@ function renderContestCard(summary, label, straightUp) {
   const outstandingCount = summary.pending.length + summary.unscored.length;
 
   return `
-    <div class="card pickems-card">
-      <div class="pickems-header">
-        <h3>${label} &middot; This Week</h3>
-        <div class="pickems-record">${record} &middot; ${summary.weightWon}/${summary.weightPossible} pts</div>
-      </div>
+    <details class="collapsible-section pickems-collapsible" open>
+      <summary>
+        <span>${label} &middot; This Week</span>
+        <span class="section-count">${record} &middot; ${summary.weightWon}/${summary.weightPossible} pts</span>
+      </summary>
+      <div class="collapsible-body">
+        ${
+          outstandingCount
+            ? `<p class="pickems-pending-note">${outstandingCount} of ${summary.picks.length} still to be settled.</p>`
+            : ''
+        }
 
-      ${
-        outstandingCount
-          ? `<p class="pickems-pending-note">${outstandingCount} of ${summary.picks.length} still to be settled.</p>`
-          : ''
-      }
-
-      <div class="table-scroll">
-        <table class="pickems-table">
-          <thead>
-            <tr>
-              <th>Pick</th>
-              ${straightUp ? '' : '<th>Spread</th>'}
-              <th>Wt</th>
-              <th>Result</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${summary.picks.map(pick => renderPickRow(pick, straightUp)).join('')}
-          </tbody>
-        </table>
+        <div class="table-scroll">
+          <table class="pickems-table">
+            <thead>
+              <tr>
+                <th>Pick</th>
+                ${straightUp ? '' : '<th>Spread</th>'}
+                <th>Wt</th>
+                <th>Result</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${summary.picks.map(pick => renderPickRow(pick, straightUp)).join('')}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </details>
   `;
 }
 
