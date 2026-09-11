@@ -105,8 +105,16 @@ function resetForm() {
   document.getElementById('note-input').value = '';
   const pickEmCheckbox = document.getElementById('pickem-checkbox');
   if (pickEmCheckbox) pickEmCheckbox.checked = false;
+
+  // Only hide the Pick 'Ems checkbox if the sport itself no longer calls for
+  // it - the sport dropdown stays on NFL/CFB after a save (only the
+  // item/spread/notes fields clear), so re-derive visibility from the
+  // current sport rather than force-hiding it. Force-hiding it here was the
+  // bug: it made the checkbox disappear for every pick after the first one.
+  const sport = document.getElementById('sport-select')?.value;
   const pickEmWrap = document.getElementById('pickem-wrap');
-  if (pickEmWrap) pickEmWrap.style.display = 'none';
+  if (pickEmWrap) pickEmWrap.style.display = (sport === 'NFL' || sport === 'CFB') ? 'block' : 'none';
+
   document.getElementById('game-picker-wrap').style.display = 'none';
   selectedGame = null;
   gamesToShowNow = [];
