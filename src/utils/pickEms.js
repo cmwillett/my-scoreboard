@@ -59,6 +59,38 @@ function isGameFinal_(game) {
   );
 }
 
+// Same pregame-status parser scoreboard.js uses to sort the main Live/
+// Upcoming groups ("9/12 - 7:30 PM EDT" -> a real timestamp). Only works
+// before kickoff - live ("Q2 05:12") and final ("Final") status text won't
+// match, and that's expected: those games sort by status first (see
+// sortPicks_ below), so a missing sortTime just means "keep it wherever the
+// stable sort leaves it" among games that share a status group.
+function parseGameStartTime_(text) {
+  const match = String(text || '').match(/(\d{1,2})\/(\d{1,2})\D+(\d{1,2}):(\d{2})\s*(AM|PM)/i);
+  if (!match) return null;
+
+  const [, monthStr, dayStr, hourStr, minuteStr, ampm] = match;
+  const month = Number(monthStr) - 1;
+  const day = Number(dayStr);
+  let hour = Number(hourStr) % 12;
+  if (/pm/i.test(ampm)) hour += 12;
+  const minute = Number(minuteStr);
+
+  const now = new Date();
+  const candidate = new Date(now.getFullYear(), month, day, hour, minute);
+
+  const twoWeeksMs = 14 * 24 * 60 * 60 * 1000;
+  if (candidate.getTime() < now.getTime() - twoWeeksMs) {
+    candidate.setFullYear(candidate.getFullYear() + 1);
+  }
+
+  return candidate.getTime();
+}
+
+function getGameSortTime_(game) {
+  return parseGameStartTime_(game.status) ?? parseGameStartTime_(game.startTime);
+}
+
 // Sports graded straight-up (win the game outright - spread is ignored even
 // if one happens to be entered). Anything not listed here (currently just
 // CFB) is graded against the spread.
@@ -92,7 +124,8 @@ export function gradePick(followedGame) {
     spread: isStraightUp ? '' : (followedGame.spread || ''),
     weight: Number.isFinite(weight) ? weight : null,
     status: 'pending',
-    margin: null
+    margin: null,
+    sortTime: getGameSortTime_(game)
   };
 
   if (!isGameFinal_(game)) return base;
@@ -134,6 +167,25 @@ export function gradePick(followedGame) {
   return { ...base, status: 'push', margin: 0 };
 }
 
+// Settled picks (won/lost/push - and unscored, which means the game is done
+// but couldn't be graded) go to the top of the card; whatever's still
+// pending sorts underneath by game time, soonest first / latest last, per
+// Craig's request. Games without a parseable time (live, or a pregame
+// status we couldn't parse) fall to the bottom of their group rather than
+// jumping the line.
+function sortPicks_(picks) {
+  const settledRank = { won: 0, lost: 0, push: 0, unscored: 0, pending: 1 };
+
+  return [...picks].sort((a, b) => {
+    const rankDiff = (settledRank[a.status] ?? 1) - (settledRank[b.status] ?? 1);
+    if (rankDiff !== 0) return rankDiff;
+
+    const aTime = a.sortTime ?? Number.MAX_SAFE_INTEGER;
+    const bTime = b.sortTime ?? Number.MAX_SAFE_INTEGER;
+    return aTime - bTime;
+  });
+}
+
 // followedGames is the raw (pre-dedup) list from getFollowedGames() - one
 // entry per followed team, each carrying its own spread/notes/isPickEm and
 // Firestore updatedAt. `now` is overridable for testing; defaults to the
@@ -141,7 +193,7 @@ export function gradePick(followedGame) {
 export function summarizeContest(followedGames, sportKey, now = new Date()) {
   const boundary = currentWeekBoundary_(sportKey, now);
 
-  const picks = (followedGames || [])
+  const picks = sortPicks_((followedGames || [])
     .filter(g => g.isPickEm === true && String(g.sportKey || '').toUpperCase() === sportKey)
     .filter(g => {
       if (!boundary) return true;
@@ -151,7 +203,7 @@ export function summarizeContest(followedGames, sportKey, now = new Date()) {
       if (updatedMs === null) return false;
       return updatedMs >= boundary.getTime();
     })
-    .map(gradePick);
+    .map(gradePick));
 
   const won = picks.filter(p => p.status === 'won');
   const lost = picks.filter(p => p.status === 'lost');
