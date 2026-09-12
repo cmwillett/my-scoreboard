@@ -3,17 +3,19 @@ import {
   saveFavoriteGamePick,
   updateFollowedGame,
   removeFollowedGame,
-  removeAllFollowedGames
+  removeAllFollowedGames,
+  manualRefreshSport
 } from '../api.js';
 import { renderGameCard } from '../components/gameCard.js';
 import {
   openConfirmModal,
   openGameEditModal,
+  openMessageModal,
   showToast
 } from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
 import { renderDensityToggle } from '../components/pageTools.js';
-import { renderPickEmsSummary } from '../components/pickEmsSummary.js';
+import { renderPickEmsSummary, renderPickEmsCardForSport } from '../components/pickEmsSummary.js';
 
 
 function getFollowedTeamNames(item) {
@@ -153,25 +155,38 @@ function groupBySport(games) {
   }, {});
 }
 
-function attachScoreboardHandlers() {
-  const removeAllBtn = document.getElementById('remove-all-games-btn');
+// root defaults to the whole document (a normal full-page render), but the
+// per-card "refresh this sport" patch below (patchSportSections_) also
+// calls this scoped to just the fragment it inserted/replaced - re-running
+// it against `document` there would re-bind a second click listener onto
+// every OTHER already-existing button on the page (their DOM nodes weren't
+// touched by the patch, so they're still the same elements from the last
+// full render), stacking duplicate handlers a little more with every
+// surgical refresh. Scoping to the new fragment keeps each button bound
+// exactly once no matter how many patches happen. The remove-all-games-btn
+// wiring stays document-only since that control is a page singleton that
+// never appears inside a patched fragment.
+function attachScoreboardHandlers(root = document) {
+  if (root === document) {
+    const removeAllBtn = document.getElementById('remove-all-games-btn');
 
-  if (removeAllBtn) {
-    removeAllBtn.addEventListener('click', () => {
-      openConfirmModal({
-        title: 'Remove All Games?',
-        message: 'This will remove all manually followed games from the scoreboard.',
-        confirmText: 'Remove All',
-        onConfirm: async () => {
-          await removeAllFollowedGames();
-          showToast('All games removed.');
-          await window.refreshCurrentPage?.();
-        }
+    if (removeAllBtn) {
+      removeAllBtn.addEventListener('click', () => {
+        openConfirmModal({
+          title: 'Remove All Games?',
+          message: 'This will remove all manually followed games from the scoreboard.',
+          confirmText: 'Remove All',
+          onConfirm: async () => {
+            await removeAllFollowedGames();
+            showToast('All games removed.');
+            await window.refreshCurrentPage?.();
+          }
+        });
       });
-    });
+    }
   }
 
-  document.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
+  root.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       const sportKey = String(btn.dataset.sport || '').toUpperCase();
       openGameEditModal({
@@ -189,7 +204,7 @@ function attachScoreboardHandlers() {
     });
   });
 
-  document.querySelectorAll('.edit-favorite-game-btn').forEach(btn => {
+  root.querySelectorAll('.edit-favorite-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       openGameEditModal({
         id: btn.dataset.id,
@@ -210,7 +225,7 @@ function attachScoreboardHandlers() {
     });
   });
 
-  document.querySelectorAll('.remove-followed-game-btn').forEach(btn => {
+  root.querySelectorAll('.remove-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
       openConfirmModal({
         title: 'Remove Game?',
@@ -224,6 +239,154 @@ function attachScoreboardHandlers() {
       });
     });
   });
+
+  root.querySelectorAll('.card-refresh-btn').forEach(btn => {
+    const sportKey = btn.dataset.sportKey || '';
+    if (sportsCoolingDown_.has(sportKey)) btn.disabled = true;
+
+    btn.addEventListener('click', () => refreshSportInPlace_(sportKey));
+  });
+}
+
+// --- Per-card "refresh this sport now" ------------------------------------
+//
+// ESPN's scoreboard endpoint returns every game for a sport in one call, so
+// there's no cheaper way to refresh "just this game" - clicking the button
+// on one card refreshes (and in-place updates) every followed game in that
+// same sport, wherever they currently sit (Live/Upcoming/Recent Finals),
+// plus that sport's Pick 'Ems card if it has one. A short shared cooldown
+// per sport (not per button) stops a flurry of taps across several cards of
+// the same sport from firing overlapping refreshes back to back.
+const SPORT_REFRESH_COOLDOWN_MS = 8000;
+const sportsCoolingDown_ = new Set();
+
+function setSportRefreshButtonsState_(sportKey, { refreshing }) {
+  const disabled = refreshing || sportsCoolingDown_.has(sportKey);
+
+  document.querySelectorAll(`.card-refresh-btn[data-sport-key="${sportKey}"]`).forEach(btn => {
+    btn.disabled = disabled;
+    btn.classList.toggle('is-refreshing', refreshing);
+  });
+}
+
+// Finds/replaces/removes the one <details data-section-key="section:TITLE:
+// sport:SPORT"> group for this sport within each of the three outer
+// sections, using the freshly-fetched (already-deduped) games for this
+// sport only. Leaves every other sport's groups, and every other section's
+// contents, completely untouched.
+function patchSportSections_(sportKey, sportGames) {
+  if (!sportGames.length) return;
+
+  const sportDisplayName = (() => {
+    const first = sportGames[0];
+    const game = first.live || first;
+    return game.sport || first.sport || sportKey;
+  })();
+
+  const SECTION_DEFS = [
+    { title: 'Live', match: g => getGameSection(g) === 'live' },
+    { title: 'Upcoming', match: g => getGameSection(g) === 'upcoming' },
+    { title: 'Recent Finals', match: g => getGameSection(g) === 'final' }
+  ];
+
+  SECTION_DEFS.forEach(({ title, match }) => {
+    const sectionEl = document.querySelector(`details.scoreboard-section[data-section-key="section:${title}"]`);
+    if (!sectionEl) return;
+
+    const body = sectionEl.querySelector('.collapsible-body');
+    if (!body) return;
+
+    const groupKey = `section:${title}:sport:${sportDisplayName}`;
+    const existingGroup = body.querySelector(`[data-section-key="${groupKey}"]`);
+    const sectionGames = sportGames.filter(match);
+
+    if (sectionGames.length) {
+      const wasOpen = existingGroup ? existingGroup.open : false;
+
+      if (existingGroup) {
+        existingGroup.outerHTML = renderSportGroup(title, sportDisplayName, sectionGames);
+      } else {
+        const emptyState = body.querySelector('.empty-state.small');
+        if (emptyState) emptyState.remove();
+        body.insertAdjacentHTML('beforeend', renderSportGroup(title, sportDisplayName, sectionGames));
+      }
+
+      const refreshedGroup = body.querySelector(`[data-section-key="${groupKey}"]`);
+      if (refreshedGroup) {
+        refreshedGroup.open = wasOpen;
+        attachScoreboardHandlers(refreshedGroup);
+      }
+    } else if (existingGroup) {
+      existingGroup.remove();
+
+      if (!body.querySelector('.sport-group')) {
+        body.innerHTML = '<div class="card empty-state small"><p>No games in this section.</p></div>';
+      }
+    }
+
+    const countEl = sectionEl.querySelector('summary .section-count');
+    if (countEl) countEl.textContent = String(body.querySelectorAll('.score-card').length);
+  });
+}
+
+// Pick 'Ems membership (which picks count, and which contest they belong
+// to) only ever changes when Craig edits a follow - a live-score refresh
+// can only change an existing pick's graded status, never add or drop one.
+// So this only ever needs to patch an ALREADY-shown card's content; it
+// never has to decide whether to insert one that wasn't there before.
+function patchSportPickEms_(sportKey, followedRaw) {
+  const existingCard = document.querySelector(`[data-section-key="pickems:${sportKey}"]`);
+  if (!existingCard) return;
+
+  const wasOpen = existingCard.open;
+  const newHtml = renderPickEmsCardForSport(followedRaw, sportKey);
+
+  if (!newHtml) {
+    existingCard.remove();
+    return;
+  }
+
+  existingCard.outerHTML = newHtml;
+
+  const refreshed = document.querySelector(`[data-section-key="pickems:${sportKey}"]`);
+  if (refreshed) refreshed.open = wasOpen;
+}
+
+async function refreshSportInPlace_(sportKey) {
+  if (!sportKey || sportsCoolingDown_.has(sportKey)) return;
+
+  setSportRefreshButtonsState_(sportKey, { refreshing: true });
+
+  try {
+    await manualRefreshSport(sportKey);
+
+    const followedResult = await getFollowedGames();
+    const followedRaw = followedResult.data || [];
+    const allGames = dedupeFollowedGames(followedRaw);
+    const sportGames = allGames.filter(g => {
+      const game = g.live || g;
+      return (game.sportKey || g.sportKey || '') === sportKey;
+    });
+
+    patchSportSections_(sportKey, sportGames);
+    patchSportPickEms_(sportKey, followedRaw);
+
+    showToast('Scores refreshed.');
+  } catch (err) {
+    console.error(err);
+    openMessageModal({
+      title: 'Could Not Refresh',
+      message: "That sport's scores could not be refreshed right now. Try again in a moment."
+    });
+  } finally {
+    sportsCoolingDown_.add(sportKey);
+    setSportRefreshButtonsState_(sportKey, { refreshing: false });
+
+    setTimeout(() => {
+      sportsCoolingDown_.delete(sportKey);
+      setSportRefreshButtonsState_(sportKey, { refreshing: false });
+    }, SPORT_REFRESH_COOLDOWN_MS);
+  }
 }
 
 // Each league within a Live/Upcoming/Recent Finals section is its own

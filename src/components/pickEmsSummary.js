@@ -98,3 +98,16 @@ export function renderPickEmsSummary(followedGamesRaw) {
 
   return `<div class="pickems-summary-wrap">${cards.join('')}</div>`;
 }
+
+// Re-renders just one contest's card - used by the per-card "refresh this
+// sport" button (scoreboard.js) to patch that sport's Pick 'Ems totals in
+// place after a manual score refresh, without touching the other contest's
+// card. Returns '' if that sport isn't a known contest, or has no eligible
+// picks right now (matching renderContestCard's own empty-state behavior) -
+// either way the caller treats an empty result as "remove the card".
+export function renderPickEmsCardForSport(followedGamesRaw, sportKey) {
+  const contest = CONTESTS.find(c => c.sportKey === sportKey);
+  if (!contest) return '';
+
+  return renderContestCard(summarizeContest(followedGamesRaw, sportKey), contest.label, contest.straightUp);
+}

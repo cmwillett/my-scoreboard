@@ -123,6 +123,15 @@ export function renderGameCard(followedGame) {
 
       <div class="game-card-buttons">
         <button
+          class="small-btn card-refresh-btn"
+          data-sport-key="${followedGame.sportKey || game.sportKey || ''}"
+          title="Refresh ${game.sport || 'this'} scores now"
+          aria-label="Refresh scores"
+        >
+          🔄
+        </button>
+
+        <button
           class="small-btn ${isAutoFavorite ? 'edit-favorite-game-btn' : 'edit-followed-game-btn'}"
           data-id="${followedGame.id}"
           data-sport-key="${followedGame.sportKey || game.sportKey || ''}"
