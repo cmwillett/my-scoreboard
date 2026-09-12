@@ -226,16 +226,26 @@ function attachScoreboardHandlers() {
   });
 }
 
+// Each league within a Live/Upcoming/Recent Finals section is its own
+// collapsible, collapsed by default - so opening e.g. "Upcoming" with 16 NFL
+// games and a handful of CFB games doesn't force scrolling past one league
+// to reach the other. Reuses the same nested-collapsible look the admin
+// page already uses for sections-within-a-section.
 function renderSportGroup(sport, games) {
   const sortedGames = [...games].sort((a, b) => getGameSortTime_(a) - getGameSortTime_(b));
 
   return `
-    <div class="sport-group">
-      <h3>${sport}</h3>
-      <div class="score-card-grid">
-        ${sortedGames.map(renderGameCard).join('')}
+    <details class="collapsible-section admin-nested-collapsible sport-group">
+      <summary>
+        <span>${sport}</span>
+        <span class="section-count">${sortedGames.length}</span>
+      </summary>
+      <div class="collapsible-body">
+        <div class="score-card-grid">
+          ${sortedGames.map(renderGameCard).join('')}
+        </div>
       </div>
-    </div>
+    </details>
   `;
 }
 

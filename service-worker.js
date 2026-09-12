@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-scoreboard-v1.4.2';
+const CACHE_NAME = 'my-scoreboard-v1.4.12';
 
 const APP_SHELL = [
   './',
