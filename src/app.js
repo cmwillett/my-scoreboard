@@ -102,6 +102,7 @@ function getUiSnapshot() {
   const openSections = Array.from(document.querySelectorAll('details.collapsible-section'))
     .map((details, index) => ({
       index,
+      key: details.dataset.sectionKey || '',
       title: details.querySelector('summary span:first-child')?.textContent?.trim() || '',
       open: details.open === true
     }));
@@ -116,14 +117,39 @@ function restoreUiSnapshot(snapshot) {
   if (!snapshot) return;
 
   const detailsList = Array.from(document.querySelectorAll('details.collapsible-section'));
+  // Tracks which elements this restore already claimed, so two snapshot
+  // entries can never both land on the same <details> (see the key match
+  // below for why that could otherwise happen).
+  const claimedIndexes = new Set();
 
   snapshot.openSections?.forEach(section => {
-    const match = detailsList.find((details, index) => {
-      const title = details.querySelector('summary span:first-child')?.textContent?.trim() || '';
-      return title === section.title || index === section.index;
-    });
+    let matchIndex = -1;
 
-    if (match) match.open = section.open === true;
+    // Prefer an explicit data-section-key - unambiguous even when two
+    // sections share the same visible title, which happens on the Scores
+    // page (e.g. an "NFL" league group can exist under both Live and
+    // Upcoming at the same time). Falling back to title/index matching here
+    // would silently restore both onto whichever one is found first.
+    if (section.key) {
+      matchIndex = detailsList.findIndex((details, index) =>
+        !claimedIndexes.has(index) && details.dataset.sectionKey === section.key
+      );
+    }
+
+    // Sections without a key (currently just the admin page's) keep the
+    // original title/index matching.
+    if (matchIndex === -1 && !section.key) {
+      matchIndex = detailsList.findIndex((details, index) => {
+        if (claimedIndexes.has(index)) return false;
+        const title = details.querySelector('summary span:first-child')?.textContent?.trim() || '';
+        return title === section.title || index === section.index;
+      });
+    }
+
+    if (matchIndex !== -1) {
+      claimedIndexes.add(matchIndex);
+      detailsList[matchIndex].open = section.open === true;
+    }
   });
 
   requestAnimationFrame(() => {

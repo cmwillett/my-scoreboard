@@ -160,6 +160,21 @@
   margin-right: 10px;
   color: #64748b;
 }
+
+/* Down/distance text (e.g. "4th & Goal at ASU 4") shown next to the live
+   clock in .game-meta-line - only present while a football game is
+   actually in progress (see gameCard.js). */
+.game-situation {
+  color: #facc15;
+}
+
+/* Football icon next to whichever team currently has the ball, in the
+   team-row itself (see renderTeamNameWithFollowIcon in gameCard.js). */
+.possession-icon {
+  display: inline-block;
+  margin-right: 2px;
+}
+
 .favorite-score-card {
   border-color: rgba(250, 204, 21, 0.45);
 }

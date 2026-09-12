@@ -231,11 +231,18 @@ function attachScoreboardHandlers() {
 // games and a handful of CFB games doesn't force scrolling past one league
 // to reach the other. Reuses the same nested-collapsible look the admin
 // page already uses for sections-within-a-section.
-function renderSportGroup(sport, games) {
+//
+// sectionTitle is folded into data-section-key (not just the league name)
+// because the same league can legitimately appear under more than one
+// parent section at once (e.g. one Thursday NFL game live while the Sunday
+// slate is still Upcoming) - keying on the league name alone would give two
+// different <details> elements the same key and make app.js's refresh
+// snapshot restore the wrong one's open/closed state onto both.
+function renderSportGroup(sectionTitle, sport, games) {
   const sortedGames = [...games].sort((a, b) => getGameSortTime_(a) - getGameSortTime_(b));
 
   return `
-    <details class="collapsible-section admin-nested-collapsible sport-group">
+    <details class="collapsible-section admin-nested-collapsible sport-group" data-section-key="section:${sectionTitle}:sport:${sport}">
       <summary>
         <span>${sport}</span>
         <span class="section-count">${sortedGames.length}</span>
@@ -253,12 +260,12 @@ function renderSection(title, games) {
   const groupedGames = groupBySport(games);
   const body = games.length
     ? Object.entries(groupedGames)
-      .map(([sport, sportGames]) => renderSportGroup(sport, sportGames))
+      .map(([sport, sportGames]) => renderSportGroup(title, sport, sportGames))
       .join('')
     : '<div class="card empty-state small"><p>No games in this section.</p></div>';
 
   return `
-    <details class="collapsible-section scoreboard-section">
+    <details class="collapsible-section scoreboard-section" data-section-key="section:${title}">
       <summary>
         <span>${title}</span>
         <span class="section-count">${games.length}</span>

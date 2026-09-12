@@ -43,7 +43,9 @@ function renderPickRow(pick, straightUp) {
 // Reuses the app's existing collapsible-section pattern (same one Live /
 // Upcoming / Recent Finals use on this page) so it looks and behaves the
 // same way - just defaulting to open via the `open` attribute, rather than
-// collapsed like those sections start.
+// collapsed like those sections start. data-section-key lets app.js's
+// refresh snapshot restore this card's open/closed state precisely, rather
+// than matching on the visible title text.
 function renderContestCard(summary, label, straightUp) {
   if (!summary.picks.length) return '';
 
@@ -51,7 +53,7 @@ function renderContestCard(summary, label, straightUp) {
   const outstandingCount = summary.pending.length + summary.unscored.length;
 
   return `
-    <details class="collapsible-section pickems-collapsible" open>
+    <details class="collapsible-section pickems-collapsible" data-section-key="pickems:${summary.sportKey}" open>
       <summary>
         <span>${label} &middot; This Week</span>
         <span class="section-count">${record} &middot; ${summary.weightWon}/${summary.weightPossible} pts</span>
