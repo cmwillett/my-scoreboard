@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-scoreboard-v1.4.15';
+const CACHE_NAME = 'my-scoreboard-v1.4.16';
 
 const APP_SHELL = [
   './',
@@ -39,7 +39,24 @@ const APP_SHELL = [
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
-      .then(cache => cache.addAll(APP_SHELL))
+      .then(cache => Promise.all(
+        // cache.addAll(APP_SHELL) looks like it forces a fresh network
+        // fetch for every file, but it doesn't - it uses default fetch
+        // semantics, which can still be satisfied from the BROWSER's own
+        // HTTP cache (a layer entirely separate from this Cache Storage
+        // API) if that file's Cache-Control/ETag from GitHub Pages still
+        // looks fresh. That's exactly how one file (pickEmsSummary.js) came
+        // back stale in a v1.4.15 install while others in the same deploy
+        // (like config.js, which is why the version badge itself updated
+        // correctly) happened to have already-expired HTTP cache entries -
+        // each file's staleness was independent luck, not tied to
+        // CACHE_NAME at all. `cache: 'reload'` forces every shell file to
+        // bypass the HTTP cache and hit the network for real, every time a
+        // new CACHE_NAME triggers this install step.
+        APP_SHELL.map(url =>
+          fetch(url, { cache: 'reload' }).then(response => cache.put(url, response))
+        )
+      ))
       .then(() => self.skipWaiting())
   );
 });
