@@ -1,4 +1,4 @@
-const CACHE_NAME = 'my-scoreboard-v1.4.18';
+const CACHE_NAME = 'my-scoreboard-v1.4.19';
 
 const APP_SHELL = [
   './',
@@ -17,14 +17,19 @@ const APP_SHELL = [
   './src/components/pwaInstall.js',
   './src/components/pageTools.js',
   './src/components/scoreCard.js',
+  './src/components/pickEmsSummary.js',
   './src/pages/admin.js',
+  './src/pages/addgame.js',
   './src/pages/golfers.js',
+  './src/pages/myPicks.js',
   './src/pages/scoreboard.js',
   './src/pages/worldcup.js',
   './src/services/refresh.js',
   './src/services/settings.js',
   './src/services/storage.js',
+  './src/userData.js',
   './src/utils/date.js',
+  './src/utils/pickEms.js',
   './src/styles/main.css',
   './src/styles/cards.css',
   './src/styles/mobile.css',
@@ -45,14 +50,21 @@ self.addEventListener('install', event => {
         // semantics, which can still be satisfied from the BROWSER's own
         // HTTP cache (a layer entirely separate from this Cache Storage
         // API) if that file's Cache-Control/ETag from GitHub Pages still
-        // looks fresh. That's exactly how one file (pickEmsSummary.js) came
-        // back stale in a v1.4.15 install while others in the same deploy
-        // (like config.js, which is why the version badge itself updated
-        // correctly) happened to have already-expired HTTP cache entries -
-        // each file's staleness was independent luck, not tied to
-        // CACHE_NAME at all. `cache: 'reload'` forces every shell file to
-        // bypass the HTTP cache and hit the network for real, every time a
-        // new CACHE_NAME triggers this install step.
+        // looks fresh, independent of anything CACHE_NAME does.
+        // `cache: 'reload'` forces every shell file to bypass the HTTP cache
+        // and hit the network for real, every time a new CACHE_NAME triggers
+        // this install step. (A v1.4.15 bolding report was originally
+        // suspected to be this exact bug hitting pickEmsSummary.js - it
+        // turned out the bolding was rendering correctly the whole time, but
+        // that file was ALSO found to be missing from this list entirely at
+        // the time, which would have left it exposed to this same gap via
+        // the plain, non-`reload` fetch in the runtime handler below on its
+        // very first post-install request. Both gaps are closed as of
+        // v1.4.19: this file (plus a few others that were similarly
+        // missing) is precached here now, and the runtime handler below
+        // also uses `cache: 'reload'` on a cache miss, so neither an
+        // omitted-from-the-list file nor a future one added without
+        // remembering to list it here can go stale this way again.)
         APP_SHELL.map(url =>
           fetch(url, { cache: 'reload' }).then(response => cache.put(url, response))
         )
@@ -95,7 +107,14 @@ self.addEventListener('fetch', event => {
     caches.match(request).then(cached => {
       if (cached) return cached;
 
-      return fetch(request).then(response => {
+      // Same reasoning as the install handler above: a plain fetch() here
+      // can still be satisfied from the browser's own HTTP cache. This path
+      // only runs once per file per CACHE_NAME (after that, the line above
+      // serves it from Cache Storage), but that one time matters - it's
+      // exactly how a file missing from APP_SHELL (or added later without
+      // remembering to list it there) could go stale independent of
+      // anything CACHE_NAME does.
+      return fetch(request, { cache: 'reload' }).then(response => {
         const responseClone = response.clone();
         caches.open(CACHE_NAME).then(cache => {
           cache.put(request, responseClone);

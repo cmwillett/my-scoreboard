@@ -435,7 +435,8 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
   const settings = {
     scoreboard: visibility.scoreboard !== false,
     golfers: visibility.golfers !== false,
-    worldcup: visibility.worldcup !== false
+    worldcup: visibility.worldcup !== false,
+    mypicks: visibility.mypicks !== false
   };
 
   const refreshRows = [
@@ -471,6 +472,11 @@ function renderSportsDataCard(visibility, refreshSports = [], worldCupRefresh = 
         <label class="checkbox-row admin-checkbox-row">
           <input id="page-visible-worldcup" type="checkbox" ${settings.worldcup ? 'checked' : ''} />
           World Cup
+        </label>
+
+        <label class="checkbox-row admin-checkbox-row">
+          <input id="page-visible-mypicks" type="checkbox" ${settings.mypicks ? 'checked' : ''} />
+          My Picks
         </label>
 
         <button id="save-page-visibility-btn" class="primary-btn">
@@ -650,8 +656,11 @@ function renderFollowedTeamRow(row) {
             type="button"
             class="small-btn edit-current-followed-game-btn"
             data-id="${escapeHtml(row.id)}"
+            data-sport-key="${escapeHtml(row.sportKey || '')}"
             data-spread="${escapeHtml(row.spread || '')}"
             data-notes="${escapeHtml(row.notes || '')}"
+            data-is-pick-em="${row.isPickEm ? 'true' : 'false'}"
+            data-survivor-pick="${escapeHtml(row.survivorPick || '')}"
           >
             Edit
           </button>
@@ -1216,6 +1225,7 @@ function attachAdminHandlers() {
         scoreboard: document.getElementById('page-visible-scoreboard')?.checked !== false,
         golfers: document.getElementById('page-visible-golfers')?.checked !== false,
         worldcup: document.getElementById('page-visible-worldcup')?.checked !== false,
+        mypicks: document.getElementById('page-visible-mypicks')?.checked !== false,
         admin: true
       };
 
@@ -1499,12 +1509,21 @@ function attachAdminHandlers() {
 
   document.querySelectorAll('.edit-current-followed-game-btn').forEach(btn => {
     btn.addEventListener('click', () => {
+      // Was previously missing isPickEm/survivorPick entirely, which meant
+      // editing a team's spread/notes from this list silently reset its
+      // Pick 'Ems tag (and would have done the same to a survivor tag) back
+      // to off every time, regardless of what it was set to before.
+      const sportKey = String(btn.dataset.sportKey || '').toUpperCase();
       openGameEditModal({
         id: btn.dataset.id,
         spread: btn.dataset.spread || '',
         notes: btn.dataset.notes || '',
-        onSave: async ({ id, spread, notes }) => {
-          await updateFollowedGame(id, spread, notes);
+        isPickEm: btn.dataset.isPickEm === 'true',
+        showPickEmToggle: sportKey === 'NFL' || sportKey === 'CFB',
+        survivorPick: btn.dataset.survivorPick || '',
+        showSurvivorField: sportKey === 'NFL',
+        onSave: async ({ id, spread, notes, isPickEm, survivorPick }) => {
+          await updateFollowedGame(id, spread, notes, isPickEm, survivorPick);
           showToast('Team saved.');
           await window.refreshCurrentPage?.();
         }

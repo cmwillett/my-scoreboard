@@ -105,15 +105,20 @@ function resetForm() {
   document.getElementById('note-input').value = '';
   const pickEmCheckbox = document.getElementById('pickem-checkbox');
   if (pickEmCheckbox) pickEmCheckbox.checked = false;
+  const survivorInput = document.getElementById('survivor-input');
+  if (survivorInput) survivorInput.value = '';
 
-  // Only hide the Pick 'Ems checkbox if the sport itself no longer calls for
-  // it - the sport dropdown stays on NFL/CFB after a save (only the
-  // item/spread/notes fields clear), so re-derive visibility from the
-  // current sport rather than force-hiding it. Force-hiding it here was the
-  // bug: it made the checkbox disappear for every pick after the first one.
+  // Only hide the Pick 'Ems checkbox/Survivor field if the sport itself no
+  // longer calls for it - the sport dropdown stays on NFL/CFB (or NFL, for
+  // Survivor) after a save (only the item/spread/notes/survivor fields
+  // clear), so re-derive visibility from the current sport rather than
+  // force-hiding it. Force-hiding it here was the bug: it made the checkbox
+  // disappear for every pick after the first one.
   const sport = document.getElementById('sport-select')?.value;
   const pickEmWrap = document.getElementById('pickem-wrap');
   if (pickEmWrap) pickEmWrap.style.display = (sport === 'NFL' || sport === 'CFB') ? 'block' : 'none';
+  const survivorWrap = document.getElementById('survivor-wrap');
+  if (survivorWrap) survivorWrap.style.display = sport === 'NFL' ? 'block' : 'none';
 
   document.getElementById('game-picker-wrap').style.display = 'none';
   selectedGame = null;
@@ -170,6 +175,7 @@ export function attachAddHandlers() {
   async function updateItems() {
     const sport = sportSelect.value;
     const pickEmWrap = document.getElementById('pickem-wrap');
+    const survivorWrap = document.getElementById('survivor-wrap');
 
     itemInput.value = '';
     itemInput.placeholder = 'Loading...';
@@ -183,6 +189,10 @@ export function attachAddHandlers() {
 
     if (pickEmWrap) {
       pickEmWrap.style.display = (sport === 'NFL' || sport === 'CFB') ? 'block' : 'none';
+    }
+
+    if (survivorWrap) {
+      survivorWrap.style.display = sport === 'NFL' ? 'block' : 'none';
     }
 
     if (!sport) {
@@ -272,6 +282,8 @@ export function attachAddHandlers() {
     const notes = document.getElementById('note-input').value.trim();
     const pickEmCheckbox = document.getElementById('pickem-checkbox');
     const isPickEm = (sport === 'NFL' || sport === 'CFB') && pickEmCheckbox ? pickEmCheckbox.checked : false;
+    const survivorInput = document.getElementById('survivor-input');
+    const survivorPick = sport === 'NFL' && survivorInput ? survivorInput.value.trim() : '';
 
     if (!sport || !item) {
       openMessageModal({
@@ -302,7 +314,8 @@ export function attachAddHandlers() {
           team: item,
           spread,
           notes,
-          isPickEm
+          isPickEm,
+          survivorPick
         });
 
         showToast(`${item} followed.`);
@@ -382,6 +395,11 @@ export async function renderAddGame(options = {}) {
           <input id="pickem-checkbox" type="checkbox" />
           Count toward this week's Pick 'Ems totals
         </label>
+      </div>
+
+      <div id="survivor-wrap" style="display:none;">
+        <label>Survivor pick for (My Picks page)</label>
+        <input id="survivor-input" type="text" placeholder="Name, leave blank if none" />
       </div>
 
       <button id="save-followed-item" class="primary-btn">

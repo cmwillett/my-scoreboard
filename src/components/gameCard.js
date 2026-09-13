@@ -140,6 +140,7 @@ export function renderGameCard(followedGame) {
           data-spread="${followedGame.spread || ''}"
           data-notes="${followedGame.notes || ''}"
           data-is-pick-em="${followedGame.isPickEm ? 'true' : 'false'}"
+          data-survivor-pick="${followedGame.survivorPick || ''}"
           data-sport="${followedGame.sportKey || game.sportKey || ''}"
         >
           Edit

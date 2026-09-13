@@ -104,7 +104,16 @@ export function openConfirmModal({
   });
 }
 
-export function openGameEditModal({ id, spread = '', notes = '', isPickEm = false, showPickEmToggle = false, onSave }) {
+export function openGameEditModal({
+  id,
+  spread = '',
+  notes = '',
+  isPickEm = false,
+  showPickEmToggle = false,
+  survivorPick = '',
+  showSurvivorField = false,
+  onSave
+}) {
   const modal = createModal(`
     <h3>Edit Game</h3>
 
@@ -125,6 +134,15 @@ export function openGameEditModal({ id, spread = '', notes = '', isPickEm = fals
         : ''
     }
 
+    ${
+      showSurvivorField
+        ? `
+          <label>Survivor pick for (My Picks page)</label>
+          <input class="modal-game-survivor" type="text" value="${survivorPick}" placeholder="Name, leave blank if none" />
+        `
+        : ''
+    }
+
     <div class="modal-actions">
       <button type="button" class="small-btn modal-cancel-btn">Cancel</button>
       <button type="button" class="primary-btn modal-save-btn">Save</button>
@@ -141,12 +159,14 @@ export function openGameEditModal({ id, spread = '', notes = '', isPickEm = fals
     const nextNotes = modal.querySelector('.modal-game-notes').value.trim();
     const pickEmCheckbox = modal.querySelector('.modal-game-pickem');
     const nextIsPickEm = pickEmCheckbox ? pickEmCheckbox.checked : isPickEm === true;
+    const survivorInput = modal.querySelector('.modal-game-survivor');
+    const nextSurvivorPick = survivorInput ? survivorInput.value.trim() : survivorPick;
 
     button.disabled = true;
     button.textContent = 'Saving...';
 
     try {
-      await onSave({ id, spread: nextSpread, notes: nextNotes, isPickEm: nextIsPickEm });
+      await onSave({ id, spread: nextSpread, notes: nextNotes, isPickEm: nextIsPickEm, survivorPick: nextSurvivorPick });
       closeModal(modal);
     } catch (err) {
       console.error(err);

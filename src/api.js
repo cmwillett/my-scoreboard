@@ -112,7 +112,8 @@ export async function addFollowedGame(game) {
     team: game.team,
     spread: game.spread || '',
     notes: game.notes || '',
-    isPickEm: game.isPickEm === true
+    isPickEm: game.isPickEm === true,
+    survivorPick: game.survivorPick || ''
   });
   return { success: true, data: teams };
 }
@@ -121,8 +122,8 @@ export async function saveFavoriteGamePick(game) {
   return addFollowedGame(game);
 }
 
-export async function updateFollowedGame(id, spread = '', notes = '', isPickEm = false) {
-  const teams = await updateUserFollowedTeam(id, spread, notes, isPickEm);
+export async function updateFollowedGame(id, spread = '', notes = '', isPickEm = false, survivorPick = '') {
+  const teams = await updateUserFollowedTeam(id, spread, notes, isPickEm, survivorPick);
   return { success: true, data: teams };
 }
 

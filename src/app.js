@@ -1,6 +1,7 @@
 import { renderScoreboard } from './pages/scoreboard.js';
 import { renderGolfers } from './pages/golfers.js';
 import { renderWorldCup } from './pages/worldcup.js';
+import { renderMyPicks } from './pages/myPicks.js';
 import { renderAdmin } from './pages/admin.js';
 import { getPageVisibility } from './api.js';
 import { CONFIG } from './config.js';
@@ -25,6 +26,7 @@ const pages = {
   scoreboard: renderScoreboard,
   golfers: renderGolfers,
   worldcup: renderWorldCup,
+  mypicks: renderMyPicks,
   admin: renderAdmin
 };
 
@@ -32,6 +34,7 @@ const defaultVisibility = {
   scoreboard: true,
   golfers: true,
   worldcup: true,
+  mypicks: true,
   admin: true
 };
 
@@ -48,27 +51,14 @@ function getFirstVisiblePage() {
   if (isPageVisible('scoreboard')) return 'scoreboard';
   if (isPageVisible('golfers')) return 'golfers';
   if (isPageVisible('worldcup')) return 'worldcup';
+  if (isPageVisible('mypicks')) return 'mypicks';
   return 'admin';
 }
 
 function applyNavVisibility(activePageKey) {
   let visibleCount = 0;
 
-  
-document.addEventListener('click', event => {
-  const densityBtn = event.target.closest('.density-toggle-btn');
-  if (densityBtn) {
-    setPageDensity(densityBtn.dataset.pageDensity, densityBtn.dataset.density);
-    return;
-  }
-});
-
-const helpBtn = document.getElementById('help-btn');
-if (helpBtn) {
-  helpBtn.addEventListener('click', openHelpAndChangeLog);
-}
-
-navButtons.forEach(btn => {
+  navButtons.forEach(btn => {
     const pageKey = btn.dataset.page;
     const visible = isPageVisible(pageKey);
 
@@ -190,7 +180,7 @@ async function renderPage(pageKey, options = {}) {
     window.location.hash = targetPage;
   }
 
-  if (targetPage === 'scoreboard' || targetPage === 'golfers' || targetPage === 'worldcup') {
+  if (targetPage === 'scoreboard' || targetPage === 'golfers' || targetPage === 'worldcup' || targetPage === 'mypicks') {
     const refreshInterval = targetPage === 'golfers'
       ? (CONFIG.GOLF_REFRESH_INTERVAL || CONFIG.REFRESH_INTERVAL)
       : targetPage === 'worldcup'
@@ -225,6 +215,7 @@ function openHelpAndChangeLog() {
           <p><strong>Follow Team</strong> tells the app you care about a team. The scoreboard automatically shows that team's live game, recent final, or next upcoming game.</p>
           <p><strong>Follow Golfer</strong> adds that golfer to the Golfers page and the Roku leaderboard.</p>
           <p><strong>World Cup</strong> is managed through the same Follow Team flow. Choose World Cup as the sport, then choose the country.</p>
+          <p><strong>My Picks</strong> shows Pick 'Ems totals and Survivor Picks. Tag a followed NFL/CFB team from Follow Team or its Edit button to add it to either.</p>
         </section>
 
         <section>
@@ -242,6 +233,7 @@ function openHelpAndChangeLog() {
         <section>
           <h4>Recent changes</h4>
           <ul>
+            <li><strong>v1.4.19</strong> Added a My Picks page with Pick 'Ems (moved from Scores) and a new Survivor Picks list.</li>
             <li><strong>v1.4.0</strong> Restored World Cup auto-refresh while viewing the World Cup page.</li>
             <li><strong>v1.3.8</strong> Hid followed teams when no real ESPN/App Script game exists.</li>
             <li><strong>v1.3.5</strong> Split personal setup from Craig-only global admin tools.</li>

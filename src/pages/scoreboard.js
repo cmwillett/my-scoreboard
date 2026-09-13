@@ -15,7 +15,6 @@ import {
 } from '../components/modal.js';
 import { formatLastUpdated } from '../utils/date.js';
 import { renderDensityToggle } from '../components/pageTools.js';
-import { renderPickEmsSummary, renderPickEmsCardForSport } from '../components/pickEmsSummary.js';
 
 
 function getFollowedTeamNames(item) {
@@ -206,8 +205,10 @@ function attachScoreboardHandlers(root = document) {
         notes: btn.dataset.notes || '',
         isPickEm: btn.dataset.isPickEm === 'true',
         showPickEmToggle: sportKey === 'NFL' || sportKey === 'CFB',
-        onSave: async ({ id, spread, notes, isPickEm }) => {
-          await updateFollowedGame(id, spread, notes, isPickEm);
+        survivorPick: btn.dataset.survivorPick || '',
+        showSurvivorField: sportKey === 'NFL',
+        onSave: async ({ id, spread, notes, isPickEm, survivorPick }) => {
+          await updateFollowedGame(id, spread, notes, isPickEm, survivorPick);
           showToast('Game saved.');
           await window.refreshCurrentPage?.();
         }
@@ -264,10 +265,11 @@ function attachScoreboardHandlers(root = document) {
 // ESPN's scoreboard endpoint returns every game for a sport in one call, so
 // there's no cheaper way to refresh "just this game" - clicking the button
 // on one card refreshes (and in-place updates) every followed game in that
-// same sport, wherever they currently sit (Live/Upcoming/Recent Finals),
-// plus that sport's Pick 'Ems card if it has one. A short shared cooldown
-// per sport (not per button) stops a flurry of taps across several cards of
-// the same sport from firing overlapping refreshes back to back.
+// same sport, wherever they currently sit (Live/Upcoming/Recent Finals). A
+// short shared cooldown per sport (not per button) stops a flurry of taps
+// across several cards of the same sport from firing overlapping refreshes
+// back to back. (Pick 'Ems/Survivor moved to their own My Picks page as of
+// v1.4.19 - this button only ever touches the Scores page now.)
 const SPORT_REFRESH_COOLDOWN_MS = 8000;
 const sportsCoolingDown_ = new Set();
 
@@ -340,29 +342,6 @@ function patchSportSections_(sportKey, sportGames) {
   });
 }
 
-// Pick 'Ems membership (which picks count, and which contest they belong
-// to) only ever changes when Craig edits a follow - a live-score refresh
-// can only change an existing pick's graded status, never add or drop one.
-// So this only ever needs to patch an ALREADY-shown card's content; it
-// never has to decide whether to insert one that wasn't there before.
-function patchSportPickEms_(sportKey, followedRaw) {
-  const existingCard = document.querySelector(`[data-section-key="pickems:${sportKey}"]`);
-  if (!existingCard) return;
-
-  const wasOpen = existingCard.open;
-  const newHtml = renderPickEmsCardForSport(followedRaw, sportKey);
-
-  if (!newHtml) {
-    existingCard.remove();
-    return;
-  }
-
-  existingCard.outerHTML = newHtml;
-
-  const refreshed = document.querySelector(`[data-section-key="pickems:${sportKey}"]`);
-  if (refreshed) refreshed.open = wasOpen;
-}
-
 async function refreshSportInPlace_(sportKey) {
   if (!sportKey || sportsCoolingDown_.has(sportKey)) return;
 
@@ -380,7 +359,6 @@ async function refreshSportInPlace_(sportKey) {
     });
 
     patchSportSections_(sportKey, sportGames);
-    patchSportPickEms_(sportKey, followedRaw);
 
     showToast('Scores refreshed.');
   } catch (err) {
@@ -457,7 +435,6 @@ export async function renderScoreboard() {
     const followedRaw = followedResult.data || [];
     const games = dedupeFollowedGames(followedRaw);
     const lastUpdated = formatLastUpdated();
-    const pickEmsHtml = renderPickEmsSummary(followedRaw);
 
     const liveGames = games.filter(game => getGameSection(game) === 'live');
     const upcomingGames = games.filter(game => getGameSection(game) === 'upcoming');
@@ -487,8 +464,6 @@ export async function renderScoreboard() {
         <p class="last-updated">Scoreboard Last Updated: ${lastUpdated}</p>
         <p>${games.length} games showing. Duplicate matchups are combined automatically.</p>
       </div>
-
-      ${pickEmsHtml}
 
       ${renderSection('Live', liveGames)}
       ${renderSection('Upcoming', upcomingGames)}
