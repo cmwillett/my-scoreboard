@@ -331,6 +331,14 @@
   color: #facc15;
 }
 
+/* The team Craig actually picked, in each Pick 'Ems row (pickEmsSummary.js).
+   Bold alone (v1.4.15) was too subtle to notice at a glance - underline on
+   top of it reads a lot more clearly at this font size. */
+.picked-team {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
 .pickem-tag {
   display: inline-flex;
   align-items: center;

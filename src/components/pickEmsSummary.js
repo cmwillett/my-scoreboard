@@ -30,12 +30,14 @@ function statusLabel(status, straightUp) {
 }
 
 // pick.team is always the side Craig actually picked (opponent is just
-// whoever else is in the game) - bolding it makes that explicit at a
-// glance instead of relying on it always being listed first.
+// whoever else is in the game) - bold + underline (.picked-team, cards.css)
+// makes that explicit at a glance instead of relying on it always being
+// listed first. Plain bold alone (v1.4.15) turned out too subtle to notice
+// at a glance - underline reads a lot more clearly at this font size.
 function renderPickRow(pick, straightUp) {
   const matchup = pick.opponent
-    ? `<strong>${pick.team}</strong> vs ${pick.opponent}`
-    : `<strong>${pick.team}</strong>`;
+    ? `<strong class="picked-team">${pick.team}</strong> vs ${pick.opponent}`
+    : `<strong class="picked-team">${pick.team}</strong>`;
 
   return `
     <tr class="pickems-row pickems-row-${pick.status}">
