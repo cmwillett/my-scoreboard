@@ -25,7 +25,8 @@ function renderSurvivorResult_(followedGame) {
 
 function renderSurvivorRow_(followedGame) {
   const opponent = followedGame.opponent || '';
-  const matchup = opponent ? `${followedGame.team} vs ${opponent}` : followedGame.team;
+  const pickedTeamHtml = `<span class="picked-team">${followedGame.team}</span>`;
+  const matchup = opponent ? `${pickedTeamHtml} vs ${opponent}` : pickedTeamHtml;
 
   return `
     <tr class="pickems-row">
