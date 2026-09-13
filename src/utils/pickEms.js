@@ -59,6 +59,23 @@ function isGameFinal_(game) {
   );
 }
 
+// Same live-detection rule scoreboard.js/gameCard.js already use for the
+// main Scores page, so a game counts as "Live" in exactly the same cases in
+// both places.
+function isGameLive_(game) {
+  const rawStatus = String(game.rawStatus || '');
+  const status = String(game.status || '').toLowerCase();
+  return (
+    rawStatus === 'STATUS_IN_PROGRESS' ||
+    status.includes('top') ||
+    status.includes('bot') ||
+    status.includes('live') ||
+    status.includes('half') ||
+    status.includes('period') ||
+    status.includes('quarter')
+  );
+}
+
 // Same pregame-status parser scoreboard.js uses to sort the main Live/
 // Upcoming groups ("9/12 - 7:30 PM EDT" -> a real timestamp). Only works
 // before kickoff - live ("Q2 05:12") and final ("Final") status text won't
@@ -103,7 +120,8 @@ const STRAIGHT_UP_SPORTS = ['NFL'];
 // Pick 'Em entry.
 //
 // status is one of:
-//   pending  - game hasn't gone Final yet
+//   pending  - game hasn't started yet
+//   live     - game is in progress (not yet gradeable)
 //   unscored - game is Final but we can't grade it (missing spread on a
 //              spread sport, missing scores, or the picked team name
 //              doesn't match either side of the game - shouldn't normally
@@ -128,7 +146,18 @@ export function gradePick(followedGame) {
     sortTime: getGameSortTime_(game)
   };
 
-  if (!isGameFinal_(game)) return base;
+  if (!isGameFinal_(game)) {
+    if (isGameLive_(game)) {
+      // A live game's own status text ("Q2 05:12") never parses to a
+      // sortTime, which would otherwise dump it at the very bottom of the
+      // not-yet-settled group (behind every still-scheduled game). Pin it
+      // to the front of that group instead - it's happening right now, so
+      // it belongs above games that haven't kicked off yet.
+      return { ...base, status: 'live', sortTime: -1 };
+    }
+
+    return base;
+  }
 
   const awayScore = Number(game.awayScore);
   const homeScore = Number(game.homeScore);
@@ -168,13 +197,13 @@ export function gradePick(followedGame) {
 }
 
 // Settled picks (won/lost/push - and unscored, which means the game is done
-// but couldn't be graded) go to the top of the card; whatever's still
-// pending sorts underneath by game time, soonest first / latest last, per
-// Craig's request. Games without a parseable time (live, or a pregame
-// status we couldn't parse) fall to the bottom of their group rather than
-// jumping the line.
+// but couldn't be graded) go to the top of the card; live and pending picks
+// sort underneath, live first (see the sortTime: -1 above), then upcoming
+// games by kickoff time, soonest first / latest last. Games without a
+// parseable time (a pregame status we couldn't parse) fall to the bottom of
+// that group rather than jumping the line.
 function sortPicks_(picks) {
-  const settledRank = { won: 0, lost: 0, push: 0, unscored: 0, pending: 1 };
+  const settledRank = { won: 0, lost: 0, push: 0, unscored: 0, live: 1, pending: 1 };
 
   return [...picks].sort((a, b) => {
     const rankDiff = (settledRank[a.status] ?? 1) - (settledRank[b.status] ?? 1);
@@ -208,6 +237,7 @@ export function summarizeContest(followedGames, sportKey, now = new Date()) {
   const won = picks.filter(p => p.status === 'won');
   const lost = picks.filter(p => p.status === 'lost');
   const push = picks.filter(p => p.status === 'push');
+  const live = picks.filter(p => p.status === 'live');
   const pending = picks.filter(p => p.status === 'pending');
   const unscored = picks.filter(p => p.status === 'unscored');
 
@@ -220,6 +250,7 @@ export function summarizeContest(followedGames, sportKey, now = new Date()) {
     won,
     lost,
     push,
+    live,
     pending,
     unscored,
     weightWon,

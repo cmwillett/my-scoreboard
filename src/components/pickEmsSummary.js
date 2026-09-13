@@ -13,6 +13,7 @@ function statusLabel(status, straightUp) {
       won: '✅ Win',
       lost: '❌ Loss',
       push: '➖ Tie',
+      live: '🔴 Live',
       pending: '⏳ Pending',
       unscored: '—'
     }[status] || '—';
@@ -22,13 +23,19 @@ function statusLabel(status, straightUp) {
     won: '✅ Covered',
     lost: '❌ No Cover',
     push: '➖ Push',
+    live: '🔴 Live',
     pending: '⏳ Pending',
     unscored: '—'
   }[status] || '—';
 }
 
+// pick.team is always the side Craig actually picked (opponent is just
+// whoever else is in the game) - bolding it makes that explicit at a
+// glance instead of relying on it always being listed first.
 function renderPickRow(pick, straightUp) {
-  const matchup = pick.opponent ? `${pick.team} vs ${pick.opponent}` : pick.team;
+  const matchup = pick.opponent
+    ? `<strong>${pick.team}</strong> vs ${pick.opponent}`
+    : `<strong>${pick.team}</strong>`;
 
   return `
     <tr class="pickems-row pickems-row-${pick.status}">
@@ -50,7 +57,7 @@ function renderContestCard(summary, label, straightUp) {
   if (!summary.picks.length) return '';
 
   const record = `${summary.won.length}-${summary.lost.length}${summary.push.length ? `-${summary.push.length}` : ''}`;
-  const outstandingCount = summary.pending.length + summary.unscored.length;
+  const outstandingCount = summary.live.length + summary.pending.length + summary.unscored.length;
 
   return `
     <details class="collapsible-section pickems-collapsible" data-section-key="pickems:${summary.sportKey}" open>

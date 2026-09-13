@@ -325,6 +325,12 @@
   color: #cbd5e1;
 }
 
+/* Same amber used for the live down/distance text on game cards, so "in
+   progress right now" reads consistently wherever it shows up. */
+.pickems-row-live td {
+  color: #facc15;
+}
+
 .pickem-tag {
   display: inline-flex;
   align-items: center;
