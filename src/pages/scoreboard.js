@@ -184,6 +184,17 @@ function attachScoreboardHandlers(root = document) {
         });
       });
     }
+
+    // Only shown on the "Failed to load games" error card (see renderScoreboard's
+    // catch block) - gives an immediate way to retry instead of waiting for the
+    // next background auto-refresh cycle.
+    const retryBtn = document.getElementById('retry-load-games-btn');
+
+    if (retryBtn) {
+      retryBtn.addEventListener('click', () => {
+        window.refreshCurrentPage?.({ showLoading: true });
+      });
+    }
   }
 
   root.querySelectorAll('.edit-followed-game-btn').forEach(btn => {
@@ -495,7 +506,14 @@ export async function renderScoreboard() {
       }
     `;
   } catch (err) {
-    console.error(err);
+    // Swallows anything from the Firestore/backend calls in getFollowedGames()
+    // or any render helper below it - could be a network blip, a slow/erroring
+    // Apps Script backend, or a bad response. Logging the real message (rather
+    // than just the generic card below) means checking the browser console
+    // after a report of this screen can actually point at the cause.
+    console.error('Scoreboard failed to load:', err);
+
+    setTimeout(attachScoreboardHandlers, 0);
 
     return `
       <div class="page-header">
@@ -503,7 +521,8 @@ export async function renderScoreboard() {
       </div>
 
       <div class="card">
-        Failed to load games.
+        <p>Failed to load games.</p>
+        <button id="retry-load-games-btn" class="small-btn">Try Again</button>
       </div>
     `;
   }
