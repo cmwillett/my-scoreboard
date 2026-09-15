@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component name="DiagReportTask" extends="Task">
+  <interface>
+    <field id="apiUrl" type="string" />
+    <field id="checkpoint" type="string" />
+    <field id="memPercent" type="string" />
+    <field id="stepCount" type="string" />
+    <field id="checkpointTime" type="string" />
+    <field id="deviceId" type="string" />
+    <field id="appVersion" type="string" />
+    <field id="done" type="boolean" alwaysNotify="true" />
+  </interface>
+  <script type="text/brightscript" uri="pkg:/components/DiagReportTask.brs" />
+</component>
