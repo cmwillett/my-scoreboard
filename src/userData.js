@@ -222,6 +222,32 @@ export async function removeAllUserFollowedTeams() {
   return [];
 }
 
+// Same shape as removeAllUserFollowedTeams(), but scoped to one sport - fetch
+// everything and filter client-side rather than a Firestore `where` query, to
+// match how this file already reads the whole collection elsewhere (and to
+// avoid needing a composite index for a one-off admin action). sportKey
+// comparison is case-insensitive since callers pass through the same sport
+// keys stored on each doc (e.g. "NFL"), but this stays defensive either way.
+export async function removeUserFollowedTeamsBySport(sportKey) {
+  const targetKey = String(sportKey || '').trim().toLowerCase();
+  const rows = await getDocs(userCollection_('followedTeams'));
+  const toDelete = rows.docs.filter(row => String(row.data().sportKey || '').trim().toLowerCase() === targetKey);
+
+  if (toDelete.length) {
+    const batch = writeBatch(db_());
+    toDelete.forEach(row => batch.delete(row.ref));
+    await batch.commit();
+  }
+
+  const remaining = await getUserFollowedTeams();
+  await updateUserSyncStatus_({
+    lastFollowWrite: 'removeSportFollowedTeams',
+    followedTeamsCount: remaining.length
+  });
+  await syncPairedRokuDevice().catch(err => console.warn('Roku sync skipped.', err));
+  return remaining;
+}
+
 function isGameFinal_(game) {
   const status = String(game.status || '').toLowerCase();
   const raw = String(game.rawStatus || '').toLowerCase();

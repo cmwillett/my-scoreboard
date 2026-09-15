@@ -9,6 +9,7 @@ import {
   getUserWorldCupTeams,
   mergeFollowedGolfersWithLive,
   removeAllUserFollowedTeams,
+  removeUserFollowedTeamsBySport,
   removeAllUserFollowedGolfers,
   removeUserFollowedTeam,
   removeUserFollowedGolfer,
@@ -134,6 +135,11 @@ export async function removeFollowedGame(id) {
 
 export async function removeAllFollowedGames() {
   const teams = await removeAllUserFollowedTeams();
+  return { success: true, data: teams };
+}
+
+export async function removeFollowedGamesBySport(sportKey) {
+  const teams = await removeUserFollowedTeamsBySport(sportKey);
   return { success: true, data: teams };
 }
 

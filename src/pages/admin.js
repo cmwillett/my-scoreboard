@@ -5,6 +5,7 @@ import {
   updateFollowedGame,
   removeFollowedGame,
   removeAllFollowedGames,
+  removeFollowedGamesBySport,
   getFollowedGolfers,
   getAvailableGolfers,
   addFollowedGolfer,
@@ -599,11 +600,28 @@ function renderSportGroupedPanels(groups, rowRenderer, emptyMessage) {
     return `<div class="empty-state"><p>${emptyMessage}</p></div>`;
   }
 
-  return sportKeys.map(sport => renderNestedCollapsibleSection(
-    sport === 'WorldCup' ? 'World Cup' : sport,
-    `${groups[sport].length} selected`,
-    `<div class="card"><div class="admin-list">${groups[sport].map(rowRenderer).join('')}</div></div>`
-  )).join('');
+  return sportKeys.map(sport => {
+    const sportLabel = sport === 'WorldCup' ? 'World Cup' : sport;
+    return renderNestedCollapsibleSection(
+      sportLabel,
+      `${groups[sport].length} selected`,
+      `
+        <div class="card">
+          <div class="admin-list">${groups[sport].map(rowRenderer).join('')}</div>
+          <div class="admin-section-actions">
+            <button
+              class="small-btn danger remove-sport-followed-teams-btn"
+              type="button"
+              data-sport-key="${sport}"
+              data-sport-label="${sportLabel}"
+            >
+              Remove All ${sportLabel}
+            </button>
+          </div>
+        </div>
+      `
+    );
+  }).join('');
 }
 
 function getFollowedTeamRows(games = [], worldCupData = {}) {
@@ -1026,6 +1044,33 @@ function attachAdminHandlers() {
       });
     });
   }
+
+  document.querySelectorAll('.remove-sport-followed-teams-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const sportKey = btn.dataset.sportKey;
+      const sportLabel = btn.dataset.sportLabel || sportKey;
+      // World Cup teams live in their own Firestore collection (see
+      // removeAllWorldCupFollowedTeams()/the global Remove All Followed Teams
+      // handler above), not the regular followedTeams collection that
+      // removeFollowedGamesBySport() targets - route accordingly.
+      const isWorldCup = sportKey === 'WorldCup';
+
+      openConfirmModal({
+        title: `Remove All ${sportLabel} Followed Teams?`,
+        message: `This will remove every followed ${sportLabel} team from your account. This cannot be undone.`,
+        confirmText: `Remove All ${sportLabel}`,
+        onConfirm: async () => {
+          if (isWorldCup) {
+            await removeAllWorldCupFollowedTeams();
+          } else {
+            await removeFollowedGamesBySport(sportKey);
+          }
+          showToast(`All ${sportLabel} followed teams removed.`);
+          await window.refreshCurrentPage?.();
+        }
+      });
+    });
+  });
 
   const removeAllGolfersBtn = document.getElementById('remove-all-followed-golfers-btn');
   if (removeAllGolfersBtn) {
